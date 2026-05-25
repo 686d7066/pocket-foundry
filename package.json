@@ -8,11 +8,7 @@
     "build": "node --experimental-transform-types scripts/build.ts",
     "check:unused": "node node_modules/typescript/bin/tsc --noEmit --noUnusedLocals --noUnusedParameters",
     "test": "npm run check:unused && vitest run",
-    "test:watch": "vitest",
-    "test:e2e": "npm run build && node --experimental-transform-types tests/e2e/browser-history.test.ts && node --experimental-transform-types tests/e2e/favorite-context.test.ts",
-    "test:browser": "npm run test:e2e",
-    "deploy": "npm run devdeploy",
-    "devdeploy": "npm run test && npm run build && node --experimental-transform-types scripts/devdeploy.ts"
+    "test:watch": "vitest"
   },
   "devDependencies": {
     "@tailwindcss/cli": "^4.3.0",

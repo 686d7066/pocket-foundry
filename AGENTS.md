@@ -46,3 +46,10 @@ Build and deploy tooling belongs in the workspace root.
 - When creating new features make sure tests are added to the existing test suite.
 - When updating existing code, evaluate if tests need to be updated or if the updated code is wrong.
 - After adding or updating code always run all tests to check for potential errors.
+
+## Review guidelines
+
+- Focus on real defects, regressions, security issues, missing validation, broken tests, and risky behavior changes.
+- Do not comment on subjective style unless it affects maintainability or correctness or violates previous instructions.
+- For TypeScript code, check strict typing, error handling, broken template bindings, and unsafe assumptions about API responses.
+- For tests, flag missing coverage for changed behavior.
