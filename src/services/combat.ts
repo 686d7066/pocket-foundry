@@ -2,7 +2,7 @@ import { getFoundryRuntime } from "../core/foundry-globals.ts";
 import { getCollectionContents, getInitials, getNumber, getObject, getString } from "../core/utils.ts";
 import { canViewDocument, type FoundryUserLike, type PermissionCheckedDocument } from "./permissions.ts";
 
-const ENCOUNTER_VISIBILITY_MODULE_ID = "encounter-visibility";
+const ENCOUNTER_VISIBILITY_MODULE_ID = "inverted-encounter-visibility";
 const ENCOUNTER_VISIBILITY_FLAG_KEY = "isVisible";
 
 export type CombatSummaryViewModel = {

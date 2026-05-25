@@ -3,12 +3,14 @@ import { afterEach, test } from "vitest";
 import { buildCombatViewModel } from "../src/services/combat.ts";
 
 type RuntimeWithGame = typeof globalThis & { game?: unknown };
+const ENCOUNTER_VISIBILITY_MODULE_ID = "inverted-encounter-visibility";
+const ENCOUNTER_VISIBILITY_FLAG_KEY = "isVisible";
 
 afterEach(() => {
   Reflect.deleteProperty(globalThis, "game");
 });
 
-test("combat visibility honors encounter-visibility flag false when module is active", () => {
+test("combat visibility honors inverted-encounter-visibility flag false when module is active", () => {
   const combat = createCombatFixture({
     visible: true,
     flagValue: false
@@ -25,7 +27,7 @@ test("combat visibility honors encounter-visibility flag false when module is ac
   assert.equal(viewModel.combatants.length, 0);
 });
 
-test("combat visibility honors encounter-visibility flag true when module is active", () => {
+test("combat visibility honors inverted-encounter-visibility flag true when module is active", () => {
   const combat = createCombatFixture({
     visible: false,
     flagValue: true
@@ -60,7 +62,7 @@ test("combat visibility falls back to Foundry visibility when module is inactive
   assert.equal(viewModel.combatants.length, 1);
 });
 
-test("combat visibility falls back to Foundry visibility when encounter-visibility flag is undefined", () => {
+test("combat visibility falls back to Foundry visibility when inverted-encounter-visibility flag is undefined", () => {
   const combat = createCombatFixture({
     visible: false
   });
@@ -82,7 +84,7 @@ function setGameFixture(game: unknown): void {
 
 function createModulesFixture(active: boolean): { get: (id: string) => { active: boolean } | null } {
   return {
-    get: (id: string) => (id === "encounter-visibility" ? { active } : null)
+    get: (id: string) => (id === ENCOUNTER_VISIBILITY_MODULE_ID ? { active } : null)
   };
 }
 
@@ -115,6 +117,9 @@ function createCombatFixture(options: {
         initiative: 12
       }
     ],
-    getFlag: (_scope: string, _key: string) => options.flagValue
+    getFlag: (scope: string, key: string) =>
+      scope === ENCOUNTER_VISIBILITY_MODULE_ID && key === ENCOUNTER_VISIBILITY_FLAG_KEY
+        ? options.flagValue
+        : undefined
   };
 }
