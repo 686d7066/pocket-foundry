@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - env/public
   pull_request:
 
 jobs:
@@ -76,3 +75,4 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           artifacts: "./dist/pocket-foundry/module.json,./module.zip"
           tag: ${{ steps.get-version.outputs.version }}
+          commit: ${{ github.sha }}
