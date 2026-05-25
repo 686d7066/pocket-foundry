@@ -1,0 +1,36 @@
+<div class="content pf-view recents-view">
+  <div class="section content-group pf-view-section recent-list">
+    <div class="section-heading content-group-heading pf-view-section-heading recent-list-heading">
+      <h2>Recent Views</h2>
+    </div>
+
+    {{#if hasRows}}
+      <div class="content-table content-list pf-view-list recent-list-table" role="list">
+        <div class="content-list-head recent-list-head" aria-hidden="true">
+          <span>View</span>
+          <span>Opened</span>
+          <span>Action</span>
+        </div>
+
+        {{#each rows}}
+          {{> "modules/pocket-foundry/templates/partials/content-list-row.hbs"
+            rowClass="recent-row"
+            rowClassExtra=rowClass
+            action="open-recent"
+            recentId=id
+            recentKind=kind
+            icon=icon
+            iconText=iconText
+            title=title
+            subtitle=subtitle
+            value=lastOpenedLabel
+            valueClass="recent-list-value"
+            actionLabel=actionLabel
+          }}
+        {{/each}}
+      </div>
+    {{else}}
+      {{> "modules/pocket-foundry/templates/partials/empty-state.hbs" title="No Recent Views" body="Recently opened mobile views will appear here."}}
+    {{/if}}
+  </div>
+</div>

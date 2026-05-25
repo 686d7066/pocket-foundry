@@ -1,0 +1,7 @@
+<div class="empty-state" data-empty-state>
+  <h2>{{title}}</h2>
+  {{#if body}}<p>{{body}}</p>{{/if}}
+  {{#if actionLabel}}
+    <button class="row-action" type="button" data-action="{{action}}">{{actionLabel}}</button>
+  {{/if}}
+</div>

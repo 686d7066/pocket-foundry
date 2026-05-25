@@ -1,0 +1,134 @@
+<div class="character-picker-view" data-region="character-picker-view">
+  {{#*inline "characterPickerRows"}}
+    {{#each rows}}
+      <a class="row character-picker-row character-picker-row-header favorite-context-row" role="link" tabindex="0" data-action="open-character" data-uuid="{{uuid}}" data-favorite-context data-favorite-id="{{uuid}}" data-favorite-type="character">
+        <span class="portrait character-picker-portrait" aria-hidden="true">
+          {{#if image}}
+            <img src="{{image}}" alt="">
+          {{else}}
+            {{iconText}}
+          {{/if}}
+        </span>
+        <span class="title-block character-picker-title-block">
+          <strong>{{name}}</strong>
+          <span>{{subtitle}}</span>
+        </span>
+        <span class="header-stats character-picker-header-stats" aria-hidden="true">
+          <span class="header-stat header-stat-ac"><b>AC</b><strong>{{acValue}}</strong></span>
+          <span class="header-stat header-stat-hp"><b>HP</b><strong>{{hpValue}}</strong></span>
+        </span>
+        {{> "modules/pocket-foundry/templates/partials/favorite-context-menu.hbs"
+          canToggleFavorite=canToggleFavorite
+          favorite=favorite
+          ariaLabel="Character favorite actions"
+          addLabel="Add to Favorites"
+          removeLabel="Remove from Favorites"
+          addAction="character-picker-add-favorite"
+          removeAction="character-picker-remove-favorite"
+          favoriteType="character"
+          favoriteId=uuid
+        }}
+      </a>
+    {{/each}}
+  {{/inline}}
+
+  {{#*inline "characterPickerFolderNode"}}
+    <section class="character-folder-node" data-folder-id="{{node.id}}" data-depth="{{node.depth}}">
+      <button
+        class="character-folder-toggle"
+        type="button"
+        data-action="character-picker-toggle-folder"
+        data-folder-id="{{node.id}}"
+        data-expanded="{{#if node.expanded}}true{{else}}false{{/if}}"
+        aria-expanded="{{#if node.expanded}}true{{else}}false{{/if}}"
+      >
+        <i class="fa-solid {{#if node.expanded}}fa-folder-open{{else}}fa-folder{{/if}}" aria-hidden="true"></i>
+        <strong>{{node.label}}</strong>
+        <span>{{node.totalCharacterCount}}</span>
+      </button>
+
+      {{#if node.expanded}}
+        <div class="character-folder-children">
+          {{#if node.characters.length}}
+            <div class="character-picker-list">
+              {{> characterPickerRows rows=node.characters}}
+            </div>
+          {{/if}}
+          {{#each node.childFolders}}
+            {{> characterPickerFolderNode node=this}}
+          {{/each}}
+        </div>
+      {{/if}}
+    </section>
+  {{/inline}}
+
+  {{> "modules/pocket-foundry/templates/partials/pane-search-toolbar.hbs"
+    toolbarClass="pane-search-toolbar character-picker-toolbar"
+    searchClass="pane-search-field"
+    region="character-picker-toolbar"
+    placeholder="Search characters"
+    ariaLabel="Search characters"
+    clearAriaLabel="Clear character search"
+    value=searchQuery
+    canClear=canClearSearch
+    characterPickerSearch=true
+  }}
+
+  <div class="section pf-view-section character-picker" data-region="character-picker" aria-label="{{label}}">
+    <div class="section-heading pf-view-section-heading">
+      <h2>{{heading}}</h2>
+    </div>
+
+    {{#if hasCharacters}}
+      <div class="character-picker-content">
+        {{#if hasFavorites}}
+          <section class="character-picker-favorites" data-region="character-picker-favorites">
+            <header class="character-picker-block-heading character-picker-block-heading-help">
+              <h3>Favorites</h3>
+              <button
+                class="character-picker-help-toggle"
+                type="button"
+                data-action="character-picker-toggle-favorite-help"
+                aria-label="Favorite help"
+                aria-expanded="{{#if favoriteHelpOpen}}true{{else}}false{{/if}}"
+                title="Favorite help"
+              ><i class="fa-solid fa-circle-info" aria-hidden="true"></i></button>
+            </header>
+            {{#if favoriteHelpOpen}}
+              <p class="character-picker-help-text">Long-press or right-click a character row to add or remove favorites.</p>
+            {{/if}}
+            <div class="character-picker-list">
+              {{> characterPickerRows rows=favorites}}
+            </div>
+          </section>
+        {{/if}}
+
+        {{#if hasFolderTree}}
+          <section class="character-picker-folders" data-region="character-picker-folders">
+            <header class="character-picker-block-heading">
+              <h3>Folders</h3>
+            </header>
+            <div class="character-folder-tree">
+              {{#each folderTree}}
+                {{> characterPickerFolderNode node=this}}
+              {{/each}}
+            </div>
+          </section>
+        {{/if}}
+
+        {{#if hasUngroupedCharacters}}
+          <section class="character-picker-ungrouped" data-region="character-picker-ungrouped">
+            <header class="character-picker-block-heading">
+              <h3>Ungrouped</h3>
+            </header>
+            <div class="character-picker-list">
+              {{> characterPickerRows rows=ungroupedCharacters}}
+            </div>
+          </section>
+        {{/if}}
+      </div>
+    {{else}}
+      {{> "modules/pocket-foundry/templates/partials/empty-state.hbs" title=emptyTitle body=emptyBody}}
+    {{/if}}
+  </div>
+</div>

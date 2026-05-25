@@ -1,0 +1,14 @@
+<div class="setting-row">
+  <div>
+    <strong>{{label}}</strong>
+    <p class="mini">{{hint}}</p>
+  </div>
+  <button
+    class="toggle {{#unless enabled}}off{{/unless}}"
+    type="button"
+    role="switch"
+    aria-checked="{{#if enabled}}true{{else}}false{{/if}}"
+    aria-label="{{ariaLabel}}"
+    data-action="{{action}}"
+  ></button>
+</div>

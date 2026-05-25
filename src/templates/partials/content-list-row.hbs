@@ -1,0 +1,24 @@
+<button
+  class="row content-list-row {{rowClass}}{{#if rowClassExtra}} {{rowClassExtra}}{{/if}}"
+  type="button"
+  data-action="{{action}}"
+  {{#if entryUuid}}data-entry-uuid="{{entryUuid}}"{{/if}}
+  {{#if pageUuid}}data-page-uuid="{{pageUuid}}"{{/if}}
+  {{#if recentId}}data-recent-id="{{recentId}}"{{/if}}
+  {{#if recentKind}}data-recent-kind="{{recentKind}}"{{/if}}
+  aria-label="{{#if ariaLabel}}{{ariaLabel}}{{else}}{{title}}{{#if subtitle}}, {{subtitle}}{{/if}}{{/if}}"
+>
+  <span class="item-icon" aria-hidden="true">
+    {{#if icon}}<img src="{{icon}}" alt="">{{else}}{{iconText}}{{/if}}
+  </span>
+  <span class="row-title content-row-title">
+    <strong>{{title}}</strong>
+    <span>{{subtitle}}</span>
+  </span>
+  {{#if hasValue}}
+    <span class="content-list-value {{valueClass}}">{{value}}</span>
+  {{else}}
+    {{#if value}}<span class="content-list-value {{valueClass}}">{{value}}</span>{{/if}}
+  {{/if}}
+  {{#if actionLabel}}<span class="row-action content-list-action">{{actionLabel}}</span>{{/if}}
+</button>

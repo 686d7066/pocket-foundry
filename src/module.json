@@ -1,0 +1,30 @@
+{
+    "id": "pocket-foundry",
+    "title": "Pocket Foundry",
+    "description": "Mobile-native character sheets and player content browsing for Foundry VTT.",
+    "version": "0.7.0",
+    "authors": [
+        {
+            "name": "686d7066",
+            "url": "https://github.com/686d7066/pocket-foundry"
+        }
+    ],
+    "compatibility": {
+        "minimum": "14",
+        "verified": "14"
+    },
+    "relationships": {
+        "recommends": [
+            {
+                "id": "inverted-encounter-visibility",
+                "type": "module"
+            }
+        ]
+    },
+    "esmodules": [
+        "scripts/pocket-foundry.js"
+    ],
+    "styles": [
+        "styles/pocket-foundry.css"
+    ]
+}

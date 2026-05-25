@@ -1,0 +1,55 @@
+<article class="row sheet-list-row features-list-row feature-row" data-item-id="{{id}}" data-favorite-context data-state-key="feature:{{id}}">
+  {{#*inline "summary"}}
+      <span class="item-icon" aria-hidden="true">
+        {{#if icon}}<img src="{{icon}}" alt="">{{else}}{{iconText}}{{/if}}
+      </span>
+      <span class="row-title sheet-row-title">
+        <strong>{{name}}</strong>
+        <span>{{subtitle}}</span>
+      </span>
+      <span class="sheet-list-value features-list-value">{{usesLabel}}</span>
+      <span class="sheet-list-value features-list-value">{{recovery}}</span>
+      <span class="feature-row-actions" aria-label="{{name}} controls">
+        {{#if actions.canRecharge}}<button type="button" data-action="features-recharge" data-item-id="{{id}}" aria-label="Recharge {{name}}" data-swipe-ignore><i class="fa-solid fa-bolt" aria-hidden="true"></i></button>{{/if}}
+      </span>
+  {{/inline}}
+  {{#*inline "body"}}
+      {{#if activities.length}}
+        <div class="feature-activities">
+          {{#each activities}}
+            <div class="feature-activity-row">
+              <strong>{{name}}</strong>
+              <span>{{activation}}</span>
+              <span>{{range}}</span>
+              <span>{{target}}</span>
+              <span>{{#if toHit}}{{toHit}}{{else}}{{save}}{{/if}}</span>
+              <span>{{usesLabel}}</span>
+            </div>
+          {{/each}}
+        </div>
+      {{/if}}
+      {{#if description}}<div class="feature-description pf-detail-description">{{{description}}}</div>{{/if}}
+      <dl class="pf-detail-facts">
+        {{#each facts}}<div><dt>{{label}}</dt><dd>{{value}}</dd></div>{{/each}}
+      </dl>
+  {{/inline}}
+  {{> "modules/pocket-foundry/templates/partials/expandable-detail-row.hbs"
+    drawerClass="feature-detail-drawer"
+    summaryClass="feature-row-summary pf-list-schema pf-list-schema--icon-title-2meta-actions"
+    bodyClass="pf-expandable-detail-body"
+  }}
+  {{> "modules/pocket-foundry/templates/partials/favorite-context-menu.hbs"
+    canToggleFavorite=actions.canToggleFavorite
+    favorite=favorite
+    ariaLabel=name
+    addAction="context-add-favorite"
+    removeAction="context-remove-favorite"
+    addLabel="Add to Favorites"
+    removeLabel="Remove from Favorites"
+    favoriteType="item"
+    favoriteId=uuid
+  }}
+</article>
+
+
+

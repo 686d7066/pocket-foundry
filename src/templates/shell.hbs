@@ -1,0 +1,114 @@
+<main class="pocket-foundry-root mf-app{{#if colorBlindMode}} color-blind-mode{{/if}}" data-view="{{activeDestination}}" data-content-type="{{contentType}}"{{#if characterSheetBannerImage}} style="--pf-character-banner-image: url('{{characterSheetBannerImage}}');"{{/if}}>
+  {{#if actorSheet}}
+    {{> "modules/pocket-foundry/templates/actor-sheet-shell.hbs" actorSheet}}
+  {{else}}
+    <header class="mf-header">
+      <button class="icon-button" type="button" data-action="back" aria-label="Back" {{#unless canGoBack}}disabled{{/unless}}>&lt;</button>
+      <div class="portrait" aria-hidden="true">
+        {{#if portraitImage}}<img src="{{portraitImage}}" alt="">{{else}}{{portraitInitials}}{{/if}}
+      </div>
+      <div class="title-block">
+        <h1>{{title}}</h1>
+        <p>{{subtitle}}</p>
+      </div>
+      {{#if journalUpRoute}}
+        <button class="icon-button header-up-button" type="button" data-action="journal-up" aria-label="Up one Journal level" title="Up one Journal level">
+          <i class="fa-solid fa-folder-tree" aria-hidden="true"></i>
+        </button>
+      {{/if}}
+    </header>
+
+    <section class="content" data-region="content">
+      {{#if characterPicker}}
+        {{> "modules/pocket-foundry/templates/character-picker.hbs" characterPicker}}
+      {{/if}}
+
+      {{#if (eq contentType "journal")}}
+        {{#if journal.list}}
+          {{> "modules/pocket-foundry/templates/journal.hbs" journal.list}}
+        {{/if}}
+        {{#if journal.entry}}
+          {{> "modules/pocket-foundry/templates/journal-entry.hbs" journal.entry}}
+        {{/if}}
+        {{#if journal.page}}
+          {{> "modules/pocket-foundry/templates/journal-page.hbs" journal.page}}
+        {{/if}}
+      {{/if}}
+
+      {{#if (eq contentType "recents")}}
+        {{> "modules/pocket-foundry/templates/recents.hbs" recents}}
+      {{/if}}
+
+      {{#if (eq contentType "combat")}}
+        {{> "modules/pocket-foundry/templates/combat.hbs" combat}}
+      {{/if}}
+
+      {{#if (eq contentType "search")}}
+        {{> "modules/pocket-foundry/templates/search.hbs" search}}
+      {{/if}}
+
+      {{#if itemDetail}}
+        {{> "modules/pocket-foundry/templates/item-detail.hbs" itemDetail}}
+      {{/if}}
+
+      {{#if pendingDetail}}
+        <div class="section pf-view-section">
+          {{> "modules/pocket-foundry/templates/partials/empty-state.hbs" title=pendingDetail.title body=pendingDetail.body}}
+        </div>
+      {{/if}}
+
+      {{#if settings}}
+        {{#> "modules/pocket-foundry/templates/partials/section.hbs"
+          id="mobile-mode"
+          title="Mobile Mode"
+          sectionClass="pf-view-section"
+          headingClass="pf-view-section-heading"
+        }}
+          {{> "modules/pocket-foundry/templates/partials/settings-toggle-row.hbs"
+            label="Mobile View"
+            hint="Use the mobile-optimized Foundry interface for this user."
+            enabled=settings.mobileViewEnabled
+            ariaLabel="Mobile View"
+            action="toggle-mobile-view"
+          }}
+          {{> "modules/pocket-foundry/templates/partials/settings-toggle-row.hbs"
+            label="Color-Blind Mode"
+            hint="Use color-blind-friendly colors for success and failure blips."
+            enabled=settings.colorBlindMode
+            ariaLabel=settings.colorBlindModeAriaLabel
+            action="toggle-color-blind-mode"
+          }}
+          {{#if settings.characterSheetBannerAvailable}}
+            {{> "modules/pocket-foundry/templates/partials/settings-toggle-row.hbs"
+              label=settings.characterSheetBannerLabel
+              hint=settings.characterSheetBannerHint
+              enabled=settings.characterSheetBannerEnabled
+              ariaLabel=settings.characterSheetBannerAriaLabel
+              action="toggle-character-banner"
+            }}
+          {{/if}}
+        {{/"modules/pocket-foundry/templates/partials/section.hbs"}}
+        {{#> "modules/pocket-foundry/templates/partials/section.hbs"
+          id="recents"
+          title="Recents"
+          sectionClass="pf-view-section"
+          headingClass="pf-view-section-heading"
+        }}
+          <div class="setting-row">
+            <div>
+              <strong>Clear Recent Views</strong>
+              <p class="mini">Remove this user's locally stored recent mobile views.</p>
+            </div>
+            <button
+              class="setting-action"
+              type="button"
+              data-action="clear-recents"
+            >Clear</button>
+          </div>
+        {{/"modules/pocket-foundry/templates/partials/section.hbs"}}
+      {{/if}}
+    </section>
+  {{/if}}
+
+  {{> "modules/pocket-foundry/templates/partials/bottom-nav.hbs" label=bottomNav.label items=bottomNav.items}}
+</main>

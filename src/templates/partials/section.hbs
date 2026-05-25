@@ -1,0 +1,26 @@
+<section class="section{{#if sectionClass}} {{sectionClass}}{{/if}}" data-section="{{id}}">
+  <div class="section-heading{{#if headingClass}} {{headingClass}}{{/if}}">
+    <h2>{{title}}</h2>
+    {{#if meter}}
+      {{> "modules/pocket-foundry/templates/partials/meter.hbs" label=meter.label value=meter.value max=meter.max percent=meter.percent}}
+    {{/if}}
+  </div>
+
+  {{#if chips}}
+    <div class="chip-row">
+      {{#each chips}}
+        {{> "modules/pocket-foundry/templates/partials/chip.hbs"}}
+      {{/each}}
+    </div>
+  {{/if}}
+
+  {{#if @partial-block}}
+    {{> @partial-block}}
+  {{else}}
+    {{#each rows}}
+      {{> "modules/pocket-foundry/templates/partials/row.hbs"}}
+    {{else}}
+      {{> "modules/pocket-foundry/templates/partials/empty-state.hbs" title=emptyTitle body=emptyBody actionLabel=emptyActionLabel action=emptyAction}}
+    {{/each}}
+  {{/if}}
+</section>

@@ -1,0 +1,657 @@
+@import "tailwindcss/theme" layer(theme);
+@import "tailwindcss/utilities" layer(utilities);
+
+@theme inline {
+  --color-mf-bg: var(--pf-color-bg);
+  --color-mf-surface: var(--pf-color-surface);
+  --color-mf-panel: var(--pf-color-panel);
+  --color-mf-muted: var(--pf-color-muted);
+  --color-mf-line: var(--pf-color-line);
+  --color-mf-accent: var(--pf-color-accent);
+  --color-mf-warm: var(--pf-color-warm);
+  --color-mf-text: var(--pf-color-text);
+  --color-mf-active: var(--pf-color-active);
+  --color-mf-subtle: var(--pf-color-subtle);
+  --color-mf-row-line: var(--pf-color-row-line);
+  --color-mf-warning: var(--pf-color-warning);
+  --color-mf-warning-surface: var(--pf-color-warning-surface);
+  --color-mf-danger: var(--pf-color-danger);
+  --color-mf-good: var(--pf-color-good);
+  --color-mf-good-surface: var(--pf-color-good-surface);
+  --color-mf-overlay: var(--pf-color-overlay);
+  --color-mf-section: var(--pf-color-section);
+  --color-mf-section-text: var(--pf-color-section-text);
+  --color-mf-slot: var(--pf-color-slot);
+  --color-mf-slot-filled: var(--pf-color-slot-filled);
+  --color-mf-slot-temp: var(--pf-color-slot-temp);
+  --color-mf-portrait-from: var(--pf-color-portrait-from);
+  --color-mf-portrait-to: var(--pf-color-portrait-to);
+  --shadow-mf-shell: 0 10px 28px var(--pf-color-shadow);
+}
+
+@layer base {
+  :root {
+    --pf-color-bg: #f4f1eb;
+    --pf-color-surface: #fffdf8;
+    --pf-color-panel: #f7f3eb;
+    --pf-color-muted: #675f55;
+    --pf-color-line: #d2c7b7;
+    --pf-color-accent: #1f6f78;
+    --pf-color-warm: #874b3a;
+    --pf-color-text: #201c18;
+    --pf-color-active: #e2f1f2;
+    --pf-color-subtle: #ece6da;
+    --pf-color-row-line: color-mix(in srgb, var(--pf-color-muted) 16%, transparent);
+    --pf-color-warning: #6f4910;
+    --pf-color-warning-surface: #fff2d4;
+    --pf-color-danger: #9d332c;
+    --pf-color-good: #244f35;
+    --pf-color-good-surface: #e5f4e9;
+    --pf-color-overlay: rgb(32 28 24 / 36%);
+    --pf-color-shadow: rgb(35 28 20 / 12%);
+    --pf-color-section: #602b32;
+    --pf-color-section-text: #fffdf8;
+    --pf-color-slot: #8d7b56;
+    --pf-color-slot-filled: #a38335;
+    --pf-color-slot-temp: #b86121;
+    --pf-color-portrait-from: #334044;
+    --pf-color-portrait-to: #8f6248;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --pf-color-bg: #181614;
+      --pf-color-surface: #24211d;
+      --pf-color-panel: #1f1c19;
+      --pf-color-muted: #c5b9a8;
+      --pf-color-line: #51483e;
+      --pf-color-accent: #76cbd1;
+      --pf-color-warm: #d0957f;
+      --pf-color-text: #f4eee7;
+      --pf-color-active: #1f3d42;
+      --pf-color-subtle: #312b25;
+      --pf-color-row-line: color-mix(in srgb, var(--pf-color-muted) 18%, transparent);
+      --pf-color-warning: #f0c16f;
+      --pf-color-warning-surface: #3a2b17;
+      --pf-color-danger: #b8433b;
+      --pf-color-good: #9fd6ad;
+      --pf-color-good-surface: #173221;
+      --pf-color-overlay: rgb(0 0 0 / 58%);
+      --pf-color-shadow: rgb(0 0 0 / 32%);
+      --pf-color-section: #4a252b;
+      --pf-color-section-text: #f8eee9;
+      --pf-color-slot: #9f927a;
+      --pf-color-slot-filled: #d4bd80;
+      --pf-color-slot-temp: #e0a261;
+      --pf-color-portrait-from: #263134;
+      --pf-color-portrait-to: #6f4c3d;
+    }
+  }
+
+  body[data-pocket-foundry-mobile-mode="active"] { @apply overflow-hidden bg-mf-bg; }
+  body[data-pocket-foundry-mobile-mode="active"] #ui-left,
+  body[data-pocket-foundry-mobile-mode="active"] #ui-middle,
+  body[data-pocket-foundry-mobile-mode="active"] #ui-right,
+  body[data-pocket-foundry-mobile-mode="active"] #hotbar,
+  body[data-pocket-foundry-mobile-mode="active"] #sidebar,
+  body[data-pocket-foundry-mobile-mode="active"] #players,
+  body[data-pocket-foundry-mobile-mode="active"] #navigation,
+  body[data-pocket-foundry-mobile-mode="active"] #controls,
+  body[data-pocket-foundry-mobile-mode="active"] #notifications,
+  body[data-pocket-foundry-mobile-mode="active"] canvas { @apply hidden; }
+  body[data-pocket-foundry-mobile-mode="active"] #board { @apply pointer-events-none opacity-0; }
+  body[data-pocket-foundry-mobile-mode="active"] .app.window-app:not(.pocket-foundry-root) { @apply hidden; }
+}
+
+@layer components {
+  .pocket-foundry-root {
+    @apply fixed inset-0 z-[10000] overflow-y-auto bg-mf-bg text-[15px] leading-snug text-mf-text [overscroll-behavior:contain];
+    --pf-header-height: 72px;
+    --pf-pane-rail-height: 49px;
+    --pf-bottom-nav-height: 78px;
+    --pf-character-banner-image: none;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+
+  .pocket-foundry-root *,
+  .pocket-foundry-root *::before,
+  .pocket-foundry-root *::after { @apply box-border; }
+  .pocket-foundry-root a { @apply text-inherit no-underline; }
+  .pocket-foundry-root button,
+  .pocket-foundry-root input { font: inherit; }
+
+  .pocket-foundry-root.mf-app,
+  .pocket-foundry-root .mf-app { @apply mx-auto min-h-screen max-w-[920px] bg-mf-surface pb-[calc(var(--pf-bottom-nav-height)+env(safe-area-inset-bottom))] shadow-mf-shell; }
+  .pocket-foundry-root .actor-sheet-shell { @apply relative min-h-screen bg-mf-surface; isolation: isolate; }
+  .pocket-foundry-root .actor-sheet-shell.character-banner-enabled::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto;
+    height: 360px;
+    border-radius: 0 0 5px 5px;
+    background-image: var(--pf-character-banner-image);
+    background-repeat: no-repeat;
+    background-position: top center;
+    background-size: clamp(760px, 105vw, 980px) auto;
+    opacity: .42;
+    pointer-events: none;
+    z-index: 0;
+    -webkit-mask-image: linear-gradient(to bottom, black 0 28%, rgb(0 0 0 / .72) 46%, transparent 100%);
+    mask-image: linear-gradient(to bottom, black 0 28%, rgb(0 0 0 / .72) 46%, transparent 100%);
+  }
+  .pocket-foundry-root .actor-sheet-shell > * { @apply relative; }
+  .pocket-foundry-root .mf-header { @apply sticky top-0 z-30 grid h-[var(--pf-header-height)] min-h-[var(--pf-header-height)] grid-cols-[44px_48px_minmax(0,1fr)_max-content] items-center gap-2 overflow-hidden border-0 bg-mf-surface px-2.5 py-2; }
+  .pocket-foundry-root .icon-button { @apply grid h-[42px] w-[42px] place-items-center rounded-lg border border-mf-line bg-mf-surface font-bold; }
+  .pocket-foundry-root .portrait { @apply grid h-12 w-12 place-items-center overflow-hidden rounded-lg bg-gradient-to-br from-mf-portrait-from to-mf-portrait-to font-extrabold text-mf-section-text; }
+  .pocket-foundry-root .portrait img,
+  .pocket-foundry-root .item-icon img { @apply h-full w-full object-cover; }
+  .pocket-foundry-root .title-block { @apply min-w-0; }
+  .pocket-foundry-root .title-block h1 { @apply m-0 truncate border-0 font-sans text-[1.05rem] leading-tight font-extrabold text-mf-text; }
+  .pocket-foundry-root .title-block p { @apply mt-1 mb-0 text-[.78rem] text-mf-muted; }
+  .pocket-foundry-root .header-stats { @apply flex min-w-0 flex-nowrap items-center justify-end gap-1 overflow-visible; }
+  .pocket-foundry-root .header-stats.header-stats-priority { @apply grid grid-cols-[max-content_max-content] grid-rows-2 justify-end gap-x-1 gap-y-1; }
+  .pocket-foundry-root .header-stats.header-stats-priority { @apply mb-0.5; }
+  .pocket-foundry-root .header-stats.header-stats-priority .header-stat-ac { grid-column: 1; grid-row: 1; justify-self: stretch; }
+  .pocket-foundry-root .header-stats.header-stats-priority .header-stat-hp { grid-column: 2; grid-row: 1; justify-self: stretch; }
+  .pocket-foundry-root .header-stats.header-stats-priority .header-stat-temp { grid-column: 1; grid-row: 2; justify-self: stretch; }
+  .pocket-foundry-root .header-stats.header-stats-priority .header-stat-hi { grid-column: 2; grid-row: 2; justify-self: stretch; }
+  .pocket-foundry-root .header-stats.header-stats-priority .header-stat,
+  .pocket-foundry-root .header-stats.header-stats-priority .header-inspiration-button {
+    @apply inline-flex min-h-7 items-center justify-center gap-1 rounded-md border border-mf-line bg-mf-surface px-1.5 py-0.5 text-[.78rem] leading-tight font-extrabold text-mf-text;
+    width: 100%;
+  }
+  .pocket-foundry-root .header-stats.header-stats-priority .header-inspiration-button {
+    @apply h-auto;
+  }
+  .pocket-foundry-root .header-stats.header-stats-priority .header-inspiration-button i {
+    @apply text-[.9rem];
+  }
+  .pocket-foundry-root .header-stats.header-stats-priority .header-inspiration-button.active {
+    @apply border-mf-accent bg-mf-active;
+  }
+  .pocket-foundry-root .header-stats.header-stats-priority .header-inspiration-button.active i {
+    @apply text-mf-accent;
+  }
+  .pocket-foundry-root .header-stat { @apply inline-flex min-h-7 shrink-0 items-center justify-center gap-1 whitespace-nowrap rounded-md border border-mf-line bg-mf-surface px-1.5 py-0.5 text-[.78rem] leading-tight font-extrabold; }
+  .pocket-foundry-root .header-stat b { @apply text-[.68rem] uppercase text-mf-muted; }
+  .pocket-foundry-root .header-stat strong { @apply text-[.95rem]; }
+  .pocket-foundry-root .header-inspiration-button { @apply grid h-8 w-8 shrink-0 place-items-center rounded-md border border-mf-line bg-mf-surface p-0 text-mf-muted; }
+  .pocket-foundry-root .header-inspiration-button i { @apply text-[.95rem]; }
+  .pocket-foundry-root .header-inspiration-button.active { @apply border-mf-warm bg-mf-warning-surface; }
+  .pocket-foundry-root .header-inspiration-button.active i { @apply text-mf-warm; }
+  .pocket-foundry-root .header-up-button { @apply text-mf-accent; }
+
+  .pocket-foundry-root .chip-row,
+  .pocket-foundry-root .rail,
+  .pocket-foundry-root .meta-row,
+  .pocket-foundry-root .bottom-nav { @apply flex gap-1.5; }
+  .pocket-foundry-root .chip { @apply inline-flex min-h-7 items-center justify-center whitespace-nowrap rounded-full border border-mf-line bg-mf-surface px-2 py-1 text-[.78rem] font-semibold; }
+  .pocket-foundry-root .chip.accent { @apply border-transparent bg-mf-accent text-mf-section-text; }
+  .pocket-foundry-root .chip.warn { @apply border-mf-warning bg-mf-warning-surface text-mf-warning; }
+  .pocket-foundry-root .chip.good { @apply border-mf-good bg-mf-good-surface text-mf-good; }
+  .pocket-foundry-root .pf-pill { @apply inline-flex items-center rounded border border-mf-line bg-mf-subtle px-2 py-1 text-[.76rem] font-extrabold; }
+  .pocket-foundry-root .pf-pill-label { @apply block; }
+  .pocket-foundry-root .pf-pill-block { @apply flex-1 basis-[130px] bg-mf-surface p-2 text-left; }
+  .pocket-foundry-root .pf-pill-action { @apply cursor-pointer transition-colors hover:border-mf-accent hover:text-mf-accent focus-visible:border-mf-accent focus-visible:text-mf-accent; }
+  .pocket-foundry-root .pf-pill-action:disabled,
+  .pocket-foundry-root .pf-pill-action[aria-disabled="true"] { @apply cursor-default opacity-70 hover:border-mf-line hover:text-mf-text; }
+  .pocket-foundry-root .pane-rail,
+  .pocket-foundry-root .sub-rail { @apply sticky z-20 h-[var(--pf-pane-rail-height)] min-h-[var(--pf-pane-rail-height)] items-center overflow-x-auto overflow-y-hidden px-2.5 py-2; }
+  .pocket-foundry-root .pane-rail { @apply top-[var(--pf-header-height)] bg-mf-surface; }
+  .pocket-foundry-root .pane-rail.rail {
+    justify-content: flex-start;
+    justify-content: safe center;
+  }
+  .pocket-foundry-root .sub-rail { @apply top-[calc(var(--pf-header-height)+var(--pf-pane-rail-height))] bg-mf-subtle; }
+  .pocket-foundry-root .actor-sheet-shell .actor-top-chrome { @apply sticky top-0 z-30 bg-mf-surface; }
+  .pocket-foundry-root .actor-sheet-shell .actor-top-chrome > .actor-sheet-header,
+  .pocket-foundry-root .actor-sheet-shell .actor-top-chrome > .pane-rail {
+    position: static;
+    top: auto;
+    z-index: auto;
+    background-color: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+  .pocket-foundry-root .actor-sheet-shell.character-banner-enabled .actor-top-chrome { @apply bg-mf-surface/70 backdrop-blur-sm; }
+  .pocket-foundry-root .rail button,
+  .pocket-foundry-root .rail a,
+  .pocket-foundry-root .rail span { @apply shrink-0 min-w-[82px] rounded-lg border border-mf-line bg-mf-surface px-2.5 py-2 text-center text-[.82rem] font-bold text-mf-muted; }
+  .pocket-foundry-root .rail button.icon-only,
+  .pocket-foundry-root .rail a.icon-only { @apply min-w-11 px-2; }
+  .pocket-foundry-root .rail .active { @apply border-mf-accent bg-mf-active text-mf-accent; }
+  .pocket-foundry-root .content { @apply px-2.5 pt-3 pb-[calc(var(--pf-bottom-nav-height)+18px+env(safe-area-inset-bottom))]; }
+
+  .pocket-foundry-root .section,
+  .pocket-foundry-root .row,
+  .pocket-foundry-root .sheet-panel,
+  .pocket-foundry-root .stat-card,
+  .pocket-foundry-root .feature-card,
+  .pocket-foundry-root .setting-row,
+  .pocket-foundry-root .item-card { @apply rounded-lg border border-mf-line bg-mf-surface; }
+  .pocket-foundry-root .section { @apply mb-3 p-2.5; }
+  .pocket-foundry-root .section h2 { @apply m-0 mb-2 text-[.98rem]; }
+  .pocket-foundry-root .section h3 { @apply mt-3 mb-1.5 text-[.8rem] uppercase text-mf-muted; }
+  .pocket-foundry-root .section-heading { @apply m-0 mb-2 flex flex-wrap items-center justify-between gap-2; }
+  .pocket-foundry-root .section-heading h2 { @apply m-0; }
+  .pocket-foundry-root .pf-view { @apply grid gap-2.5 p-0; }
+  .pocket-foundry-root .content .content.pf-view { @apply p-0; }
+  .pocket-foundry-root .pf-view-section { @apply m-0 overflow-hidden rounded-md border border-mf-line bg-mf-surface p-0; }
+  .pocket-foundry-root .pf-view-section + .pf-view-section { @apply mt-2.5; }
+  .pocket-foundry-root .pf-view-section-heading { @apply mb-0 min-h-8 bg-mf-section px-2 py-1.5 text-mf-section-text; }
+  .pocket-foundry-root .pf-view-section-heading h2 { @apply text-[.92rem] leading-tight text-mf-section-text; }
+  .pocket-foundry-root .pf-view-list.content-list.content-table { @apply px-2 pb-1; }
+  .pocket-foundry-root .pf-view-section .empty-state { @apply mx-0; }
+  .pocket-foundry-root .grid-2 { @apply grid grid-cols-2 gap-2; }
+  .pocket-foundry-root .grid-3 { @apply grid grid-cols-3 gap-2; }
+  .pocket-foundry-root .empty-state { @apply rounded-lg border border-dashed border-mf-line bg-mf-panel p-3 text-mf-muted; }
+
+  .pocket-foundry-root .details-sheet,
+  .pocket-foundry-root .sheet-dense { @apply grid gap-2.5 bg-mf-surface text-mf-text; }
+  .pocket-foundry-root .actor-sheet-shell.character-banner-enabled {
+    --pf-banner-surface-bg: color-mix(in srgb, var(--pf-color-surface) 72%, transparent);
+    --pf-banner-panel-bg: color-mix(in srgb, var(--pf-color-panel) 68%, transparent);
+    --pf-banner-section-bg: color-mix(in srgb, var(--pf-color-section) 74%, transparent);
+    --pf-banner-blur: 8px;
+  }
+  .pocket-foundry-root .actor-sheet-shell.character-banner-enabled > .content {
+    background: linear-gradient(to bottom, color-mix(in srgb, var(--pf-color-surface) 72%, transparent) 0, var(--pf-color-surface) 240px);
+  }
+  .pocket-foundry-root .actor-sheet-shell.character-banner-enabled .section,
+  .pocket-foundry-root .actor-sheet-shell.character-banner-enabled .row,
+  .pocket-foundry-root .actor-sheet-shell.character-banner-enabled .sheet-panel,
+  .pocket-foundry-root .actor-sheet-shell.character-banner-enabled .stat-card,
+  .pocket-foundry-root .actor-sheet-shell.character-banner-enabled .feature-card,
+  .pocket-foundry-root .actor-sheet-shell.character-banner-enabled .item-card,
+  .pocket-foundry-root .actor-sheet-shell.character-banner-enabled .pf-view-section,
+  .pocket-foundry-root .actor-sheet-shell.character-banner-enabled .content-group,
+  .pocket-foundry-root .actor-sheet-shell.character-banner-enabled .sheet-group {
+    background-color: var(--pf-banner-surface-bg);
+    backdrop-filter: blur(var(--pf-banner-blur));
+    -webkit-backdrop-filter: blur(var(--pf-banner-blur));
+  }
+  .pocket-foundry-root .actor-sheet-shell.character-banner-enabled .empty-state {
+    background-color: var(--pf-banner-panel-bg);
+    backdrop-filter: blur(var(--pf-banner-blur));
+    -webkit-backdrop-filter: blur(var(--pf-banner-blur));
+  }
+  .pocket-foundry-root .actor-sheet-shell.character-banner-enabled .pf-view-section-heading,
+  .pocket-foundry-root .actor-sheet-shell.character-banner-enabled .content-group-heading,
+  .pocket-foundry-root .actor-sheet-shell.character-banner-enabled .sheet-group-heading {
+    background-color: var(--pf-banner-section-bg);
+    backdrop-filter: blur(var(--pf-banner-blur));
+    -webkit-backdrop-filter: blur(var(--pf-banner-blur));
+  }
+  .pocket-foundry-root .sheet-status { @apply grid grid-cols-[repeat(auto-fit,minmax(130px,1fr))] gap-2; }
+  .pocket-foundry-root .sheet-status > span,
+  .pocket-foundry-root .sheet-status > button { @apply min-h-[54px] rounded-lg border border-mf-line bg-mf-surface p-2 text-left; }
+  .pocket-foundry-root .sheet-status b,
+  .pocket-foundry-root .sheet-status em { @apply block; }
+  .pocket-foundry-root .sheet-status b { @apply text-[1.1rem]; }
+  .pocket-foundry-root .sheet-status em { @apply truncate text-[.72rem] not-italic text-mf-muted; }
+  .pocket-foundry-root .meter { @apply mt-2 h-2 overflow-hidden rounded-full bg-mf-subtle; }
+  .pocket-foundry-root .meter > span { @apply block h-full rounded-full bg-mf-accent; }
+
+  .pocket-foundry-root .content-group,
+  .pocket-foundry-root .sheet-group { @apply m-0 overflow-hidden rounded-md p-0; }
+  .pocket-foundry-root .content-group-body,
+  .pocket-foundry-root .sheet-group-body { @apply px-2.5 pt-2 pb-2.5; }
+  .pocket-foundry-root .content-group-heading,
+  .pocket-foundry-root .sheet-group-heading { @apply mb-0 min-h-8 bg-mf-section px-2 py-1.5 text-mf-section-text; }
+  .pocket-foundry-root .content-group-heading h2,
+  .pocket-foundry-root .sheet-group-heading h2 { @apply text-[.92rem] leading-tight text-mf-section-text; }
+  .pocket-foundry-root .sheet-table { @apply w-full table-fixed border-collapse; }
+  .pocket-foundry-root .content-list.content-table { @apply grid max-w-full overflow-hidden border-separate gap-0 px-2 pb-1; }
+  .pocket-foundry-root .sheet-list.sheet-table { @apply grid max-w-full overflow-hidden border-separate gap-0 px-2 pb-1; }
+  .pocket-foundry-root .content-list-head,
+  .pocket-foundry-root .content-list-row,
+  .pocket-foundry-root .sheet-list-head,
+  .pocket-foundry-root .sheet-list-row { @apply box-border grid max-w-full items-center gap-x-2 overflow-hidden rounded-none border-0 border-b border-mf-row-line bg-transparent py-1; }
+  .pocket-foundry-root .content-list-head > *,
+  .pocket-foundry-root .content-list-row > *,
+  .pocket-foundry-root .sheet-list-head > *,
+  .pocket-foundry-root .sheet-list-row > * { @apply min-w-0; }
+  .pocket-foundry-root .content-list-head,
+  .pocket-foundry-root .sheet-list-head { @apply min-h-[24px] border-b border-mf-line py-0 text-[.58rem] font-extrabold uppercase text-mf-muted; }
+  .pocket-foundry-root .pf-view-list .content-list-head { @apply px-0; }
+  .pocket-foundry-root .content-list-head > :first-child,
+  .pocket-foundry-root .sheet-list-head > :first-child { @apply col-start-2 text-left; }
+  .pocket-foundry-root .content-list-head > :not(:first-child),
+  .pocket-foundry-root .sheet-list-head > :not(:first-child) { @apply text-center; }
+  .pocket-foundry-root .content-list-row,
+  .pocket-foundry-root .sheet-list-row { @apply m-0 min-h-[42px]; }
+  .pocket-foundry-root .content-list-row:last-child,
+  .pocket-foundry-root .sheet-list-row:last-child { @apply border-b-0; }
+  .pocket-foundry-root .pf-list-schema { grid-template-columns: var(--pf-list-cols); }
+  .pocket-foundry-root .pf-list-schema--icon-title-3meta-actions { --pf-list-cols: 34px minmax(0,1fr) 44px 58px 58px 56px; }
+  .pocket-foundry-root .pf-list-schema--icon-title-2meta-actions { --pf-list-cols: 34px minmax(0,1fr) 58px 68px 40px; }
+  .pocket-foundry-root .pf-list-schema--icon-title-4meta-actions { --pf-list-cols: 34px minmax(0,1.35fr) 44px 58px 68px 44px 28px; }
+  .pocket-foundry-root .pf-list-schema--icon-title-source-actions { --pf-list-cols: 34px minmax(0,1fr) minmax(88px,128px) 34px; }
+  .pocket-foundry-root .content-list-row .item-icon,
+  .pocket-foundry-root .sheet-list-row .item-icon { @apply h-[30px] w-[30px] rounded text-[.66rem]; }
+  .pocket-foundry-root .content-list-value,
+  .pocket-foundry-root .sheet-list-value { @apply min-w-0 truncate text-center text-[.74rem] font-extrabold text-mf-text; }
+  .pocket-foundry-root .expandable-detail-drawer,
+  .pocket-foundry-root .inventory-detail-drawer,
+  .pocket-foundry-root .feature-detail-drawer,
+  .pocket-foundry-root .spell-detail-drawer,
+  .pocket-foundry-root .effect-detail-drawer { @apply block min-w-0; }
+  .pocket-foundry-root .expandable-detail-drawer summary,
+  .pocket-foundry-root .inventory-detail-drawer summary,
+  .pocket-foundry-root .feature-detail-drawer summary,
+  .pocket-foundry-root .spell-detail-drawer summary,
+  .pocket-foundry-root .effect-detail-drawer summary { @apply cursor-pointer list-none; }
+  .pocket-foundry-root .expandable-detail-drawer summary::-webkit-details-marker,
+  .pocket-foundry-root .biography-detail-drawer summary::-webkit-details-marker,
+  .pocket-foundry-root .favorite-detail-drawer summary::-webkit-details-marker { @apply hidden; }
+  .pocket-foundry-root .row { @apply grid min-h-[62px] grid-cols-[42px_minmax(0,1fr)_auto] items-center gap-2 p-2; }
+  .pocket-foundry-root .row + .row { @apply mt-2; }
+  .pocket-foundry-root .row.content-list-row,
+  .pocket-foundry-root .row.sheet-list-row { @apply m-0 min-h-[42px] gap-x-2 rounded-none border-0 border-b border-mf-row-line bg-transparent p-0 py-1; }
+  .pocket-foundry-root .row.content-list-row + .row.content-list-row,
+  .pocket-foundry-root .row.sheet-list-row + .row.sheet-list-row { @apply mt-0; }
+  .pocket-foundry-root .item-icon { @apply grid h-[42px] w-[42px] place-items-center overflow-hidden rounded-md bg-mf-subtle p-0 font-extrabold text-mf-warm; }
+  .pocket-foundry-root .row-title { @apply min-w-0; }
+  .pocket-foundry-root .row-title strong { @apply block truncate; }
+  .pocket-foundry-root .row-title span { @apply block text-[.78rem] text-mf-muted; }
+  .pocket-foundry-root .content-list-row > .content-row-title,
+  .pocket-foundry-root .sheet-list-row > .sheet-row-title { @apply min-h-[30px] w-full min-w-0 grid-rows-[16px_12px] content-center gap-0 border-0 bg-transparent p-0 text-left text-inherit; align-content: center !important; display: grid !important; justify-content: start !important; justify-items: start !important; justify-self: stretch !important; max-width: 100% !important; text-align: left !important; width: 100% !important; }
+  .pocket-foundry-root .sheet-row-title strong,
+  .pocket-foundry-root .sheet-row-title span { @apply block w-full max-w-full truncate; justify-self: start !important; text-align: left !important; }
+  .pocket-foundry-root .sheet-row-title strong { @apply text-[.78rem] leading-tight text-mf-text; }
+  .pocket-foundry-root .sheet-row-title span { @apply text-[.58rem] leading-tight text-mf-muted; }
+  .pocket-foundry-root .row-action { @apply min-w-12 text-right font-extrabold text-mf-accent; }
+  .pocket-foundry-root .meta-row { @apply col-start-2 col-end-[-1] flex flex-wrap gap-x-2.5 gap-y-1.5; }
+  .pocket-foundry-root .character-picker-view { @apply grid gap-2; }
+  .pocket-foundry-root .character-picker-toolbar { @apply px-0 pt-0 pb-0; }
+  .pocket-foundry-root .character-picker-content { @apply grid gap-2 p-2; }
+  .pocket-foundry-root .character-picker-favorites,
+  .pocket-foundry-root .character-picker-folders,
+  .pocket-foundry-root .character-picker-ungrouped { @apply overflow-hidden rounded-md border border-mf-line bg-mf-panel; }
+  .pocket-foundry-root .character-picker-favorites { @apply border-mf-accent bg-mf-active/55; }
+  .pocket-foundry-root .character-picker-block-heading { @apply grid min-h-8 items-center border-b border-mf-line bg-mf-subtle px-2 py-1.5; }
+  .pocket-foundry-root .character-picker-block-heading h3 { @apply m-0 truncate text-[.82rem] font-extrabold uppercase tracking-[.02em] text-mf-muted; }
+  .pocket-foundry-root .character-picker-block-heading-help { @apply grid-cols-[minmax(0,1fr)_auto] gap-1.5; }
+  .pocket-foundry-root .character-picker-help-toggle { @apply grid h-6 w-6 place-items-center rounded border border-mf-line bg-mf-surface p-0 text-mf-muted; }
+  .pocket-foundry-root .character-picker-help-toggle i { @apply text-[.78rem]; }
+  .pocket-foundry-root .character-picker-help-text { @apply mx-2 mt-1.5 mb-0 rounded-md border border-mf-line bg-mf-panel px-2 py-1.5 text-[.74rem] font-semibold leading-snug text-mf-muted; }
+  .pocket-foundry-root .character-folder-tree { @apply grid gap-1 p-1; }
+  .pocket-foundry-root .character-folder-node { @apply overflow-hidden rounded-md border border-mf-row-line bg-mf-surface; }
+  .pocket-foundry-root .character-folder-toggle { @apply grid w-full min-h-9 grid-cols-[20px_minmax(0,1fr)_auto] items-center gap-1.5 border-0 border-b border-mf-row-line bg-transparent px-2 py-1.5 text-left; }
+  .pocket-foundry-root .character-folder-toggle i { @apply text-[.82rem] text-mf-muted; }
+  .pocket-foundry-root .character-folder-toggle strong { @apply truncate text-[.78rem] uppercase font-extrabold text-mf-muted; }
+  .pocket-foundry-root .character-folder-toggle span { @apply min-w-5 rounded-full border border-mf-line bg-mf-subtle px-1 text-center text-[.66rem] font-extrabold text-mf-muted; }
+  .pocket-foundry-root .character-folder-children { @apply grid gap-1; }
+  .pocket-foundry-root .character-folder-node[data-depth="1"] { @apply ml-3; }
+  .pocket-foundry-root .character-folder-node[data-depth="2"] { @apply ml-6; }
+  .pocket-foundry-root .character-folder-node[data-depth="3"] { @apply ml-9; }
+  .pocket-foundry-root .character-folder-node[data-depth="4"] { @apply ml-12; }
+  .pocket-foundry-root .character-folder-node[data-depth="5"] { @apply ml-[3.75rem]; }
+  .pocket-foundry-root .character-picker-list { @apply px-1 py-1; }
+  .pocket-foundry-root .character-picker-list .character-picker-row { @apply border-0 border-b border-mf-row-line rounded-none bg-transparent; }
+  .pocket-foundry-root .character-picker-list .character-picker-row + .character-picker-row { @apply mt-0; }
+  .pocket-foundry-root .character-picker-list .character-picker-row:last-child { @apply border-b-0; }
+  .pocket-foundry-root .character-picker-row.character-picker-row-header { @apply min-h-[62px] grid-cols-[48px_minmax(0,1fr)_max-content] gap-2 px-2 py-1.5; }
+  .pocket-foundry-root .character-picker-portrait { @apply h-12 w-12 text-[.92rem]; }
+  .pocket-foundry-root .character-picker-title-block { @apply min-w-0; }
+  .pocket-foundry-root .character-picker-title-block strong { @apply block truncate text-[1.05rem] leading-tight font-extrabold text-mf-text; }
+  .pocket-foundry-root .character-picker-title-block span { @apply mt-1 block truncate text-[.78rem] text-mf-muted; }
+  .pocket-foundry-root .character-picker-header-stats { @apply mb-0 grid grid-cols-[max-content_max-content] gap-1; }
+  .pocket-foundry-root .character-picker-header-stats .header-stat { @apply px-1.5; }
+  .pocket-foundry-root .character-picker-header-stats .header-stat b { @apply text-[.64rem]; }
+  .pocket-foundry-root .character-picker-header-stats .header-stat strong { @apply text-[.88rem]; }
+
+  .pocket-foundry-root .pane-search-toolbar,
+  .pocket-foundry-root .inventory-toolbar,
+  .pocket-foundry-root .features-toolbar,
+  .pocket-foundry-root .spells-toolbar,
+  .pocket-foundry-root .effects-toolbar { @apply grid grid-cols-[minmax(0,1fr)] gap-1.5 rounded-md bg-transparent p-0; }
+  .pocket-foundry-root .pane-search-field,
+  .pocket-foundry-root .inventory-search,
+  .pocket-foundry-root .features-search,
+  .pocket-foundry-root .spells-search,
+  .pocket-foundry-root .effects-search { @apply grid min-h-9 grid-cols-[28px_minmax(0,1fr)] items-center rounded-md border border-mf-line bg-mf-surface px-1.5 text-mf-muted; }
+  .pocket-foundry-root .pane-search-field.has-clear,
+  .pocket-foundry-root .inventory-search.has-clear,
+  .pocket-foundry-root .features-search.has-clear,
+  .pocket-foundry-root .spells-search.has-clear,
+  .pocket-foundry-root .effects-search.has-clear { @apply grid-cols-[28px_minmax(0,1fr)_24px]; }
+  .pocket-foundry-root .pane-search-field input,
+  .pocket-foundry-root .inventory-search input,
+  .pocket-foundry-root .features-search input,
+  .pocket-foundry-root .spells-search input,
+  .pocket-foundry-root .effects-search input { @apply min-w-0 border-0 bg-transparent text-[.82rem] text-mf-text outline-none placeholder:text-mf-muted; }
+  .pocket-foundry-root .pane-search-field input[type="search"]::-webkit-search-cancel-button,
+  .pocket-foundry-root .inventory-search input[type="search"]::-webkit-search-cancel-button,
+  .pocket-foundry-root .features-search input[type="search"]::-webkit-search-cancel-button,
+  .pocket-foundry-root .spells-search input[type="search"]::-webkit-search-cancel-button,
+  .pocket-foundry-root .effects-search input[type="search"]::-webkit-search-cancel-button,
+  .pocket-foundry-root .search-box[type="search"]::-webkit-search-cancel-button {
+    -webkit-appearance: none;
+    appearance: none;
+    display: none;
+  }
+  .pocket-foundry-root .pane-search-field input[type="search"]::-ms-clear,
+  .pocket-foundry-root .inventory-search input[type="search"]::-ms-clear,
+  .pocket-foundry-root .features-search input[type="search"]::-ms-clear,
+  .pocket-foundry-root .spells-search input[type="search"]::-ms-clear,
+  .pocket-foundry-root .effects-search input[type="search"]::-ms-clear,
+  .pocket-foundry-root .search-box[type="search"]::-ms-clear {
+    display: none;
+    width: 0;
+    height: 0;
+  }
+  .pocket-foundry-root .pane-search-field .pane-search-clear,
+  .pocket-foundry-root .inventory-search .pane-search-clear,
+  .pocket-foundry-root .features-search .pane-search-clear,
+  .pocket-foundry-root .spells-search .pane-search-clear,
+  .pocket-foundry-root .effects-search .pane-search-clear { @apply grid h-6 w-6 place-items-center rounded border-0 bg-transparent p-0 text-mf-muted; }
+  .pocket-foundry-root .pane-search-field .pane-search-clear i,
+  .pocket-foundry-root .inventory-search .pane-search-clear i,
+  .pocket-foundry-root .features-search .pane-search-clear i,
+  .pocket-foundry-root .spells-search .pane-search-clear i,
+  .pocket-foundry-root .effects-search .pane-search-clear i { @apply text-[.95rem]; }
+  .pocket-foundry-root .reader { @apply mx-auto max-w-[68ch]; }
+  .pocket-foundry-root .reader p { @apply mt-0 mb-3; }
+  .pocket-foundry-root .journal-browser,
+  .pocket-foundry-root .journal-entry-view,
+  .pocket-foundry-root .journal-page-view,
+  .pocket-foundry-root .recents-view { @apply grid gap-2.5; }
+  .pocket-foundry-root .journal-entry-list,
+  .pocket-foundry-root .journal-page-list,
+  .pocket-foundry-root .recent-list { @apply m-0; }
+  .pocket-foundry-root .journal-list-head,
+  .pocket-foundry-root .journal-entry-row,
+  .pocket-foundry-root .journal-page-row,
+  .pocket-foundry-root .recent-list-head,
+  .pocket-foundry-root .recent-row { @apply grid-cols-[34px_minmax(0,1fr)_74px_54px]; }
+  .pocket-foundry-root .journal-entry-row,
+  .pocket-foundry-root .journal-page-row,
+  .pocket-foundry-root .recent-row { @apply w-full text-left; }
+  .pocket-foundry-root .journal-create-page-button { @apply ml-auto inline-grid min-h-7 grid-cols-[auto_auto] items-center gap-1 rounded border border-mf-line bg-mf-subtle px-2 text-[.74rem] font-extrabold text-mf-accent; }
+  .pocket-foundry-root .journal-page-row-main { @apply col-span-3 grid min-h-[34px] grid-cols-[34px_minmax(0,1fr)_74px] items-center gap-x-2 border-0 bg-transparent p-0 text-left text-mf-text; }
+  .pocket-foundry-root .journal-page-delete-button,
+  .pocket-foundry-root .journal-page-edit-button { @apply grid h-8 w-8 place-items-center justify-self-end rounded border border-mf-line bg-mf-subtle p-0 text-mf-accent; }
+  .pocket-foundry-root .journal-page-form-panel { @apply relative z-[1] grid w-[min(100%,420px)] gap-3 rounded-lg border border-mf-line bg-mf-surface p-3.5 shadow-lg; }
+  .pocket-foundry-root .journal-page-form-panel h2 { @apply m-0 border-b border-mf-line pb-2 text-[1.05rem] text-mf-text; }
+  .pocket-foundry-root .journal-page-form-field { @apply grid gap-1.5 text-[.76rem] font-extrabold uppercase text-mf-muted; }
+  .pocket-foundry-root .journal-page-form-field input,
+  .pocket-foundry-root .journal-page-form-field select,
+  .pocket-foundry-root .journal-page-form-field textarea { @apply min-h-10 w-full rounded border border-mf-line bg-mf-panel px-2 py-2 text-base font-semibold normal-case text-mf-text; }
+  .pocket-foundry-root .journal-page-form-field textarea { @apply min-h-[132px] resize-y leading-snug; }
+  .pocket-foundry-root .journal-list-value { @apply text-[.7rem]; }
+  .pocket-foundry-root .recent-list-value { @apply min-w-0 truncate text-center text-[.7rem] font-bold text-mf-muted; }
+  .pocket-foundry-root .content-list-action { @apply min-w-0 truncate text-right text-[.74rem] font-extrabold text-mf-accent; }
+  .pocket-foundry-root .journal-reader { @apply mx-auto w-full max-w-[78ch] bg-mf-surface p-2.5 font-sans text-[.95rem] leading-relaxed text-mf-text; overflow-wrap: anywhere; }
+  .pocket-foundry-root .journal-page-title-row { @apply mb-0 grid min-h-8 grid-cols-[minmax(0,1fr)_auto] items-center gap-2; }
+  .pocket-foundry-root .journal-page-title-row h2 { @apply m-0 min-w-0 border-0 text-[.92rem] leading-tight text-mf-section-text; }
+  .pocket-foundry-root .journal-reader a { @apply font-bold text-mf-accent underline underline-offset-2; }
+  .pocket-foundry-root .journal-reader .chip { @apply no-underline; }
+  .pocket-foundry-root .journal-text-content h1,
+  .pocket-foundry-root .journal-text-content h2,
+  .pocket-foundry-root .journal-text-content h3 { @apply mt-4 mb-2 border-0 font-sans leading-tight text-mf-text; }
+  .pocket-foundry-root .journal-text-content h1 { @apply text-[1.2rem] font-extrabold; }
+  .pocket-foundry-root .journal-text-content h2 { @apply text-[1.08rem] font-extrabold; }
+  .pocket-foundry-root .journal-text-content h3 { @apply text-[.95rem] font-extrabold; }
+  .pocket-foundry-root .journal-text-content p { @apply mt-0 mb-3; }
+  .pocket-foundry-root .journal-text-content > :first-child { @apply mt-0; }
+  .pocket-foundry-root .journal-text-content > :last-child { @apply mb-0; }
+  .pocket-foundry-root .journal-media-frame { @apply m-0 grid gap-2; }
+  .pocket-foundry-root .journal-media-frame img,
+  .pocket-foundry-root .journal-media-frame video { @apply block max-h-[70vh] w-full rounded-md border border-mf-line bg-mf-panel object-contain; }
+  .pocket-foundry-root .journal-media-frame figcaption { @apply text-center text-[.78rem] font-bold text-mf-muted; }
+  .pocket-foundry-root .journal-pdf-frame object { @apply h-[70vh] min-h-[420px] w-full rounded-md border border-mf-line bg-mf-panel; }
+  .pocket-foundry-root .mini { @apply mt-1 mb-0 text-[.74rem] text-mf-muted; }
+  .pocket-foundry-root .search-box { @apply min-h-12 w-full rounded-lg border border-mf-line bg-mf-surface px-3 text-mf-text; }
+  .pocket-foundry-root .pf-expandable-detail-body { @apply grid gap-2 px-2 pb-2; }
+  .pocket-foundry-root .pf-detail-description { @apply text-[.78rem] leading-snug text-mf-text; overflow-wrap: anywhere; }
+  .pocket-foundry-root .pf-detail-description p { @apply mt-0 mb-2; }
+  .pocket-foundry-root .pf-detail-facts { @apply m-0 grid grid-cols-[repeat(auto-fit,minmax(120px,1fr))] gap-x-2 gap-y-1; }
+  .pocket-foundry-root .pf-detail-facts > div { @apply min-w-0; }
+  .pocket-foundry-root .pf-detail-facts dt { @apply m-0 truncate text-[.7rem] font-extrabold text-mf-muted; }
+  .pocket-foundry-root .pf-detail-facts dd { @apply m-0 truncate text-[.72rem] text-mf-text; }
+  .pocket-foundry-root .pf-detail-meta { @apply min-w-0; }
+  .pocket-foundry-root .pf-detail-meta .chip { @apply min-h-6 rounded-full bg-mf-panel px-2 py-0.5 text-[.66rem] font-extrabold; }
+  .pocket-foundry-root .pf-detail-actions { @apply flex flex-wrap gap-1.5; }
+  .pocket-foundry-root .pf-detail-actions button { @apply grid min-h-7 min-w-7 place-items-center rounded-md border border-mf-line bg-mf-panel px-2 text-[.66rem] font-extrabold text-mf-accent; }
+  .pocket-foundry-root .search-type-rail { @apply flex gap-1.5 overflow-x-auto bg-transparent pb-1; }
+  .pocket-foundry-root .search-result-row { @apply grid min-h-[58px] grid-cols-[42px_minmax(0,1fr)_auto] items-center gap-2 rounded-lg border border-mf-line bg-mf-surface p-2; }
+  .pocket-foundry-root .search-result-row.focused { @apply border-mf-accent bg-mf-active; }
+  .pocket-foundry-root .search-snippet { @apply text-[.74rem] text-mf-muted; }
+  .pocket-foundry-root .item-detail-view { @apply grid gap-2; }
+  .pocket-foundry-root .item-detail-chip-row { @apply px-2 pt-1 pb-0; }
+  .pocket-foundry-root .item-detail-chip-row .chip { @apply min-h-6 rounded-full bg-mf-panel px-2 py-0.5 text-[.66rem] font-extrabold; }
+  .pocket-foundry-root .item-detail-grid { @apply grid grid-cols-[repeat(auto-fit,minmax(110px,1fr))] gap-1.5 px-2 pb-1; }
+  .pocket-foundry-root .item-detail-field { @apply grid min-h-[52px] gap-0.5 rounded-md border border-mf-line bg-mf-panel px-2 py-1.5; }
+  .pocket-foundry-root .item-detail-field span { @apply text-[.64rem] font-extrabold uppercase text-mf-muted; }
+  .pocket-foundry-root .item-detail-field strong { @apply truncate text-[.86rem] text-mf-text; }
+  .pocket-foundry-root .item-detail-description { @apply mx-2 rounded-md border border-mf-line bg-mf-surface p-2 text-[.86rem] leading-snug; overflow-wrap: anywhere; }
+  .pocket-foundry-root .item-detail-description p { @apply mt-0 mb-2; }
+  .pocket-foundry-root .item-detail-description > :last-child { @apply mb-0; }
+  .pocket-foundry-root .setting-row { @apply grid min-h-[68px] grid-cols-[minmax(0,1fr)_auto] items-center gap-3 p-2.5; }
+  .pocket-foundry-root .setting-action { @apply min-h-10 min-w-[72px] rounded-lg border border-mf-line bg-mf-subtle px-3 text-[.82rem] font-extrabold text-mf-accent; }
+  .pocket-foundry-root .toggle { @apply block h-[30px] w-[52px] rounded-full bg-mf-accent p-[3px]; }
+  .pocket-foundry-root .toggle::before { @apply ml-auto block h-6 w-6 rounded-full bg-mf-surface content-['']; }
+  .pocket-foundry-root .toggle.off { @apply bg-mf-muted; }
+  .pocket-foundry-root .toggle.off::before { @apply mr-auto ml-0; }
+  .pocket-foundry-root .bottom-nav { @apply fixed inset-x-0 bottom-0 z-20 min-h-[var(--pf-bottom-nav-height)] justify-center border-t border-mf-line bg-mf-surface/95 px-2.5 pt-2 pb-[calc(8px+env(safe-area-inset-bottom))]; }
+  .pocket-foundry-root .bottom-nav button,
+  .pocket-foundry-root .bottom-nav a { @apply grid min-h-[54px] w-[min(23vw,116px)] min-w-0 place-items-center rounded-lg border-0 bg-transparent text-[.76rem] font-extrabold text-mf-muted; }
+  .pocket-foundry-root .bottom-nav button.has-warning .bottom-nav-label,
+  .pocket-foundry-root .bottom-nav a.has-warning .bottom-nav-label { @apply inline-flex items-center justify-center gap-1; }
+  .pocket-foundry-root .bottom-nav button.has-warning .bottom-nav-label i,
+  .pocket-foundry-root .bottom-nav a.has-warning .bottom-nav-label i { @apply text-[.82rem] text-mf-warning; }
+  .pocket-foundry-root .bottom-nav button.encounter-has-image,
+  .pocket-foundry-root .bottom-nav a.encounter-has-image {
+    background-image: var(--pf-encounter-nav-bg);
+    background-size: auto;
+    background-position: center center;
+    background-repeat: no-repeat;
+  }
+  .pocket-foundry-root .bottom-nav button.encounter-highlight,
+  .pocket-foundry-root .bottom-nav a.encounter-highlight { @apply border border-mf-warning; }
+  .pocket-foundry-root .bottom-nav button[data-route="search"],
+  .pocket-foundry-root .bottom-nav a[data-route="search"],
+  .pocket-foundry-root .bottom-nav button[data-route="settings"],
+  .pocket-foundry-root .bottom-nav a[data-route="settings"] { @apply w-12 text-[1rem]; }
+  .pocket-foundry-root .bottom-nav button:disabled,
+  .pocket-foundry-root .bottom-nav a[aria-disabled="true"] { @apply opacity-45 text-mf-muted; }
+  .pocket-foundry-root .bottom-nav-label { @apply block max-w-full min-w-0 truncate; }
+  .pocket-foundry-root .bottom-nav .active { @apply bg-mf-active text-mf-accent; }
+  .pocket-foundry-root .bottom-nav .active.encounter-has-image {
+    background-image: linear-gradient(rgb(0 0 0 / 25%), rgb(0 0 0 / 25%)), var(--pf-encounter-nav-bg);
+    background-size: cover, auto;
+    background-position: center center, center center;
+    color: var(--pf-color-section-text);
+  }
+
+  .pocket-foundry-root .combat-view { @apply grid gap-2.5 pb-[calc(var(--pf-bottom-nav-height)+16px+env(safe-area-inset-bottom))]; }
+  .pocket-foundry-root .combat-order-heading-meta { @apply ml-auto flex flex-wrap justify-end; }
+  .pocket-foundry-root .combat-toolbar { @apply flex flex-wrap gap-1.5; }
+  .pocket-foundry-root .combat-toolbar .chip { @apply min-h-8 rounded-md px-2.5; }
+  .pocket-foundry-root .combat-list { @apply grid gap-0; }
+  .pocket-foundry-root .combat-row {
+    @apply grid min-h-[48px] items-center gap-1.5 border-0 border-b border-mf-row-line py-1.5;
+    grid-template-columns: 34px minmax(0,1fr) 42px minmax(0,120px);
+  }
+  .pocket-foundry-root .combat-row:last-child { @apply border-b-0; }
+  .pocket-foundry-root .combat-row.is-active { @apply bg-mf-active; }
+  .pocket-foundry-root .combat-row.is-next { @apply bg-mf-panel; }
+  .pocket-foundry-root .combat-row.is-defeated { @apply opacity-75; }
+  .pocket-foundry-root .combat-row-icon { @apply h-8 w-8; }
+  .pocket-foundry-root .combat-row-title strong { @apply truncate text-[.82rem]; }
+  .pocket-foundry-root .combat-row-title span { @apply truncate text-[.66rem] uppercase text-mf-muted; }
+  .pocket-foundry-root .combat-row.is-defeated .combat-row-title strong { text-decoration: line-through; }
+  .pocket-foundry-root .combat-row-hostile { @apply text-[1rem] text-mf-muted; }
+  .pocket-foundry-root .combat-row-initiative { @apply text-center text-[.82rem] font-extrabold; }
+  .pocket-foundry-root .combat-row-status { @apply flex flex-wrap justify-end gap-1; }
+  .pocket-foundry-root .combat-row-status .chip { @apply min-h-6 rounded-full px-1.5 py-0 text-[.64rem]; }
+  .pocket-foundry-root .combat-end-turn-footer {
+    position: sticky;
+    bottom: calc(var(--pf-bottom-nav-height) + env(safe-area-inset-bottom));
+    z-index: 6;
+  }
+  .pocket-foundry-root .combat-end-turn-button {
+    @apply grid w-full min-h-11 place-items-center rounded-lg border border-mf-accent bg-mf-accent text-[.88rem] font-extrabold text-mf-section-text;
+  }
+  .pocket-foundry-root .combat-end-turn-button:disabled {
+    @apply border-mf-line bg-mf-subtle text-mf-muted;
+  }
+  .pocket-foundry-root .sr-only { @apply absolute h-px w-px overflow-hidden whitespace-nowrap border-0 p-0; clip: rect(0 0 0 0); }
+
+  .pocket-foundry-root .mock-dialog { @apply hidden; }
+  .pocket-foundry-root .mock-dialog:target,
+  .pocket-foundry-root .mock-dialog.open { @apply fixed inset-0 z-40 grid place-items-center p-[18px]; }
+  .pocket-foundry-root .dialog-backdrop { @apply absolute inset-0 w-full border-0 bg-mf-overlay; }
+  .pocket-foundry-root .number-spinner { @apply relative z-[1] grid w-[min(100%,340px)] gap-2.5 rounded-[10px] border border-mf-line bg-mf-surface p-3.5 shadow-mf-shell; }
+  .pocket-foundry-root .confirm-dialog-panel { @apply relative z-[1] grid w-[min(100%,340px)] gap-3 rounded-[10px] border border-mf-line bg-mf-surface p-3.5 shadow-mf-shell; }
+  .pocket-foundry-root .number-spinner h2,
+  .pocket-foundry-root .number-spinner p,
+  .pocket-foundry-root .confirm-dialog-panel h2,
+  .pocket-foundry-root .confirm-dialog-panel p { @apply m-0; }
+  .pocket-foundry-root .number-spinner p { @apply text-[.82rem] text-mf-muted; }
+  .pocket-foundry-root .confirm-dialog-panel p { @apply text-[.86rem] text-mf-muted; }
+  .pocket-foundry-root .spinner-wheel { @apply relative block h-[164px] overflow-y-auto rounded-[10px] border border-mf-line bg-mf-surface [overscroll-behavior:contain] [scroll-snap-type:y_mandatory] [scrollbar-width:none] [touch-action:pan-y]; padding-block: 58px; }
+  .pocket-foundry-root .spinner-wheel::-webkit-scrollbar { @apply hidden; }
+  .pocket-foundry-root .spinner-wheel button { @apply grid min-h-12 w-full place-items-center border-0 bg-transparent text-[1.05rem] font-extrabold text-mf-muted [scroll-snap-align:center]; }
+  .pocket-foundry-root .spinner-wheel button.selected { @apply text-[1.65rem] font-black text-mf-accent; }
+  .pocket-foundry-root .dialog-actions { @apply flex justify-end gap-2; }
+  .pocket-foundry-root .dialog-actions a,
+  .pocket-foundry-root .dialog-actions button { @apply min-w-[72px] rounded-lg border border-mf-line bg-mf-surface px-2.5 py-2 text-center font-extrabold; }
+  .pocket-foundry-root .dialog-actions .primary-action { @apply border-mf-accent bg-mf-accent text-mf-section-text; }
+  .pocket-foundry-root .dialog-actions .danger-action { @apply border-mf-danger bg-mf-danger text-white; }
+  .pocket-foundry-root .portrait-open-button { @apply border-0 p-0; background: none; }
+  .pocket-foundry-root .portrait-viewer-dialog { @apply p-3; }
+  .pocket-foundry-root .portrait-viewer-panel { @apply relative z-[1] border-0 bg-transparent p-0; }
+  .pocket-foundry-root .portrait-viewer-panel img { @apply block max-h-[86vh] max-w-[92vw] rounded-lg border border-mf-line bg-mf-surface shadow-mf-shell; }
+}
+
+@layer utilities {
+  @media (max-width: 480px) {
+    .pocket-foundry-root { --pf-header-height: 72px; --pf-bottom-nav-height: 78px; }
+    .pocket-foundry-root .pf-list-schema--icon-title-3meta-actions { --pf-list-cols: 30px minmax(0,1fr) 38px 48px 46px 48px; @apply gap-x-1.5; }
+    .pocket-foundry-root .pf-list-schema--icon-title-2meta-actions { --pf-list-cols: 30px minmax(0,1fr) 46px 54px 32px; @apply gap-x-1.5; }
+    .pocket-foundry-root .pf-list-schema--icon-title-4meta-actions { --pf-list-cols: 30px minmax(104px,1.35fr) 38px 46px 54px 34px 24px; @apply gap-x-1.5; }
+    .pocket-foundry-root .pf-list-schema--icon-title-source-actions { --pf-list-cols: 30px minmax(78px,1fr) minmax(52px,78px) 28px; @apply gap-x-1.5; }
+    .pocket-foundry-root .mf-header { @apply grid-cols-[40px_44px_minmax(0,1fr)_max-content] gap-1.5 px-2; }
+    .pocket-foundry-root .icon-button { @apply h-10 w-10; }
+    .pocket-foundry-root .portrait { @apply h-11 w-11; }
+    .pocket-foundry-root .title-block h1 { @apply text-[.98rem]; }
+    .pocket-foundry-root .title-block p { @apply text-[.72rem]; }
+    .pocket-foundry-root .header-stat { @apply min-h-7 gap-0.5 px-1 text-[.68rem]; }
+    .pocket-foundry-root .header-stat b { @apply text-[.58rem]; }
+    .pocket-foundry-root .header-stat strong { @apply text-[.78rem]; }
+    .pocket-foundry-root .header-stat em { @apply text-[.68rem]; }
+    .pocket-foundry-root .header-inspiration-button { @apply h-7 w-7; }
+    .pocket-foundry-root .header-inspiration-button i { @apply text-[.84rem]; }
+    .pocket-foundry-root .combat-row { grid-template-columns: 30px minmax(0,1fr) 34px minmax(0,104px); }
+    .pocket-foundry-root .combat-row-status .chip { @apply text-[.58rem]; }
+    .pocket-foundry-root .combat-toolbar .chip { @apply px-2 text-[.72rem]; }
+  }
+
+  @media (min-width: 900px) {
+    .pocket-foundry-root.mf-app,
+    .pocket-foundry-root .mf-app { @apply max-w-[1180px]; }
+    .pocket-foundry-root .grid-2 { @apply grid-cols-4; }
+  }
+}

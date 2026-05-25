@@ -1,0 +1,19 @@
+{{#if button}}
+  <button
+    type="button"
+    class="pf-pill{{#if block}} pf-pill-block{{/if}}{{#if action}} pf-pill-action{{/if}}{{#if className}} {{className}}{{/if}}"
+    {{#if action}}data-action="{{action}}"{{/if}}
+    {{#if uuid}}data-uuid="{{uuid}}"{{/if}}
+    {{#if disabled}}
+      disabled
+      aria-disabled="true"
+    {{/if}}
+    {{#if swipeIgnore}}data-swipe-ignore{{/if}}
+  >
+    <span class="pf-pill-label">{{label}}</span>
+  </button>
+{{else}}
+  <span class="pf-pill{{#if block}} pf-pill-block{{/if}}{{#if className}} {{className}}{{/if}}">
+    <span class="pf-pill-label">{{label}}</span>
+  </span>
+{{/if}}

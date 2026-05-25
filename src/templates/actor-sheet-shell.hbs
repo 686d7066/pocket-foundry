@@ -1,0 +1,147 @@
+{{#if unavailable}}
+  {{> "modules/pocket-foundry/templates/partials/pane-unavailable.hbs" region="character-unavailable" title=title body=body}}
+{{else}}
+  <div class="actor-sheet-shell {{#if showCharacterBanner}}character-banner-enabled{{/if}}" data-region="actor-sheet-shell" data-actor-uuid="{{actorUuid}}" data-active-pane="{{activePane}}">
+    <div class="actor-top-chrome">
+      <header class="mf-header actor-sheet-header">
+        <button class="icon-button" type="button" data-action="back" aria-label="Back" {{#unless canGoBack}}disabled{{/unless}}>&lt;</button>
+        {{#if portraitImage}}
+          <button class="portrait portrait-open-button" type="button" data-action="portrait-open-dialog" data-dialog-id="portrait-viewer-dialog" aria-label="Open character portrait" data-swipe-ignore>
+            <img src="{{portraitImage}}" alt="Character portrait">
+          </button>
+        {{else}}
+          <div class="portrait" aria-hidden="true">{{portraitInitials}}</div>
+        {{/if}}
+        <div class="title-block">
+          <h1>{{actorName}}</h1>
+          <p>{{classSummary}}</p>
+        </div>
+        <div class="header-stats {{#if headerDetails}}header-stats-priority{{/if}}" aria-label="Priority character state">
+          {{#if headerDetails}}
+            <span class="header-stat header-stat-ac" data-stat="ac"><b>AC</b><strong>{{headerDetails.header.ac}}</strong></span>
+            {{#if headerDetails.header.hp.canUpdateValue}}
+              <button class="header-stat header-stat-hp hp-trigger" type="button" data-action="details-open-dialog" data-dialog="hp" data-swipe-ignore><b>HP</b><strong>{{headerDetails.header.hp.value}}</strong><em>/{{headerDetails.header.hp.effectiveMax}}</em></button>
+            {{else}}
+              <span class="header-stat header-stat-hp" data-stat="hp"><b>HP</b><strong>{{headerDetails.header.hp.value}}</strong><em>/{{headerDetails.header.hp.effectiveMax}}</em></span>
+            {{/if}}
+            {{#if headerDetails.header.hp.canUpdateTemp}}
+              <button class="header-stat header-stat-temp temp-trigger" type="button" data-action="details-open-dialog" data-dialog="temp" data-swipe-ignore><b>Temp</b><strong>{{headerDetails.header.hp.temp}}</strong></button>
+            {{else}}
+              <span class="header-stat header-stat-temp" data-stat="temp"><b>Temp</b><strong>{{headerDetails.header.hp.temp}}</strong></span>
+            {{/if}}
+            <button
+              class="header-inspiration-button header-stat-hi inspiration-toggle {{#if headerDetails.header.inspiration.active}}active{{/if}}"
+              type="button"
+              data-action="details-toggle-inspiration"
+              aria-label="Heroic Inspiration"
+              aria-pressed="{{#if headerDetails.header.inspiration.active}}true{{else}}false{{/if}}"
+              {{#unless headerDetails.header.inspiration.canToggle}}disabled{{/unless}}
+            >
+              <i class="{{#if headerDetails.header.inspiration.active}}fa-solid{{else}}fa-regular{{/if}} fa-star" aria-hidden="true"></i>
+            </button>
+          {{else}}
+            {{#each headerStats}}
+              <span class="header-stat" data-stat="{{id}}">
+                <b>{{label}}</b>
+                <strong>{{value}}</strong>
+                {{#if suffix}}<em>{{suffix}}</em>{{/if}}
+              </span>
+            {{/each}}
+          {{/if}}
+        </div>
+      </header>
+
+      {{> "modules/pocket-foundry/templates/partials/pane-rail.hbs" railClass="pane-rail" label="Character sheet panes" panes=panes}}
+    </div>
+
+    {{#if headerDetails}}
+      {{> "modules/pocket-foundry/templates/partials/number-adjust-dialog.hbs"
+        dialogId="hp-spinner"
+        dialogAriaLabel="Adjust hit points"
+        closeAction="details-close-dialog"
+        title="Adjust HP"
+        description="Choose how much to add or subtract."
+        wheelAriaLabel="HP adjustment amount"
+        options=headerDetails.deltaOptions
+        selectAction="details-select-delta"
+        centerZeroLabel=true
+        confirmActionPrefix="details-confirm"
+        confirmActionMiddle="hp"
+      }}
+
+      {{> "modules/pocket-foundry/templates/partials/number-adjust-dialog.hbs"
+        dialogId="temp-spinner"
+        dialogAriaLabel="Adjust temporary hit points"
+        closeAction="details-close-dialog"
+        title="Adjust Temp HP"
+        description="Choose how much to add or subtract."
+        wheelAriaLabel="Temporary HP amount"
+        options=headerDetails.deltaOptions
+        selectAction="details-select-delta"
+        centerZeroLabel=true
+        confirmActionPrefix="details-confirm"
+        confirmActionMiddle="temp-hp"
+      }}
+    {{/if}}
+
+    {{#if portraitImage}}
+      <section id="portrait-viewer-dialog" class="mock-dialog portrait-viewer-dialog" data-action="portrait-close-dialog" aria-label="Character portrait preview" data-swipe-ignore>
+        <div class="dialog-backdrop" aria-hidden="true"></div>
+        <div class="portrait-viewer-panel" role="dialog" aria-modal="true" aria-label="Character portrait" data-swipe-ignore>
+          <img src="{{portraitImage}}" alt="Character portrait">
+        </div>
+      </section>
+    {{/if}}
+
+    {{#if details}}
+      {{#if (lookup paneTemplatePaths "details")}}
+        {{> (lookup paneTemplatePaths "details") details}}
+      {{/if}}
+    {{else}}
+      {{#if inventory}}
+        {{#if (lookup paneTemplatePaths "inventory")}}
+          {{> (lookup paneTemplatePaths "inventory") inventory}}
+        {{/if}}
+      {{else}}
+        {{#if features}}
+          {{#if (lookup paneTemplatePaths "features")}}
+            {{> (lookup paneTemplatePaths "features") features}}
+          {{/if}}
+        {{else}}
+          {{#if spells}}
+            {{#if (lookup paneTemplatePaths "spells")}}
+              {{> (lookup paneTemplatePaths "spells") spells}}
+            {{/if}}
+          {{else}}
+            {{#if effects}}
+              {{#if (lookup paneTemplatePaths "effects")}}
+                {{> (lookup paneTemplatePaths "effects") effects}}
+              {{/if}}
+            {{else}}
+              {{#if biography}}
+                {{#if (lookup paneTemplatePaths "biography")}}
+                  {{> (lookup paneTemplatePaths "biography") biography}}
+                {{/if}}
+              {{else}}
+                {{#if favorites}}
+                  {{#if (lookup paneTemplatePaths "favorites")}}
+                    {{> (lookup paneTemplatePaths "favorites") favorites}}
+                  {{/if}}
+                {{else}}
+                  <section class="content actor-pane-content" data-region="actor-pane-content" data-swipe-region="character-pane">
+                    <div class="section actor-pane-placeholder" data-pane="{{activePane}}">
+                      <div class="section-heading">
+                        <h2>{{activePaneLabel}}</h2>
+                      </div>
+                      {{> "modules/pocket-foundry/templates/partials/empty-state.hbs" title="Pane Content Pending" body="This character pane is wired for navigation. Pane data binding is implemented in its dedicated step."}}
+                    </div>
+                  </section>
+                {{/if}}
+              {{/if}}
+            {{/if}}
+          {{/if}}
+        {{/if}}
+      {{/if}}
+    {{/if}}
+  </div>
+{{/if}}

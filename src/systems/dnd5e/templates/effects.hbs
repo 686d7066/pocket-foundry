@@ -1,0 +1,76 @@
+{{#if unavailable}}
+  {{> "modules/pocket-foundry/templates/partials/pane-unavailable.hbs" region="effects-unavailable" title=title body=body}}
+{{else}}
+  <section class="content sheet-dense effects-pane" data-region="effects-pane" data-swipe-region="character-pane">
+    {{> "modules/pocket-foundry/templates/partials/pane-search-toolbar.hbs"
+      toolbarClass="effects-toolbar"
+      searchClass="effects-search"
+      region="effects-toolbar"
+      placeholder="Search effects"
+      ariaLabel="Search effects"
+      clearAriaLabel="Clear effect search"
+      value=searchQuery
+      pane="Effects"
+      canClear=canClearSearch
+    }}
+
+    <div class="compact-panels effects-sections" data-region="effects-sections">
+      {{#each sections}}
+        <section class="section sheet-group effects-section effects-section-{{id}}" data-section="{{id}}" data-system-category="{{category}}">
+          <div class="section-heading sheet-group-heading effects-section-heading">
+            <h2>{{label}}</h2>
+            {{#if info}}<span class="chip warn">{{info}}</span>{{/if}}
+          </div>
+          <div class="sheet-table sheet-list effects-list">
+            <div class="sheet-list-head effects-list-head pf-list-schema pf-list-schema--icon-title-source-actions" aria-hidden="true">
+              <span>Name</span>
+              <span>Source</span>
+              <span></span>
+            </div>
+            {{#each effects}}
+              {{> "modules/pocket-foundry/systems/dnd5e/templates/partials/effect-row.hbs" this}}
+            {{/each}}
+          </div>
+        </section>
+      {{/each}}
+
+      {{#if showConditions}}
+        <section class="section sheet-group effects-section effects-conditions-section" data-section="conditions" data-system-category="conditions">
+          <div class="section-heading sheet-group-heading effects-section-heading">
+            <h2>Conditions</h2>
+          </div>
+          {{#if hasConditions}}
+            <div class="condition-grid effects-condition-grid">
+              {{#each conditions}}
+                <button
+                  class="condition effects-condition {{#if active}}active{{/if}}"
+                  type="button"
+                  data-action="effects-toggle-condition"
+                  data-condition-id="{{id}}"
+                  aria-pressed="{{#if active}}true{{else}}false{{/if}}"
+                  {{#unless canToggle}}disabled{{/unless}}
+                  data-swipe-ignore
+                >
+                  <span class="condition-icon" aria-hidden="true">
+                    {{#if icon}}<img src="{{icon}}" alt="">{{else}}{{iconText}}{{/if}}
+                  </span>
+                  <span class="condition-label">{{name}}</span>
+                  <span class="condition-state">
+                    {{#if showAdd}}
+                      <i class="fa-solid fa-plus" aria-hidden="true"></i>
+                    {{/if}}
+                  </span>
+                </button>
+              {{/each}}
+            </div>
+          {{else}}
+            {{> "modules/pocket-foundry/templates/partials/empty-state.hbs" title="No Conditions" body="Condition types appear here when the dnd5e system exposes them."}}
+          {{/if}}
+        </section>
+      {{/if}}
+    </div>
+  </section>
+{{/if}}
+
+
+

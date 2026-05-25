@@ -1,0 +1,110 @@
+<article class="row inventory-list-row inventory-list-row-{{sectionId}} inventory-list-row-{{type}}" data-item-id="{{id}}" data-favorite-context data-state-key="inventory:{{id}}">
+  {{#*inline "summary"}}
+      <span class="item-icon" aria-hidden="true">
+        {{#if icon}}<img src="{{icon}}" alt="">{{else}}{{iconText}}{{/if}}
+      </span>
+      <span class="row-title sheet-row-title">
+        <strong>{{name}}</strong>
+        <span>{{subtitle}}</span>
+      </span>
+      {{#each listCells}}
+        <span class="sheet-list-value inventory-list-value inventory-list-cell inventory-list-cell-{{id}} {{#if emphasis}}emphasis{{/if}}">
+          {{#if adjustment}}
+            <button
+              class="inventory-number-button"
+              type="button"
+              data-action="inventory-open-number-dialog"
+              data-dialog-id="inventory-number-{{../id}}-{{adjustment.id}}"
+              aria-label="{{adjustment.title}} for {{../name}}"
+              data-swipe-ignore
+            >{{value}}</button>
+          {{else}}
+            {{value}}
+          {{/if}}
+        </span>
+      {{/each}}
+      <span class="inventory-list-actions inventory-list-summary-actions" aria-label="{{name}} state">
+        {{#if actions.canToggleAttuned}}
+          <button class="inventory-icon-toggle inventory-summary-attuned attuned {{#if states.attuned}}active{{/if}}" type="button" data-action="inventory-toggle-attuned" data-item-id="{{id}}" aria-label="{{#if states.attuned}}Remove attunement from{{else}}Attune{{/if}} {{name}}" aria-pressed="{{#if states.attuned}}true{{else}}false{{/if}}" title="Attuned" data-swipe-ignore>
+            <i class="fa-solid fa-sun" aria-hidden="true"></i>
+          </button>
+        {{else}}
+          {{#if states.attuned}}
+            <button class="inventory-icon-toggle inventory-summary-attuned attuned active" type="button" data-action="inventory-toggle-attuned" data-item-id="{{id}}" aria-label="Attuned {{name}}" aria-pressed="true" title="Attuned" disabled aria-disabled="true" data-swipe-ignore>
+              <i class="fa-solid fa-sun" aria-hidden="true"></i>
+            </button>
+          {{/if}}
+        {{/if}}
+        <button class="inventory-icon-toggle inventory-summary-equip equipped {{#if states.equipped}}active{{/if}}" type="button" data-action="inventory-toggle-equipped" data-item-id="{{id}}" aria-label="{{#if states.equipped}}Unequip{{else}}Equip{{/if}} {{name}}" aria-pressed="{{#if states.equipped}}true{{else}}false{{/if}}" title="Equipped" {{#unless actions.canToggleEquipped}}disabled aria-disabled="true"{{/unless}} data-swipe-ignore>
+          <i class="fa-solid fa-shield-halved" aria-hidden="true"></i>
+        </button>
+        {{#if states.prepared}}<i class="fa-solid fa-certificate" aria-hidden="true"></i>{{/if}}
+      </span>
+  {{/inline}}
+  {{#*inline "body"}}
+      {{#if description}}<div class="inventory-description pf-detail-description">{{{description}}}</div>{{/if}}
+      {{#if facts.length}}
+        <dl class="pf-detail-facts">
+          {{#each facts}}
+            <div><dt>{{label}}</dt><dd>{{value}}</dd></div>
+          {{/each}}
+        </dl>
+      {{/if}}
+      {{#if children.length}}
+        <div class="inventory-children">
+          <h3>Contents</h3>
+          {{#each children}}
+            <button class="inventory-child-row" type="button" data-action="inventory-open-item" data-item-uuid="{{uuid}}" data-swipe-ignore>
+              <span class="inventory-child-name">{{name}}</span>
+              <span class="inventory-child-subtitle">{{subtitle}}</span>
+              <span class="inventory-child-value">Quantity {{quantityLabel}}</span>
+              <span class="inventory-child-value">Weight {{weightLabel}}</span>
+              <span class="inventory-child-value">{{usesLabel}}</span>
+            </button>
+          {{/each}}
+        </div>
+      {{/if}}
+      <div class="inventory-detail-actions pf-detail-actions" aria-label="{{name}} controls">
+        {{#if actions.canTogglePrepared}}<button class="inventory-toggle {{#if states.prepared}}active{{/if}}" type="button" data-action="inventory-toggle-prepared" data-item-id="{{id}}" aria-pressed="{{#if states.prepared}}true{{else}}false{{/if}}" data-swipe-ignore>Prepared</button>{{/if}}
+        {{#if actions.canRecharge}}<button class="inventory-icon-toggle recharge" type="button" data-action="inventory-recharge" data-item-id="{{id}}" aria-label="Recharge {{name}}" title="Recharge" data-swipe-ignore><i class="fa-solid fa-bolt" aria-hidden="true"></i></button>{{/if}}
+        {{#if actions.canRemoveContainer}}<button type="button" data-action="inventory-remove-container" data-item-id="{{id}}" data-swipe-ignore>Remove</button>{{/if}}
+      </div>
+  {{/inline}}
+  {{> "modules/pocket-foundry/templates/partials/expandable-detail-row.hbs"
+    drawerClass="inventory-detail-drawer"
+    summaryClass="inventory-list-row-summary pf-list-schema pf-list-schema--icon-title-3meta-actions"
+    bodyClass="pf-expandable-detail-body"
+  }}
+  {{#each adjustments}}
+    {{> "modules/pocket-foundry/templates/partials/number-adjust-dialog.hbs"
+      dialogIdPrefix="inventory-number-"
+      dialogItemId=../id
+      dialogIdMiddle="-"
+      dialogAdjustmentId=id
+      closeAction="inventory-close-number-dialog"
+      title=title
+      dialogAriaLabelName=../name
+      descriptionName=../name
+      descriptionLabel=label
+      options=options
+      selectAction="inventory-select-delta"
+      centerZeroLabel=true
+      confirmActionPrefix="inventory-confirm"
+      confirmActionMiddle=id
+      confirmItemId=../id
+    }}
+  {{/each}}
+  {{> "modules/pocket-foundry/templates/partials/favorite-context-menu.hbs"
+    canToggleFavorite=actions.canToggleFavorite
+    favorite=favorite
+    ariaLabel=name
+    addAction="inventory-add-favorite"
+    removeAction="inventory-remove-favorite"
+    addLabel="Add to Favorites"
+    removeLabel="Remove from Favorites"
+    itemId=id
+  }}
+</article>
+
+
+

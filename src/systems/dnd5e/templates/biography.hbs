@@ -1,0 +1,61 @@
+{{#if unavailable}}
+  {{> "modules/pocket-foundry/templates/partials/pane-unavailable.hbs" region="biography-unavailable" title=title body=body}}
+{{else}}
+  <section class="content sheet-dense biography-pane" data-region="biography-pane" data-swipe-region="character-pane">
+    <section class="section sheet-group biography-identity-section" data-section="identity">
+      <div class="section-heading sheet-group-heading biography-section-heading">
+        <h2>Identity</h2>
+      </div>
+      <div class="sheet-group-body biography-identity-body">
+        {{#if hasIdentity}}
+          <div class="bio-grid">
+            {{#each identity}}
+              <span class="bio-field" data-field="{{name}}">
+                <span>{{label}}</span>
+                <b>{{value}}</b>
+              </span>
+            {{/each}}
+          </div>
+        {{else}}
+          {{> "modules/pocket-foundry/templates/partials/empty-state.hbs" title="No Identity Details" body="Visible character details appear here when filled in."}}
+        {{/if}}
+      </div>
+    </section>
+
+    <div class="bio-copy" data-region="biography-copy">
+      {{#if hasTraits}}
+        {{#each traits}}
+          <section class="section sheet-group biography-trait-card" data-field="{{name}}">
+            <div class="section-heading sheet-group-heading biography-section-heading">
+              <h2><i class="{{icon}}" aria-hidden="true"></i> {{label}}</h2>
+            </div>
+            <div class="sheet-group-body biography-trait-body">
+              <details class="biography-detail-drawer">
+                <summary data-swipe-ignore>{{preview}}</summary>
+                <p>{{text}}</p>
+              </details>
+            </div>
+          </section>
+        {{/each}}
+      {{else}}
+        <section class="section biography-trait-card empty-feature-card">
+          {{> "modules/pocket-foundry/templates/partials/empty-state.hbs" title="No Traits" body="Ideals, bonds, flaws, personality traits, and appearance appear here when filled in."}}
+        </section>
+      {{/if}}
+
+      <article class="section sheet-group biography-backstory" data-section="backstory" aria-label="Backstory">
+        <div class="section-heading sheet-group-heading biography-section-heading">
+          <h2>Backstory</h2>
+        </div>
+        <div class="sheet-group-body biography-backstory-body">
+          {{#if hasBackstory}}
+            <div class="reader bio-backstory-content" data-biography-links>{{{backstoryHtml}}}</div>
+          {{else}}
+            {{> "modules/pocket-foundry/templates/partials/empty-state.hbs" title="No Backstory" body="Biography text appears here when filled in."}}
+          {{/if}}
+        </div>
+      </article>
+    </div>
+  </section>
+{{/if}}
+

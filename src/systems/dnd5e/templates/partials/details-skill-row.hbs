@@ -1,0 +1,46 @@
+<article class="skill-row-detail" data-favorite-context data-state-key="skill:{{id}}">
+  {{#*inline "summary"}}
+    <span class="prof-dot prof-dot-{{proficiencyIndicator}}"></span>
+    <span>{{abilityLabel}}</span>
+    <strong>{{label}}</strong>
+    <b>{{totalLabel}}</b>
+    <em>{{passive}}</em>
+  {{/inline}}
+  {{#*inline "body"}}
+    {{#if detailText}}
+      <p class="skill-detail-text">{{detailText}}</p>
+      {{#if detailReferences}}
+        <div class="detail-reference-links">
+          {{#each detailReferences}}
+            <button
+              type="button"
+              class="detail-reference-link"
+              data-action="details-open-reference"
+              data-reference-uuid="{{uuid}}"
+              data-swipe-ignore
+            >{{label}}</button>
+          {{/each}}
+        </div>
+      {{/if}}
+    {{else}}
+      <p class="skill-detail-text">No additional details are available for this skill.</p>
+    {{/if}}
+  {{/inline}}
+  {{> "modules/pocket-foundry/templates/partials/expandable-detail-row.hbs"
+    drawerClass="skill-detail-drawer"
+    summaryClass="detail-table-row skill-row skill-row-summary"
+    bodyClass="skill-detail-body"
+  }}
+  {{> "modules/pocket-foundry/templates/partials/favorite-context-menu.hbs"
+    canToggleFavorite=canToggleFavorite
+    favorite=favorite
+    ariaLabel=label
+    addAction="context-add-favorite"
+    removeAction="context-remove-favorite"
+    addLabel="Add to Favorites"
+    removeLabel="Remove from Favorites"
+    favoriteType="skill"
+    favoriteId=id
+  }}
+</article>
+

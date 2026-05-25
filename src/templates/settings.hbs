@@ -1,0 +1,64 @@
+<main class="pocket-foundry-root mf-app" data-view="settings">
+  <header class="mf-header">
+    <button class="icon-button" type="button" data-action="back" aria-label="Back">&lt;</button>
+    <div class="portrait" aria-hidden="true">PF</div>
+    <div class="title-block">
+      <h1>Settings</h1>
+      <p>User-specific mobile mode controls</p>
+    </div>
+  </header>
+
+  <section class="content pf-view">
+    {{#> "modules/pocket-foundry/templates/partials/section.hbs"
+      id="mobile-mode"
+      title="Mobile Mode"
+      sectionClass="pf-view-section"
+      headingClass="pf-view-section-heading"
+    }}
+      {{> "modules/pocket-foundry/templates/partials/settings-toggle-row.hbs"
+        label="Mobile View"
+        hint="Use the mobile-optimized Foundry interface for this user."
+        enabled=mobileViewEnabled
+        ariaLabel="Mobile View"
+        action="toggle-mobile-view"
+      }}
+      {{> "modules/pocket-foundry/templates/partials/settings-toggle-row.hbs"
+        label="Color-Blind Mode"
+        hint="Use color-blind-friendly colors for success and failure blips."
+        enabled=colorBlindMode
+        ariaLabel=colorBlindModeAriaLabel
+        action="toggle-color-blind-mode"
+      }}
+      {{#if characterSheetBannerAvailable}}
+        {{> "modules/pocket-foundry/templates/partials/settings-toggle-row.hbs"
+          label=characterSheetBannerLabel
+          hint=characterSheetBannerHint
+          enabled=characterSheetBannerEnabled
+          ariaLabel=characterSheetBannerAriaLabel
+          action="toggle-character-banner"
+        }}
+      {{/if}}
+    {{/"modules/pocket-foundry/templates/partials/section.hbs"}}
+
+    {{#> "modules/pocket-foundry/templates/partials/section.hbs"
+      id="recents"
+      title="Recents"
+      sectionClass="pf-view-section"
+      headingClass="pf-view-section-heading"
+    }}
+      <div class="setting-row">
+        <div>
+          <strong>Clear Recent Views</strong>
+          <p class="mini">Remove this user's locally stored recent mobile views.</p>
+        </div>
+        <button
+          class="setting-action"
+          type="button"
+          data-action="clear-recents"
+        >Clear</button>
+      </div>
+    {{/"modules/pocket-foundry/templates/partials/section.hbs"}}
+  </section>
+
+  {{> "modules/pocket-foundry/templates/partials/bottom-nav.hbs" label=bottomNav.label items=bottomNav.items}}
+</main>

@@ -1,0 +1,493 @@
+@import "tailwindcss/theme" layer(theme);
+@import "tailwindcss/utilities" layer(utilities);
+
+@theme inline {
+  --color-mf-bg: var(--pf-color-bg);
+  --color-mf-surface: var(--pf-color-surface);
+  --color-mf-panel: var(--pf-color-panel);
+  --color-mf-muted: var(--pf-color-muted);
+  --color-mf-line: var(--pf-color-line);
+  --color-mf-accent: var(--pf-color-accent);
+  --color-mf-warm: var(--pf-color-warm);
+  --color-mf-text: var(--pf-color-text);
+  --color-mf-active: var(--pf-color-active);
+  --color-mf-subtle: var(--pf-color-subtle);
+  --color-mf-row-line: var(--pf-color-row-line);
+  --color-mf-warning: var(--pf-color-warning);
+  --color-mf-warning-surface: var(--pf-color-warning-surface);
+  --color-mf-danger: var(--pf-color-danger);
+  --color-mf-good: var(--pf-color-good);
+  --color-mf-good-surface: var(--pf-color-good-surface);
+  --color-mf-overlay: var(--pf-color-overlay);
+  --color-mf-section: var(--pf-color-section);
+  --color-mf-section-text: var(--pf-color-section-text);
+  --color-mf-slot: var(--pf-color-slot);
+  --color-mf-slot-filled: var(--pf-color-slot-filled);
+  --color-mf-slot-temp: var(--pf-color-slot-temp);
+  --color-mf-portrait-from: var(--pf-color-portrait-from);
+  --color-mf-portrait-to: var(--pf-color-portrait-to);
+  --shadow-mf-shell: 0 10px 28px var(--pf-color-shadow);
+}
+
+@layer components {
+  .pocket-foundry-root .actor-sheet-shell.character-banner-enabled .ability-tile,
+  .pocket-foundry-root .actor-sheet-shell.character-banner-enabled .hero-number,
+  .pocket-foundry-root .actor-sheet-shell.character-banner-enabled .diamond-row div,
+  .pocket-foundry-root .actor-sheet-shell.character-banner-enabled .mini-grid > span,
+  .pocket-foundry-root .actor-sheet-shell.character-banner-enabled .death-save-panel {
+    background-color: var(--pf-banner-surface-bg);
+    backdrop-filter: blur(var(--pf-banner-blur));
+    -webkit-backdrop-filter: blur(var(--pf-banner-blur));
+  }
+  .pocket-foundry-root .actor-sheet-shell.character-banner-enabled .inventory-section-summary,
+  .pocket-foundry-root .actor-sheet-shell.character-banner-enabled .inventory-children,
+  .pocket-foundry-root .actor-sheet-shell.character-banner-enabled .favorite-detail-body {
+    background-color: var(--pf-banner-panel-bg);
+    backdrop-filter: blur(var(--pf-banner-blur));
+    -webkit-backdrop-filter: blur(var(--pf-banner-blur));
+  }
+
+  .pocket-foundry-root .spell-summary { @apply grid gap-1.5; }
+  .pocket-foundry-root .spell-stats { @apply flex flex-wrap items-stretch justify-center gap-1.5; }
+  .pocket-foundry-root .slot-tracks { @apply flex flex-wrap items-center justify-end gap-1; }
+  .pocket-foundry-root .details-grid { @apply grid grid-cols-[repeat(auto-fit,minmax(min(100%,280px),1fr))] items-start gap-2; }
+  .pocket-foundry-root .details-grid > *,
+  .pocket-foundry-root .sheet-panel { @apply min-w-0; }
+  .pocket-foundry-root .left-stack { @apply grid min-w-0 gap-2; }
+  .pocket-foundry-root .ability-strip { @apply mb-2 grid grid-cols-3 gap-1.5; }
+  .pocket-foundry-root .ability-tile { @apply grid min-h-[58px] grid-rows-[14px_18px_18px] place-items-center gap-0.5 rounded-lg border border-mf-line bg-mf-surface px-1 py-1.5 leading-none; }
+  .pocket-foundry-root .ability-tile span,
+  .pocket-foundry-root .sheet-panel h2,
+  .pocket-foundry-root .hero-number span,
+  .pocket-foundry-root .diamond-row span,
+  .pocket-foundry-root .label { @apply text-[.72rem] font-extrabold uppercase text-mf-muted; }
+  .pocket-foundry-root .ability-tile strong { @apply text-[1.05rem] leading-none; }
+  .pocket-foundry-root .ability-tile em { @apply w-[30px] rounded bg-mf-subtle py-px text-center not-italic text-mf-text; }
+  .pocket-foundry-root .sheet-panel h2 { @apply m-0 px-2.5 pt-2 pb-1 text-mf-warm; }
+  .pocket-foundry-root .side-stats { @apply p-1.5; }
+  .pocket-foundry-root .hero-number { @apply grid min-h-[46px] gap-0 rounded-lg border border-mf-line bg-mf-panel px-2 py-1.5; }
+  .pocket-foundry-root .hero-number strong { @apply text-[1.35rem] leading-none; }
+  .pocket-foundry-root .hero-number em { @apply text-[.75rem] not-italic text-mf-muted; }
+  .pocket-foundry-root .diamond-row { @apply my-1 grid grid-cols-[repeat(auto-fit,minmax(58px,1fr))] gap-1; }
+  .pocket-foundry-root .diamond-row div,
+  .pocket-foundry-root .mini-grid > span { @apply grid min-h-[34px] place-items-center rounded-lg border border-mf-line bg-mf-panel p-1 text-center; }
+  .pocket-foundry-root .mini-grid { @apply mt-1 grid grid-cols-[repeat(auto-fit,minmax(86px,1fr))] gap-1; }
+  .pocket-foundry-root .mini-grid > span { @apply min-h-8 text-[.68rem] text-mf-muted; }
+  .pocket-foundry-root .mini-grid b { @apply block text-[.82rem] text-mf-text; }
+  .pocket-foundry-root .death-save-panel { @apply mt-1 grid min-h-[50px] place-items-center gap-0.5 rounded-lg border border-mf-line bg-mf-panel p-1 text-center text-[.68rem] text-mf-muted; }
+  .pocket-foundry-root .death-save-title { @apply text-[.68rem] font-extrabold uppercase not-italic leading-none text-mf-muted; }
+  .pocket-foundry-root .mini-grid b.exhaustion-pips { @apply flex min-h-[18px] flex-wrap items-center justify-center gap-x-1 gap-y-0.5; }
+  .pocket-foundry-root .exhaustion-pips { @apply flex min-h-[18px] flex-wrap items-center justify-center gap-x-1 gap-y-0.5; }
+  .pocket-foundry-root .death-save-panel b.death-save-pips { @apply inline-flex min-h-[18px] items-center justify-center gap-1.5 whitespace-nowrap; }
+  .pocket-foundry-root .mini-grid b.death-save-pips,
+  .pocket-foundry-root .death-save-pips { @apply inline-flex min-h-[18px] items-center justify-center gap-1.5 whitespace-nowrap; }
+  .pocket-foundry-root .death-save-label { @apply inline-block w-12 text-[.54rem] font-extrabold uppercase leading-none text-mf-muted; }
+  .pocket-foundry-root .death-save-pips > .death-save-label:first-child { @apply text-right; }
+  .pocket-foundry-root .death-save-pips > .death-save-label:last-child { @apply text-left; }
+  .pocket-foundry-root .death-save-divider { @apply text-[.7rem] text-mf-warm; }
+  .pocket-foundry-root .pip-group { @apply inline-flex flex-none flex-nowrap items-center justify-center gap-1; }
+  .pocket-foundry-root .fillable-blips { @apply inline-flex flex-none flex-nowrap items-center justify-center gap-1; }
+  .pocket-foundry-root .fillable-blips.rtl { @apply flex-row-reverse; }
+  .pocket-foundry-root .death-save-pips button,
+  .pocket-foundry-root .death-save-pips .pip,
+  .pocket-foundry-root .fillable-blips button,
+  .pocket-foundry-root .fillable-blips .pip,
+  .pocket-foundry-root .exhaustion-pips button,
+  .pocket-foundry-root .exhaustion-pips .pip { @apply block h-4 w-4 flex-none rounded-full border border-mf-muted/70 bg-mf-surface p-0; }
+  .pocket-foundry-root .death-save-pips button.active,
+  .pocket-foundry-root .death-save-pips .pip.active,
+  .pocket-foundry-root .fillable-blips button.active,
+  .pocket-foundry-root .fillable-blips .pip.active,
+  .pocket-foundry-root .exhaustion-pips button.active,
+  .pocket-foundry-root .exhaustion-pips .pip.active { @apply bg-mf-warm; }
+  .pocket-foundry-root .fillable-blips.color-failure button.active,
+  .pocket-foundry-root .fillable-blips.color-failure .pip.active,
+  .pocket-foundry-root .fillable-blips.color-red button.active,
+  .pocket-foundry-root .fillable-blips.color-red .pip.active { background-color: #d64545; }
+  .pocket-foundry-root .fillable-blips.color-success button.active,
+  .pocket-foundry-root .fillable-blips.color-success .pip.active,
+  .pocket-foundry-root .fillable-blips.color-green button.active,
+  .pocket-foundry-root .fillable-blips.color-green .pip.active { background-color: #2f8f4e; }
+  .pocket-foundry-root .fillable-blips.color-orange button.active,
+  .pocket-foundry-root .fillable-blips.color-orange .pip.active { background-color: #e69f00; }
+  .pocket-foundry-root .fillable-blips.color-blue button.active,
+  .pocket-foundry-root .fillable-blips.color-blue .pip.active { background-color: #0072b2; }
+  .pocket-foundry-root.color-blind-mode .fillable-blips.color-failure button.active,
+  .pocket-foundry-root.color-blind-mode .fillable-blips.color-failure .pip.active,
+  .pocket-foundry-root.color-blind-mode .fillable-blips.color-red button.active,
+  .pocket-foundry-root.color-blind-mode .fillable-blips.color-red .pip.active { background-color: #e69f00; }
+  .pocket-foundry-root.color-blind-mode .fillable-blips.color-success button.active,
+  .pocket-foundry-root.color-blind-mode .fillable-blips.color-success .pip.active,
+  .pocket-foundry-root.color-blind-mode .fillable-blips.color-green button.active,
+  .pocket-foundry-root.color-blind-mode .fillable-blips.color-green .pip.active { background-color: #0072b2; }
+  .pocket-foundry-root .rest-actions { @apply mt-2 grid grid-cols-2 gap-1.5; }
+  .pocket-foundry-root .rest-action { @apply inline-grid min-h-9 grid-cols-[auto_minmax(0,1fr)] items-center justify-center gap-1.5 rounded-md border border-mf-line bg-mf-panel px-2 py-1.5 text-[.76rem] font-extrabold text-mf-text; }
+  .pocket-foundry-root .rest-action i { @apply text-mf-warm; }
+  .pocket-foundry-root .rest-action:disabled { @apply opacity-50; }
+
+  .pocket-foundry-root .dense-table,
+  .pocket-foundry-root .detail-table { @apply grid min-w-0 gap-0 px-2 pt-1 pb-2.5; }
+  .pocket-foundry-root .skills-table .detail-table-row { @apply grid grid-cols-[15px_minmax(36px,.5fr)_minmax(0,1.35fr)_minmax(36px,.45fr)_minmax(42px,.45fr)] items-center; }
+  .pocket-foundry-root .skills-table .skill-row-detail,
+  .pocket-foundry-root .skills-table .skill-detail-drawer { @apply block; }
+  .pocket-foundry-root .skills-table .skill-detail-body { @apply px-1 pb-2; }
+  .pocket-foundry-root .skill-detail-text { @apply m-0 px-1 py-0.5 text-[.74rem] leading-snug text-mf-text; overflow-wrap: anywhere; white-space: pre-line; }
+  .pocket-foundry-root .tools-panel { grid-column: 1 / -1; }
+  .pocket-foundry-root .tool-table .detail-table-row { @apply grid grid-cols-[15px_minmax(36px,.5fr)_minmax(0,1fr)_minmax(36px,.45fr)] items-center; }
+  .pocket-foundry-root .tool-table .tool-row-detail,
+  .pocket-foundry-root .tool-table .tool-detail-drawer { @apply block; }
+  .pocket-foundry-root .tool-table .tool-detail-body { @apply px-1 pb-2; }
+  .pocket-foundry-root .tool-detail-text { @apply m-0 px-1 py-0.5 text-[.74rem] leading-snug text-mf-text; overflow-wrap: anywhere; white-space: pre-line; }
+  .pocket-foundry-root .detail-reference-links { @apply mt-1 flex flex-wrap gap-1; }
+  .pocket-foundry-root .detail-reference-link { @apply min-h-6 rounded border border-mf-line bg-mf-surface px-2 py-0.5 text-[.66rem] font-extrabold text-mf-accent; }
+  .pocket-foundry-root .dense-table > *,
+  .pocket-foundry-root .detail-table-row > * { @apply min-h-7 min-w-0 border-b border-mf-row-line px-1 py-1 text-[.82rem] text-mf-text; overflow-wrap: anywhere; }
+  .pocket-foundry-root .skills-table .detail-table-row > *,
+  .pocket-foundry-root .tool-table .detail-table-row > * { @apply border-b-0; }
+  .pocket-foundry-root .skills-table .detail-table-head,
+  .pocket-foundry-root .tool-table .detail-table-head { @apply border-b border-mf-line; }
+  .pocket-foundry-root .dense-table > span,
+  .pocket-foundry-root .detail-table-row > span,
+  .pocket-foundry-root .detail-table-head > * { @apply text-mf-muted; }
+  .pocket-foundry-root .skills-table .detail-table-head > :nth-child(4),
+  .pocket-foundry-root .skills-table .detail-table-head > :nth-child(5),
+  .pocket-foundry-root .tool-table .detail-table-head > :nth-child(4) { @apply text-right; }
+  .pocket-foundry-root .dense-table > b,
+  .pocket-foundry-root .dense-table > em,
+  .pocket-foundry-root .detail-table-row > b,
+  .pocket-foundry-root .detail-table-row > em { @apply text-right not-italic; }
+  .pocket-foundry-root .detail-table-row > strong { @apply min-w-0; }
+  .pocket-foundry-root .skill-group-heading { @apply col-span-full mt-1.5 text-[.72rem] font-extrabold uppercase text-mf-muted; }
+  .pocket-foundry-root .prof-dot {
+    @apply relative mx-auto block h-[15px] w-[15px] min-h-[15px] min-w-[15px] max-h-[15px] max-w-[15px] self-center justify-self-center p-0 leading-none;
+    --pf-proficiency-fill: var(--mf-warm, #d9b65f);
+  }
+  .pocket-foundry-root .prof-dot::before {
+    content: "";
+    position: absolute;
+    display: block;
+    inset: 3px;
+    border: 1px solid var(--pf-proficiency-fill);
+    border-radius: 9999px;
+    background: transparent;
+  }
+  .pocket-foundry-root .prof-dot.prof-dot-full::before { background: var(--pf-proficiency-fill); }
+  .pocket-foundry-root .prof-dot.prof-dot-half::after,
+  .pocket-foundry-root .prof-dot.prof-dot-expertise::after {
+    content: "";
+    position: absolute;
+    background: var(--pf-proficiency-fill);
+  }
+  .pocket-foundry-root .prof-dot.prof-dot-half::after {
+    inset: 4px;
+    width: 4px;
+    aspect-ratio: 1 / 2;
+    border-radius: 9999px 0 0 9999px;
+  }
+  .pocket-foundry-root .prof-dot.prof-dot-expertise::before {
+    inset: 1px;
+    border-width: 2px;
+  }
+  .pocket-foundry-root .prof-dot.prof-dot-expertise::after {
+    inset: 5px;
+    border-radius: 9999px;
+  }
+  .pocket-foundry-root .save-grid { @apply grid grid-cols-2 gap-1.5 px-2.5 pt-1 pb-2.5; }
+  .pocket-foundry-root .save-grid > button,
+  .pocket-foundry-root .save-grid > .save-item,
+  .pocket-foundry-root .save-grid > span { @apply flex min-h-8 items-center justify-between rounded-md border border-mf-line bg-mf-panel px-2 py-1.5; }
+  .pocket-foundry-root .save-grid .trained { @apply border-mf-warm; }
+  .pocket-foundry-root .trait-groups { @apply grid grid-cols-[repeat(auto-fit,minmax(170px,1fr))] gap-2 p-1.5; }
+  .pocket-foundry-root .trait-group { @apply min-w-0 rounded-lg border border-mf-line bg-mf-panel; }
+  .pocket-foundry-root .proficiency-cluster { @apply grid grid-cols-1 gap-1.5 px-2 pt-1 pb-2.5; }
+  .pocket-foundry-root .proficiency-block { @apply min-w-0; }
+  .pocket-foundry-root .proficiency-block h3 { @apply m-0 text-[.68rem] font-extrabold uppercase text-mf-muted; }
+  .pocket-foundry-root .proficiency-block .pill-cluster { @apply px-0 pt-1 pb-0; }
+  .pocket-foundry-root .trait-group .tool-table .detail-table-row { @apply grid-cols-[42px_minmax(0,1fr)_40px]; }
+  .pocket-foundry-root .trait-group .tool-table .detail-table-row > :first-child { @apply hidden; }
+  .pocket-foundry-root .origin-cards,
+  .pocket-foundry-root .pill-cluster { @apply flex flex-wrap gap-1.5 px-2 pt-1 pb-2.5; }
+
+  .pocket-foundry-root .inventory-list-view { @apply col-span-full; }
+  .pocket-foundry-root .compact-panels { @apply grid grid-cols-[repeat(auto-fit,minmax(320px,1fr))] gap-2.5; }
+  .pocket-foundry-root .compact-panels .section { @apply m-0; }
+  .pocket-foundry-root .inventory-section-summary { @apply gap-1 border-mf-line bg-mf-panel text-[.66rem] text-mf-muted; }
+  .pocket-foundry-root .inventory-section-summary strong { @apply text-mf-text; }
+
+  .pocket-foundry-root .inventory-list-row { @apply block min-h-0 rounded-none border-0 border-b border-mf-row-line bg-transparent p-0; }
+  .pocket-foundry-root .inventory-list-row:last-child { @apply border-b-0; }
+  .pocket-foundry-root .inventory-list-cell { @apply self-center; }
+  .pocket-foundry-root .inventory-list-cell.emphasis,
+  .pocket-foundry-root .inventory-list-roll { @apply text-[.82rem] text-mf-accent; }
+  .pocket-foundry-root .inventory-list-cell-contents,
+  .pocket-foundry-root .inventory-list-formula { @apply text-left; }
+  .pocket-foundry-root .inventory-list-cell-roll,
+  .pocket-foundry-root .inventory-list-cell-capacity,
+  .pocket-foundry-root .inventory-list-cell-weight,
+  .pocket-foundry-root .inventory-list-cell-quantity,
+  .pocket-foundry-root .inventory-list-cell-charges,
+  .pocket-foundry-root .inventory-list-cell-value { @apply text-right; }
+  .pocket-foundry-root .inventory-list-head .inventory-list-head-cell-roll,
+  .pocket-foundry-root .inventory-list-head .inventory-list-head-cell-capacity,
+  .pocket-foundry-root .inventory-list-head .inventory-list-head-cell-weight,
+  .pocket-foundry-root .inventory-list-head .inventory-list-head-cell-quantity,
+  .pocket-foundry-root .inventory-list-head .inventory-list-head-cell-charges,
+  .pocket-foundry-root .inventory-list-head .inventory-list-head-cell-value { @apply text-right; }
+  .pocket-foundry-root .inventory-list-actions { @apply inline-flex min-w-0 flex-nowrap items-center justify-end gap-[2px] overflow-hidden; }
+  .pocket-foundry-root .inventory-list-summary-actions { @apply min-w-[50px] justify-end gap-1 text-[.7rem] text-mf-muted; overflow: visible; }
+  .pocket-foundry-root .inventory-list-summary-actions .inventory-summary-equip { @apply h-5 w-5 min-h-5 min-w-5 border-transparent bg-transparent p-0; }
+  .pocket-foundry-root .inventory-list-summary-actions .inventory-summary-attuned { @apply h-5 w-5 min-h-5 min-w-5 border-transparent bg-transparent p-0; }
+  .pocket-foundry-root .inventory-number-button { @apply min-h-0 rounded-md border border-transparent bg-transparent px-1 py-0 text-inherit leading-tight; font: inherit; }
+  .pocket-foundry-root .inventory-list-value .inventory-number-button { @apply max-w-full truncate text-inherit; }
+  .pocket-foundry-root .inventory-number-button:is(:hover, :focus-visible) { @apply border-mf-accent bg-mf-active text-mf-accent; }
+  .pocket-foundry-root .inventory-description { @apply text-[.78rem] leading-snug text-mf-text; }
+  .pocket-foundry-root .inventory-description p { @apply mt-0 mb-2; }
+
+  .pocket-foundry-root .row.inventory-list-row { @apply block min-h-0 rounded-none border-0 border-b border-mf-row-line bg-transparent p-0; }
+  .pocket-foundry-root .row.inventory-list-row + .row.inventory-list-row { @apply mt-0; }
+  .pocket-foundry-root .row.inventory-list-row:last-child { @apply border-b-0; }
+  .pocket-foundry-root .inventory-children { @apply grid gap-1.5 rounded-md border border-mf-line bg-mf-panel p-2; }
+  .pocket-foundry-root .inventory-children h3 { @apply m-0 text-[.72rem] font-extrabold uppercase text-mf-muted; }
+  .pocket-foundry-root .inventory-child-row { @apply grid min-h-[34px] grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)_54px_54px_54px] items-center gap-x-1.5 rounded-md border border-mf-line bg-mf-surface px-1.5 py-1 text-left; }
+  .pocket-foundry-root .inventory-child-name { @apply truncate text-[.76rem] font-extrabold text-mf-text; }
+  .pocket-foundry-root .inventory-child-subtitle { @apply truncate text-[.66rem] text-mf-muted; }
+  .pocket-foundry-root .inventory-child-value { @apply truncate text-right text-[.66rem] font-extrabold text-mf-muted; }
+  .pocket-foundry-root .inventory-stepper,
+  .pocket-foundry-root .inventory-row-controls { @apply inline-flex flex-wrap justify-start gap-1; }
+  .pocket-foundry-root .inventory-stepper { @apply flex-nowrap items-center; }
+  .pocket-foundry-root .inventory-stepper button,
+  .pocket-foundry-root .inventory-row-controls button,
+  .pocket-foundry-root .inventory-list-actions button,
+  .pocket-foundry-root .inventory-toggle { @apply min-h-[26px] rounded-md border border-mf-line bg-mf-panel px-[7px] py-[3px] text-[.72rem] font-extrabold; }
+  .pocket-foundry-root .inventory-list-stepper { @apply mx-auto flex-nowrap justify-center gap-1; }
+  .pocket-foundry-root .inventory-list-stepper button { @apply h-5 min-h-5 w-[18px] p-0; }
+  .pocket-foundry-root .inventory-list-stepper strong { @apply min-w-[12px] text-center text-[.68rem]; }
+  .pocket-foundry-root .inventory-list-row .inventory-list-actions button { @apply min-h-5 max-w-full overflow-hidden px-1 py-0 text-[.62rem] text-ellipsis; }
+  .pocket-foundry-root .inventory-toggle { @apply opacity-65; }
+  .pocket-foundry-root .inventory-toggle.active,
+  .pocket-foundry-root .inventory-icon-toggle.active,
+  .pocket-foundry-root .details-sheet .inspiration-toggle.active { @apply border-mf-accent bg-mf-active text-mf-accent opacity-100; }
+  .pocket-foundry-root .inventory-icon-toggle { @apply grid h-5 w-5 min-w-5 place-items-center p-0 text-mf-muted opacity-70; }
+  .pocket-foundry-root .inventory-icon-toggle i { @apply pointer-events-none text-[.76rem] leading-none; }
+  .pocket-foundry-root .inventory-currency-summary { @apply grid h-full content-center justify-items-center gap-1 text-center self-stretch; }
+  .pocket-foundry-root .inventory-currency-summary.is-readonly { @apply cursor-default; }
+  .pocket-foundry-root .inventory-currency-summary > b { @apply text-[.66rem] font-extrabold uppercase leading-none text-mf-muted; }
+  .pocket-foundry-root .inventory-currency-values {
+    @apply grid w-full max-w-[132px] items-center justify-center justify-items-center gap-x-2 gap-y-1;
+    grid-template-columns: repeat(6, minmax(0, max-content));
+  }
+  .pocket-foundry-root .inventory-currency-value { @apply inline-grid min-w-0 grid-cols-[14px_auto] items-center justify-center gap-1 leading-none; }
+  .pocket-foundry-root .inventory-currency-value:nth-child(1) { grid-column: 1 / span 2; }
+  .pocket-foundry-root .inventory-currency-value:nth-child(2) { grid-column: 3 / span 2; }
+  .pocket-foundry-root .inventory-currency-value:nth-child(3) { grid-column: 5 / span 2; }
+  .pocket-foundry-root .inventory-currency-value:nth-child(4) { grid-column: 2 / span 2; }
+  .pocket-foundry-root .inventory-currency-value:nth-child(5) { grid-column: 4 / span 2; }
+  .pocket-foundry-root .inventory-currency-value img { @apply block h-3.5 w-3.5 object-contain; }
+  .pocket-foundry-root .inventory-currency-value strong { @apply text-[.78rem] font-extrabold text-mf-text; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+  .pocket-foundry-root .inventory-currency-selector-panel { @apply w-[min(100%,760px)]; }
+  .pocket-foundry-root .inventory-currency-grid { @apply grid grid-cols-5 gap-1.5 overflow-hidden; }
+  .pocket-foundry-root .inventory-currency-trigger { @apply grid min-w-0 place-items-center gap-1 rounded-md border border-mf-line bg-mf-panel px-1.5 py-1.5 text-center; grid-template-rows: 14px auto minmax(120px,1fr); }
+  .pocket-foundry-root .inventory-currency-icon { @apply inline-flex min-h-[14px] items-center justify-center; }
+  .pocket-foundry-root .inventory-currency-icon img { @apply block h-3.5 w-3.5 object-contain; }
+  .pocket-foundry-root .inventory-currency-trigger strong { @apply text-[.9rem] font-extrabold text-mf-text; }
+  .pocket-foundry-root .inventory-currency-wheel { @apply w-full; }
+  .pocket-foundry-root .inventory-currency-wheel .spinner-wheel { @apply h-[152px] p-0 pt-14 pb-14; }
+
+  .pocket-foundry-root .features-pane,
+  .pocket-foundry-root .spells-pane,
+  .pocket-foundry-root .effects-pane { @apply gap-2 bg-mf-surface text-mf-text; }
+  .pocket-foundry-root .features-status { @apply grid-cols-[repeat(auto-fit,minmax(126px,1fr))] gap-1.5; }
+  .pocket-foundry-root .features-status .feature-progress-card,
+  .pocket-foundry-root .features-status > span { @apply grid min-h-[44px] content-center gap-0 rounded-md border border-mf-line bg-mf-surface px-2 py-1.5 text-left; }
+  .pocket-foundry-root .features-status b { @apply truncate text-[.9rem] leading-tight text-mf-text; }
+  .pocket-foundry-root .features-status em { @apply truncate text-[.68rem] text-mf-muted; }
+  .pocket-foundry-root .feature-row-actions { @apply inline-flex flex-nowrap justify-end gap-1; }
+  .pocket-foundry-root .feature-row-actions button { @apply grid min-h-[24px] min-w-6 place-items-center rounded border border-transparent bg-transparent px-1 py-0 text-[.68rem] font-extrabold text-mf-muted; }
+  .pocket-foundry-root .features-sections { @apply grid grid-cols-[repeat(auto-fit,minmax(320px,1fr))] gap-2.5; }
+  .pocket-foundry-root .features-list-row { @apply block min-h-0 rounded-none border-0 border-b border-mf-row-line bg-transparent p-0; }
+  .pocket-foundry-root .features-list-row:last-child { @apply border-b-0; }
+  .pocket-foundry-root .features-list-row .row-title strong { @apply text-[.82rem] leading-tight text-mf-text; }
+  .pocket-foundry-root .features-list-row .row-title span { @apply text-[.65rem] leading-tight text-mf-muted; }
+  .pocket-foundry-root .features-list-value { @apply text-[.76rem]; }
+  .pocket-foundry-root .feature-description { @apply text-[.78rem] leading-snug text-mf-text; }
+  .pocket-foundry-root .feature-description p { @apply mt-0 mb-2; }
+  .pocket-foundry-root .feature-activities { @apply grid gap-1.5; }
+  .pocket-foundry-root .feature-activity-row { @apply grid min-h-[32px] grid-cols-[minmax(90px,1fr)_72px_68px_68px_68px_52px_auto] items-center gap-2; }
+  .pocket-foundry-root .feature-activity-row strong { @apply truncate text-[.74rem] text-mf-text; }
+  .pocket-foundry-root .feature-activity-row span { @apply truncate text-[.66rem] text-mf-muted; }
+  .pocket-foundry-root .feature-activity-row button { @apply grid min-h-7 min-w-7 place-items-center rounded-md border border-mf-line bg-mf-panel px-2 text-[.66rem] font-extrabold text-mf-accent; }
+  .pocket-foundry-root .spellcasting-card { @apply relative grid min-h-[74px] w-[min(100%,230px)] grid-cols-4 gap-x-2 gap-y-1 overflow-hidden rounded-md border border-mf-line bg-mf-panel px-2.5 pt-1.5 pb-2 text-left shadow-sm; }
+  .pocket-foundry-root .spellcasting-card.primary { @apply border-mf-accent; }
+  .pocket-foundry-root .spellcasting-card:disabled { @apply opacity-100; }
+  .pocket-foundry-root .spellcasting-title { @apply col-span-3 min-w-0 truncate text-[.86rem] font-extrabold text-mf-text; }
+  .pocket-foundry-root .spellcasting-primary { @apply justify-self-end h-3 w-3 rounded-full border-2 border-mf-line bg-mf-muted; }
+  .pocket-foundry-root .spellcasting-card.primary .spellcasting-primary { @apply border-mf-text bg-mf-accent; }
+  .pocket-foundry-root .spellcasting-card span:not(.spellcasting-title):not(.spellcasting-primary) { @apply grid min-w-0 justify-items-center text-[.66rem] font-bold text-mf-muted; }
+  .pocket-foundry-root .spellcasting-card em { @apply block truncate text-[.58rem] not-italic uppercase text-mf-muted; }
+  .pocket-foundry-root .spellcasting-card strong { @apply text-[.9rem] leading-tight text-mf-text; }
+  .pocket-foundry-root .spell-slot-pip { @apply grid h-5 w-5 place-items-center border-0 bg-transparent p-0 text-[.74rem] text-mf-slot opacity-70; }
+  .pocket-foundry-root .spell-slot-pip.filled { @apply text-mf-slot-filled opacity-100; }
+  .pocket-foundry-root .spell-slot-pip.temporary { @apply text-mf-slot-temp; }
+  .pocket-foundry-root .spell-slot-pip:disabled { @apply opacity-70; }
+  .pocket-foundry-root .spell-sections { @apply grid grid-cols-[repeat(auto-fit,minmax(320px,1fr))] gap-2.5; }
+  .pocket-foundry-root .spell-section-slots { @apply ml-auto; }
+  .pocket-foundry-root .spells-list-row { @apply block min-h-0 rounded-none border-0 border-b border-mf-row-line bg-transparent p-0; }
+  .pocket-foundry-root .spells-list-row:last-child { @apply border-b-0; }
+  .pocket-foundry-root .spell-roll { @apply text-mf-accent; }
+  .pocket-foundry-root .spell-row-actions { @apply flex min-w-0 flex-nowrap justify-end gap-1 overflow-hidden; }
+  .pocket-foundry-root .spell-row-actions .spell-prepared-toggle {
+    @apply grid h-5 w-5 min-h-5 min-w-5 place-items-center border-transparent bg-transparent p-0 text-[.76rem] opacity-70;
+  }
+  .pocket-foundry-root .spell-row-actions .spell-prepared-toggle.unprepared { @apply text-mf-muted; }
+  .pocket-foundry-root .spell-row-actions .spell-prepared-toggle.prepared { @apply text-mf-slot-filled opacity-100; }
+  .pocket-foundry-root .spell-row-actions .spell-prepared-toggle:is(:hover, :focus-visible) { @apply opacity-100; }
+  .pocket-foundry-root .spell-row-actions .spell-prepared-toggle i { @apply pointer-events-none leading-none; }
+  .pocket-foundry-root .spell-activity-row { @apply grid min-h-[34px] items-center gap-x-2 border-b border-mf-row-line py-1; }
+  .pocket-foundry-root .activity-icon { @apply grid h-7 w-7 place-items-center overflow-hidden rounded bg-mf-subtle text-[.62rem] font-extrabold text-mf-warm; }
+  .pocket-foundry-root .activity-icon img { @apply h-full w-full object-cover; }
+  .pocket-foundry-root .activity-title { @apply grid min-w-0; }
+  .pocket-foundry-root .activity-title strong,
+  .pocket-foundry-root .activity-title em { @apply truncate; }
+  .pocket-foundry-root .activity-title em { @apply text-[.62rem] not-italic text-mf-muted; }
+  .pocket-foundry-root .spell-target-cell { @apply truncate; }
+  .pocket-foundry-root .spell-row-actions-placeholder { @apply min-h-5 min-w-5; }
+  .pocket-foundry-root .spell-description { @apply text-[.78rem] leading-snug text-mf-text; }
+  .pocket-foundry-root .spell-description p { @apply mt-0 mb-2; }
+  .pocket-foundry-root .empty-feature-card { @apply block; }
+  .pocket-foundry-root .effects-sections { @apply grid grid-cols-1 gap-2.5; }
+  .pocket-foundry-root .effects-list-row { @apply block min-h-0 rounded-none border-0 border-b border-mf-row-line bg-transparent p-0; }
+  .pocket-foundry-root .effects-list-row:last-child { @apply border-b-0; }
+  .pocket-foundry-root .effects-list-row.inactive { @apply opacity-75; }
+  .pocket-foundry-root .effect-detail-drawer .row-title { @apply grid min-h-[30px] w-full min-w-0 justify-self-stretch grid-rows-[16px_12px] content-center justify-items-stretch gap-0 border-0 bg-transparent p-0 text-left text-inherit; text-align: left !important; }
+  .pocket-foundry-root .effect-detail-drawer .row-title strong,
+  .pocket-foundry-root .effect-detail-drawer .row-title span { @apply block w-full max-w-full justify-self-stretch truncate; text-align: left !important; }
+  .pocket-foundry-root .effect-detail-drawer .row-title strong { @apply text-[.78rem] leading-tight text-mf-text; }
+  .pocket-foundry-root .effect-detail-drawer .row-title span { @apply text-[.58rem] leading-tight text-mf-muted; }
+  .pocket-foundry-root .effect-row-actions button { @apply grid min-h-7 min-w-7 place-items-center rounded-md border border-mf-line bg-mf-panel px-1.5 text-[.66rem] font-extrabold text-mf-accent; }
+  .pocket-foundry-root .inventory-detail-drawer summary:focus,
+  .pocket-foundry-root .inventory-detail-drawer summary:focus-visible,
+  .pocket-foundry-root .skill-detail-drawer summary:focus,
+  .pocket-foundry-root .skill-detail-drawer summary:focus-visible,
+  .pocket-foundry-root .tool-detail-drawer summary:focus,
+  .pocket-foundry-root .tool-detail-drawer summary:focus-visible,
+  .pocket-foundry-root .feature-detail-drawer summary:focus,
+  .pocket-foundry-root .feature-detail-drawer summary:focus-visible,
+  .pocket-foundry-root .spell-detail-drawer summary:focus,
+  .pocket-foundry-root .spell-detail-drawer summary:focus-visible,
+  .pocket-foundry-root .effect-detail-drawer summary:focus,
+  .pocket-foundry-root .effect-detail-drawer summary:focus-visible {
+    @apply outline-none ring-0;
+    box-shadow: none;
+  }
+  .pocket-foundry-root .effect-toggle.active { @apply border-mf-accent bg-mf-active; }
+  .pocket-foundry-root .effects-list-value { @apply min-w-0 truncate text-center text-[.72rem] font-extrabold text-mf-text; }
+  .pocket-foundry-root .condition-grid { @apply grid grid-cols-2 gap-2; }
+  .pocket-foundry-root .condition { @apply grid min-h-[42px] grid-cols-[30px_minmax(0,1fr)_28px] items-center gap-2 rounded-none border-0 border-b border-r border-mf-row-line bg-transparent p-2 text-left; }
+  .pocket-foundry-root .condition.active { @apply border-mf-accent bg-mf-active; }
+  .pocket-foundry-root .condition-icon { @apply grid h-7 w-7 place-items-center overflow-hidden rounded bg-mf-subtle font-extrabold text-mf-warm; }
+  .pocket-foundry-root .condition-icon img { @apply h-full w-full object-cover; }
+  .pocket-foundry-root .condition-label { @apply min-w-0 truncate font-extrabold; }
+  .pocket-foundry-root .condition-state { @apply text-center text-[.72rem] font-extrabold text-mf-muted; }
+  .pocket-foundry-root .condition-reference { @apply col-start-2 col-end-[-1] truncate text-[.62rem] text-mf-muted; }
+  .pocket-foundry-root .biography-pane { @apply gap-2.5 bg-mf-surface text-mf-text; }
+  .pocket-foundry-root .bio-grid { @apply grid grid-cols-[repeat(auto-fit,minmax(min(100%,210px),1fr))] gap-x-4 gap-y-2; }
+  .pocket-foundry-root .bio-field { @apply grid min-h-[34px] min-w-0 grid-cols-[minmax(66px,.45fr)_minmax(0,1fr)] items-end gap-2 border-b border-mf-line pb-1; }
+  .pocket-foundry-root .bio-field span:first-child { @apply truncate text-[.72rem] font-extrabold uppercase text-mf-muted; }
+  .pocket-foundry-root .bio-field b { @apply min-w-0 truncate text-right text-[.86rem]; }
+  .pocket-foundry-root .bio-copy { @apply grid grid-cols-[repeat(auto-fit,minmax(min(100%,280px),1fr))] gap-2.5; }
+  .pocket-foundry-root .biography-backstory { @apply col-span-full w-full max-w-none; }
+  .pocket-foundry-root .biography-trait-card { @apply m-0 min-w-0; }
+  .pocket-foundry-root .biography-trait-card h2 { @apply flex items-center gap-1.5; }
+  .pocket-foundry-root .biography-detail-drawer { @apply min-w-0; }
+  .pocket-foundry-root .biography-detail-drawer summary { @apply cursor-pointer list-none text-[.86rem] leading-snug text-mf-text; overflow-wrap: anywhere; }
+  .pocket-foundry-root .biography-detail-drawer p { @apply mt-2 mb-0 text-[.86rem] leading-snug; overflow-wrap: anywhere; }
+  .pocket-foundry-root .bio-backstory-content { @apply mx-0 max-w-none text-[.92rem] leading-relaxed; overflow-wrap: anywhere; }
+  .pocket-foundry-root .bio-backstory-content a { @apply font-bold text-mf-accent underline underline-offset-2; }
+  .pocket-foundry-root .bio-backstory-content .secret { @apply rounded border border-mf-line bg-mf-panel px-1; }
+  .pocket-foundry-root .favorites-pane { @apply gap-2.5 bg-mf-surface text-mf-text; }
+  .pocket-foundry-root .favorites-help { @apply m-0 rounded-md border border-mf-line bg-mf-panel px-2.5 py-2 text-[.78rem] font-semibold leading-snug text-mf-muted; }
+  .pocket-foundry-root .favorites-panel { @apply mx-auto w-full max-w-[760px]; }
+  .pocket-foundry-root .favorites-list { @apply grid gap-1.5; }
+  .pocket-foundry-root .favorite-row { @apply grid min-h-[58px] grid-cols-[42px_minmax(0,1fr)_minmax(58px,auto)_minmax(62px,auto)] items-center gap-2 rounded-lg border border-mf-line bg-mf-surface px-2 py-1.5; }
+  .pocket-foundry-root .favorite-row.suppressed { @apply opacity-70; }
+  .pocket-foundry-root .favorite-detail-drawer { @apply min-w-0; }
+  .pocket-foundry-root .favorite-detail-drawer summary { @apply cursor-pointer list-none; }
+  .pocket-foundry-root .favorite-primary { @apply inline-flex min-w-0 items-baseline justify-end truncate whitespace-nowrap text-base font-extrabold text-mf-accent; }
+  .pocket-foundry-root .favorite-primary.uses,
+  .pocket-foundry-root .favorite-primary.resource { @apply gap-1; }
+  .pocket-foundry-root .favorite-primary i { @apply not-italic text-mf-muted; }
+  .pocket-foundry-root .favorite-primary.toggle { @apply rounded-full bg-mf-good-surface px-2 py-1 text-[.76rem] uppercase text-mf-good; }
+  .pocket-foundry-root .favorite-primary.toggle.disabled { @apply bg-mf-panel text-mf-muted; }
+  .pocket-foundry-root .favorite-secondary { @apply min-w-0 truncate whitespace-nowrap text-right text-[.76rem] font-bold text-mf-muted; }
+  .pocket-foundry-root .favorite-detail-body { @apply col-span-full mt-2 grid gap-2 rounded-md border border-mf-line bg-mf-panel p-2; }
+  .pocket-foundry-root .favorite-facts { @apply m-0 grid grid-cols-[repeat(auto-fit,minmax(120px,1fr))] gap-x-2 gap-y-1; }
+  .pocket-foundry-root .favorite-facts div { @apply min-w-0; }
+  .pocket-foundry-root .favorite-facts dt,
+  .pocket-foundry-root .favorite-facts dd { @apply m-0 truncate text-[.72rem]; }
+  .pocket-foundry-root .favorite-facts dt { @apply font-extrabold text-mf-muted; }
+  .pocket-foundry-root .favorite-detail-actions { @apply flex flex-wrap gap-1.5; }
+  .pocket-foundry-root .favorite-detail-actions button,
+  .pocket-foundry-root .favorite-adjust { @apply grid min-h-7 min-w-7 place-items-center rounded-md border border-mf-line bg-mf-panel px-2 text-[.66rem] font-extrabold text-mf-accent; }
+  .pocket-foundry-root .favorite-context-menu { @apply hidden; }
+  .pocket-foundry-root .favorite-context-menu .context-action { @apply min-h-8 rounded-md border border-mf-line bg-mf-surface px-2 text-[.72rem] font-extrabold text-mf-warm; }
+  .pocket-foundry-root .favorite-action-sheet { @apply place-items-end p-0; }
+  .pocket-foundry-root .favorite-action-panel { @apply relative z-[1] grid w-full gap-2 rounded-t-[14px] border border-mf-line bg-mf-surface p-3.5 pb-[calc(14px+env(safe-area-inset-bottom))] shadow-mf-shell; }
+  .pocket-foundry-root .favorite-action-panel h2 { @apply m-0 truncate text-[.92rem] font-black text-mf-text; }
+  .pocket-foundry-root .favorite-action-list { @apply grid gap-2; }
+  .pocket-foundry-root .favorite-action-button,
+  .pocket-foundry-root .favorite-action-cancel { @apply min-h-11 w-full rounded-lg border border-mf-line bg-mf-panel px-3 text-left text-[.86rem] font-extrabold text-mf-text; }
+  .pocket-foundry-root .favorite-action-button { @apply border-mf-accent bg-mf-active text-mf-accent; }
+  .pocket-foundry-root .favorite-action-cancel { @apply text-center text-mf-muted; }
+  .pocket-foundry-root .rest-dialog-panel { @apply relative z-[1] grid w-[min(100%,360px)] gap-2.5 rounded-[10px] border border-mf-line bg-mf-surface p-3.5 shadow-mf-shell; }
+  .pocket-foundry-root .rest-dialog-panel h2,
+  .pocket-foundry-root .rest-dialog-panel p { @apply m-0; }
+  .pocket-foundry-root .rest-dialog-panel p { @apply text-[.82rem] text-mf-muted; }
+  .pocket-foundry-root .rest-hp-readout { @apply grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 rounded-md border border-mf-line bg-mf-panel px-2.5 py-2; }
+  .pocket-foundry-root .rest-hp-readout span,
+  .pocket-foundry-root .rest-hit-dice > span,
+  .pocket-foundry-root .rest-roll-result span { @apply text-[.72rem] font-extrabold uppercase text-mf-muted; }
+  .pocket-foundry-root .rest-hp-readout strong { @apply text-[1rem] text-mf-text; }
+  .pocket-foundry-root .rest-hit-dice { @apply grid gap-1.5; }
+  .pocket-foundry-root .rest-hit-dice-actions { @apply grid grid-cols-[repeat(auto-fit,minmax(92px,1fr))] gap-1.5; }
+  .pocket-foundry-root .rest-hit-dice-actions button { @apply min-h-9 rounded-md border border-mf-line bg-mf-surface px-2 py-1 text-[.76rem] font-extrabold text-mf-text; }
+  .pocket-foundry-root .rest-hit-dice-actions button:disabled { @apply opacity-45; }
+  .pocket-foundry-root .rest-note { @apply rounded-md border border-mf-line bg-mf-panel px-2 py-1.5; }
+  .pocket-foundry-root .rest-roll-result { @apply grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-2 rounded-md border border-mf-accent/60 bg-mf-accent/10 px-2.5 py-2; }
+  .pocket-foundry-root .rest-roll-result strong { @apply text-[.88rem] text-mf-text; }
+  .pocket-foundry-root .rest-roll-result em { @apply text-[.78rem] font-extrabold not-italic text-mf-accent; }
+  .pocket-foundry-root .rest-option { @apply grid min-h-12 grid-cols-[24px_minmax(0,1fr)] items-start gap-2 rounded-md border border-mf-line bg-mf-panel p-2; }
+  .pocket-foundry-root .rest-option input { @apply mt-1 h-4 w-4; }
+  .pocket-foundry-root .rest-option span { @apply grid gap-0.5; }
+  .pocket-foundry-root .rest-option strong { @apply text-[.82rem] text-mf-text; }
+  .pocket-foundry-root .rest-option em { @apply text-[.72rem] not-italic text-mf-muted; }
+}
+
+@layer utilities {
+  @media (max-width: 899px) {
+    .pocket-foundry-root .details-grid { @apply grid-cols-[repeat(auto-fit,minmax(min(100%,260px),1fr))]; }
+    .pocket-foundry-root .table-panel { grid-row: auto; }
+    .pocket-foundry-root .traits-panel { @apply col-span-1; }
+  }
+
+  @media (max-width: 620px) {
+    .pocket-foundry-root .spell-stats > span { flex: 1 1 78px; }
+  }
+
+  @media (min-width: 620px) {
+    .pocket-foundry-root .ability-strip { @apply grid-cols-6; }
+  }
+
+  @media (max-width: 480px) {
+    .pocket-foundry-root .features-sections { @apply grid-cols-1; }
+    .pocket-foundry-root .pf-detail-actions button { @apply min-w-5 px-1 text-[.6rem]; }
+    .pocket-foundry-root .effects-sections { @apply grid-cols-1; }
+    .pocket-foundry-root .effect-row-actions button { @apply min-w-5 px-0.5 text-[.6rem]; }
+    .pocket-foundry-root .details-grid { @apply grid-cols-1; }
+    .pocket-foundry-root .skills-table .detail-table-row { @apply grid-cols-[13px_minmax(34px,.45fr)_minmax(0,1fr)_minmax(34px,.38fr)_minmax(38px,.38fr)]; }
+    .pocket-foundry-root .tool-table .detail-table-row { @apply grid-cols-[13px_minmax(34px,.45fr)_minmax(0,1fr)_minmax(34px,.38fr)]; }
+  }
+
+  @media (min-width: 900px) {
+    .pocket-foundry-root .condition-grid { @apply grid-cols-3; }
+  }
+}

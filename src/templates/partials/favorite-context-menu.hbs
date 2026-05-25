@@ -1,0 +1,27 @@
+{{#if canToggleFavorite}}
+  <div class="favorite-context-menu" role="menu" aria-label="{{ariaLabel}}">
+    {{#if favorite}}
+      <button
+        class="context-action"
+        type="button"
+        role="menuitem"
+        data-action="{{removeAction}}"
+        {{#if favoriteType}}data-favorite-type="{{favoriteType}}"{{/if}}
+        {{#if favoriteId}}data-favorite-id="{{favoriteId}}"{{/if}}
+        {{#if itemId}}data-item-id="{{itemId}}"{{/if}}
+        data-swipe-ignore
+      >{{removeLabel}}</button>
+    {{else}}
+      <button
+        class="context-action"
+        type="button"
+        role="menuitem"
+        data-action="{{addAction}}"
+        {{#if favoriteType}}data-favorite-type="{{favoriteType}}"{{/if}}
+        {{#if favoriteId}}data-favorite-id="{{favoriteId}}"{{/if}}
+        {{#if itemId}}data-item-id="{{itemId}}"{{/if}}
+        data-swipe-ignore
+      >{{addLabel}}</button>
+    {{/if}}
+  </div>
+{{/if}}
