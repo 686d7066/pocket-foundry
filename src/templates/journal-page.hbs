@@ -1,0 +1,61 @@
+{{#if unavailable}}
+  <section class="content pf-view journal-page-view" data-region="journal-page-unavailable">
+    <div class="section pf-view-section">
+      {{> "modules/pocket-foundry/templates/partials/empty-state.hbs" title=title body=body}}
+    </div>
+  </section>
+{{else}}
+  <section class="content pf-view journal-page-view" data-region="journal-page-content" data-entry-uuid="{{entryUuid}}" data-page-uuid="{{uuid}}">
+    <article class="section pf-view-section reader journal-reader" data-journal-links>
+      <div class="section-heading content-group-heading pf-view-section-heading journal-page-title-row">
+        <h2>{{title}}</h2>
+        {{#if canUpdate}}
+          <button class="journal-page-edit-button" type="button" data-action="journal-edit-page" data-entry-uuid="{{entryUuid}}" data-page-uuid="{{uuid}}" aria-label="Edit {{title}}" title="Edit page">
+            <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
+          </button>
+        {{/if}}
+      </div>
+
+      {{#if textPage}}
+        <div class="journal-text-content">{{{textHtml}}}</div>
+      {{/if}}
+
+      {{#if imagePage}}
+        {{#if src}}
+          <figure class="journal-media-frame journal-image-frame">
+            <img src="{{src}}" alt="{{title}}">
+            <figcaption>{{title}}</figcaption>
+          </figure>
+        {{else}}
+          {{> "modules/pocket-foundry/templates/partials/empty-state.hbs" title="Image Unavailable" body="This image page does not expose a visible source."}}
+        {{/if}}
+      {{/if}}
+
+      {{#if pdfPage}}
+        {{#if src}}
+          <div class="journal-media-frame journal-pdf-frame">
+            <object data="{{src}}" type="application/pdf" aria-label="{{title}}"></object>
+            <a class="chip" href="{{src}}" target="_blank" rel="noreferrer">Open PDF</a>
+          </div>
+        {{else}}
+          {{> "modules/pocket-foundry/templates/partials/empty-state.hbs" title="PDF Unavailable" body="This PDF page does not expose a visible source."}}
+        {{/if}}
+      {{/if}}
+
+      {{#if videoPage}}
+        {{#if src}}
+          <figure class="journal-media-frame journal-video-frame">
+            <video controls playsinline preload="metadata" src="{{src}}"></video>
+            <figcaption>{{title}}</figcaption>
+          </figure>
+        {{else}}
+          {{> "modules/pocket-foundry/templates/partials/empty-state.hbs" title="Video Unavailable" body="This video page does not expose a visible source."}}
+        {{/if}}
+      {{/if}}
+
+      {{#if unsupportedPage}}
+        {{> "modules/pocket-foundry/templates/partials/empty-state.hbs" title="Unsupported Page" body=unsupportedBody}}
+      {{/if}}
+    </article>
+  </section>
+{{/if}}

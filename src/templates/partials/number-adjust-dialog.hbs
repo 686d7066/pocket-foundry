@@ -1,0 +1,75 @@
+{{#if embeddedWheel}}
+  <div class="{{#if embeddedWheelClass}}{{embeddedWheelClass}}{{else}}number-spinner-embedded{{/if}}">
+    <div
+      class="spinner-wheel"
+      aria-label="{{#if wheelAriaLabel}}{{wheelAriaLabel}}{{else}}{{title}} amount{{/if}}"
+      data-wheel-action="{{selectAction}}"
+      {{#if centerZeroLabel}}data-wheel-center-zero-label="true"{{/if}}
+      {{#if dynamicWheel}}data-wheel-dynamic="true" data-wheel-value="{{initialValue}}" data-wheel-min="{{dynamicMin}}" data-wheel-max="{{dynamicMax}}" data-wheel-chunk-size="{{chunkSize}}" data-wheel-step="{{step}}"{{/if}}
+      {{#if showSign}}data-wheel-show-sign="true"{{/if}}
+      {{#if wheelSelectScope}}data-wheel-select-scope="{{wheelSelectScope}}"{{/if}}
+    >
+      {{#each options}}
+        <button class="{{#if center}}selected{{/if}}" type="button" data-action="{{../selectAction}}" data-delta="{{value}}">
+          {{#if ../centerZeroLabel}}
+            {{#if center}}0{{else}}{{label}}{{/if}}
+          {{else}}
+            {{label}}
+          {{/if}}
+        </button>
+      {{/each}}
+    </div>
+  </div>
+{{else}}
+  <section
+    id="{{#if dialogId}}{{dialogId}}{{else}}{{dialogIdPrefix}}{{dialogItemId}}{{dialogIdMiddle}}{{dialogAdjustmentId}}{{dialogIdSuffix}}{{/if}}"
+    class="mock-dialog"
+    aria-label="{{#if dialogAriaLabel}}{{dialogAriaLabel}}{{else}}{{title}}{{#if dialogAriaLabelName}} for {{dialogAriaLabelName}}{{/if}}{{/if}}"
+  >
+    <button
+      class="dialog-backdrop"
+      type="button"
+      data-action="{{closeAction}}"
+      aria-label="{{#if closeAriaLabel}}{{closeAriaLabel}}{{else}}Close{{/if}}"
+    ></button>
+    <div class="number-spinner" role="dialog" aria-modal="true">
+      <h2>{{title}}</h2>
+      <p>
+        {{#if description}}
+          {{description}}
+        {{else}}
+          {{#if descriptionName}}{{descriptionName}}{{/if}}{{#if descriptionLabel}}: {{descriptionLabel}}{{/if}}
+        {{/if}}
+      </p>
+      <div
+        class="spinner-wheel"
+        aria-label="{{#if wheelAriaLabel}}{{wheelAriaLabel}}{{else}}{{title}} amount{{/if}}"
+        data-wheel-action="{{selectAction}}"
+        {{#if centerZeroLabel}}data-wheel-center-zero-label="true"{{/if}}
+        {{#if dynamicWheel}}data-wheel-dynamic="true" data-wheel-value="{{initialValue}}" data-wheel-min="{{dynamicMin}}" data-wheel-max="{{dynamicMax}}" data-wheel-chunk-size="{{chunkSize}}" data-wheel-step="{{step}}"{{/if}}
+        {{#if showSign}}data-wheel-show-sign="true"{{/if}}
+        {{#if wheelSelectScope}}data-wheel-select-scope="{{wheelSelectScope}}"{{/if}}
+      >
+        {{#each options}}
+          <button class="{{#if center}}selected{{/if}}" type="button" data-action="{{../selectAction}}" data-delta="{{value}}">
+            {{#if ../centerZeroLabel}}
+              {{#if center}}0{{else}}{{label}}{{/if}}
+            {{else}}
+              {{label}}
+            {{/if}}
+          </button>
+        {{/each}}
+      </div>
+      <div class="dialog-actions">
+        <button type="button" data-action="{{closeAction}}">{{#if cancelLabel}}{{cancelLabel}}{{else}}Cancel{{/if}}</button>
+        <button
+          class="primary-action"
+          type="button"
+          data-action="{{confirmActionPrefix}}{{#if confirmActionMiddle}}-{{confirmActionMiddle}}{{/if}}-delta"
+          {{#if confirmItemId}}data-item-id="{{confirmItemId}}"{{/if}}
+          data-delta="0"
+        >{{#if confirmLabel}}{{confirmLabel}}{{else}}OK{{/if}}</button>
+      </div>
+    </div>
+  </section>
+{{/if}}

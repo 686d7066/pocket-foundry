@@ -1,0 +1,107 @@
+{{#if unavailable}}
+  {{> "modules/pocket-foundry/templates/partials/pane-unavailable.hbs" region="inventory-unavailable" title=title body=body}}
+{{else}}
+  <section class="content sheet-dense inventory-pane" data-region="inventory-pane" data-swipe-region="character-pane">
+    <div class="sheet-status" data-region="inventory-status">
+      <span>
+        <b>{{status.encumbrance.label}}</b>
+        <em>Encumbrance</em>
+        <div class="meter"><span style="width:{{status.encumbrance.pct}}%"></span></div>
+      </span>
+      <button
+        class="inventory-currency-summary{{#unless canUpdate}} is-readonly{{/unless}}"
+        type="button"
+        {{#if canUpdate}}data-action="inventory-open-currency-dialog" data-dialog-id="inventory-currency-dialog"{{else}}aria-disabled="true"{{/if}}
+        data-swipe-ignore
+      >
+        <b>Currency</b>
+        <span class="inventory-currency-values" aria-label="Currency totals">
+          {{#each status.currency.values}}
+            <span class="inventory-currency-value" data-currency-id="{{id}}">
+              <img src="{{icon}}" alt="{{name}}">
+              <strong>{{value}}</strong>
+            </span>
+          {{/each}}
+        </span>
+      </button>
+      <span>
+        <b>{{status.attunement.label}}</b>
+        <em>Attunement</em>
+      </span>
+    </div>
+
+    {{> "modules/pocket-foundry/templates/partials/pane-search-toolbar.hbs"
+    toolbarClass="inventory-toolbar"
+    searchClass="inventory-search"
+    region="inventory-toolbar"
+    placeholder="Search inventory"
+    ariaLabel="Search inventory"
+    clearAriaLabel="Clear inventory search"
+    value=searchQuery
+    pane="Inventory"
+    canClear=canClearSearch
+    }}
+
+    <div class="inventory-list-view compact-panels" data-region="inventory-list-view">
+      {{#each sections}}
+        <section class="section sheet-group inventory-section" data-section="{{id}}">
+          <div class="section-heading sheet-group-heading inventory-section-heading">
+            <h2>{{label}}</h2>
+            <span class="chip inventory-section-summary"><span>Weight</span><strong>{{weight}}</strong></span>
+          </div>
+          <div class="sheet-table sheet-list inventory-list">
+            <div class="sheet-list-head inventory-list-head inventory-list-head-{{id}} pf-list-schema pf-list-schema--icon-title-3meta-actions" aria-hidden="true">
+              <span>Name</span>
+              {{#each listColumns}}<span class="inventory-list-head-cell inventory-list-head-cell-{{id}}">{{label}}</span>{{/each}}
+              <span></span>
+            </div>
+            {{#each items}}
+              {{> "modules/pocket-foundry/systems/dnd5e/templates/partials/inventory-list-row.hbs" this}}
+            {{/each}}
+          </div>
+        </section>
+      {{/each}}
+    </div>
+
+    <section id="inventory-currency-dialog" class="mock-dialog inventory-currency-dialog" aria-label="Adjust currency">
+      <button class="dialog-backdrop" type="button" data-action="inventory-close-number-dialog" aria-label="Close currency dialog"></button>
+      <div class="number-spinner inventory-currency-selector-panel" role="dialog" aria-modal="true">
+        <h2>Adjust Currency</h2>
+        <p>Choose new values for each coin type. Changes apply when you confirm.</p>
+        <div class="inventory-currency-grid" data-region="inventory-currency-grid">
+          {{#each status.currency.values}}
+            <section
+              class="inventory-currency-trigger"
+              data-currency-id="{{id}}"
+              data-currency-initial-value="{{value}}"
+              data-currency-value="{{value}}"
+            >
+              <span class="inventory-currency-icon"><img src="{{icon}}" alt=""></span>
+              <strong>{{value}}</strong>
+              {{> "modules/pocket-foundry/templates/partials/number-adjust-dialog.hbs"
+                embeddedWheel=true
+                embeddedWheelClass="inventory-currency-wheel"
+                title="Adjust currency"
+                wheelAriaLabel="Currency value"
+                selectAction="inventory-select-currency"
+                wheelSelectScope="wheel"
+                dynamicWheel=true
+                initialValue=0
+                chunkSize=20
+                step=1
+                showSign=true
+              }}
+            </section>
+          {{/each}}
+        </div>
+        <div class="dialog-actions">
+          <button type="button" data-action="inventory-close-number-dialog">Cancel</button>
+          <button class="primary-action" type="button" data-action="inventory-apply-currency" data-swipe-ignore>Apply</button>
+        </div>
+      </div>
+    </section>
+  </section>
+{{/if}}
+
+
+

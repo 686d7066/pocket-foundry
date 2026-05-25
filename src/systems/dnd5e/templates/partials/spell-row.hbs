@@ -1,0 +1,86 @@
+<article class="row spells-list-row spell-row" data-item-id="{{id}}" data-favorite-context data-state-key="spell:{{id}}">
+  {{#*inline "summary"}}
+      <span class="item-icon" aria-hidden="true">
+        {{#if icon}}<img src="{{icon}}" alt="">{{else}}{{iconText}}{{/if}}
+      </span>
+      <span class="row-title sheet-row-title">
+        <strong>{{name}}</strong>
+        <span>{{subtitle}}</span>
+      </span>
+      <span class="sheet-list-value spells-list-value">{{activation}}</span>
+      <span class="sheet-list-value spells-list-value">{{range}}</span>
+      <span class="sheet-list-value spells-list-value spell-target-cell" title="{{target}}">{{target}}</span>
+      <span class="sheet-list-value spells-list-value spell-roll">{{roll}}</span>
+      <span class="spell-row-actions" aria-label="{{name}} controls">
+        {{#if actions.canPrepare}}
+          <button class="spell-prepared-toggle {{#if prepared}}prepared{{else}}unprepared{{/if}}" type="button" data-action="spells-toggle-prepared" data-item-id="{{id}}" aria-label="{{#if prepared}}Unprepare{{else}}Prepare{{/if}} {{name}}" aria-pressed="{{#if prepared}}true{{else}}false{{/if}}" title="{{preparedLabel}}" data-swipe-ignore>
+            <i class="fa-{{#if prepared}}solid{{else}}regular{{/if}} fa-certificate" aria-hidden="true"></i>
+          </button>
+        {{/if}}
+      </span>
+  {{/inline}}
+  {{#*inline "body"}}
+      {{!--
+        FUTURE FEATURE: Spell sub-action rows inside expanded spell details.
+        Keep this block in place for later implementation once the interaction model is finalized.
+      {{#each activities}}
+        <div class="spell-activity-row pf-list-schema pf-list-schema--icon-title-4meta-actions">
+          <span class="activity-icon" aria-hidden="true">{{#if icon}}<img src="{{icon}}" alt="">{{else}}{{iconText}}{{/if}}</span>
+          <span class="activity-title"><strong>{{name}}</strong></span>
+          <span class="sheet-list-value spells-list-value">{{activation}}</span>
+          <span class="sheet-list-value spells-list-value">{{range}}</span>
+          <span class="sheet-list-value spells-list-value spell-target-cell" title="{{target}}">{{target}}</span>
+          <span class="sheet-list-value spells-list-value spell-roll">{{roll}}</span>
+          <span class="spell-row-actions spell-row-actions-placeholder" aria-hidden="true"></span>
+        </div>
+      {{/each}}
+      --}}
+      {{#if description}}<div class="spell-description pf-detail-description">{{{description}}}</div>{{/if}}
+      {{#if facts.length}}
+        <dl class="pf-detail-facts">
+          {{#each facts}}<div><dt>{{label}}</dt><dd>{{value}}</dd></div>{{/each}}
+        </dl>
+      {{/if}}
+      <div class="pf-detail-actions">
+        {{#if adjustments.length}}<button type="button" data-action="spells-open-number-dialog" data-dialog-id="spells-number-{{id}}-uses" aria-label="Adjust uses for {{name}}" data-swipe-ignore>{{usesLabel}}</button>{{/if}}
+        {{#if actions.canRecharge}}<button type="button" data-action="spells-recharge" data-item-id="{{id}}" aria-label="Recharge {{name}}" data-swipe-ignore><i class="fa-solid fa-bolt" aria-hidden="true"></i></button>{{/if}}
+      </div>
+  {{/inline}}
+  {{> "modules/pocket-foundry/templates/partials/expandable-detail-row.hbs"
+    drawerClass="spell-detail-drawer"
+    summaryClass="spell-row-summary pf-list-schema pf-list-schema--icon-title-4meta-actions"
+    bodyClass="pf-expandable-detail-body"
+  }}
+  {{#each adjustments}}
+    {{> "modules/pocket-foundry/templates/partials/number-adjust-dialog.hbs"
+      dialogIdPrefix="spells-number-"
+      dialogItemId=../id
+      dialogIdMiddle="-"
+      dialogAdjustmentId=id
+      closeAction="spells-close-number-dialog"
+      title=title
+      dialogAriaLabelName=../name
+      descriptionName=../name
+      descriptionLabel=label
+      options=options
+      selectAction="spells-select-delta"
+      confirmActionPrefix="spells-confirm"
+      confirmActionMiddle="uses"
+      confirmItemId=../id
+    }}
+  {{/each}}
+  {{> "modules/pocket-foundry/templates/partials/favorite-context-menu.hbs"
+    canToggleFavorite=actions.canToggleFavorite
+    favorite=favorite
+    ariaLabel=name
+    addAction="context-add-favorite"
+    removeAction="context-remove-favorite"
+    addLabel="Add to Favorites"
+    removeLabel="Remove from Favorites"
+    favoriteType="item"
+    favoriteId=uuid
+  }}
+</article>
+
+
+

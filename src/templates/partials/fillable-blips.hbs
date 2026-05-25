@@ -1,0 +1,28 @@
+<span
+  class="fillable-blips {{#if (eq direction "rtl")}}rtl{{else}}ltr{{/if}} color-{{color}}"
+  data-blip-count="{{count}}"
+  data-blip-direction="{{direction}}"
+  data-blip-fill-mode="{{fillMode}}"
+  data-blip-color="{{color}}"
+>
+  {{#each pips}}
+    {{#if ../canUpdate}}
+      <button
+        class="{{#if active}}active{{/if}}"
+        type="button"
+        aria-label="{{#if ariaLabel}}{{ariaLabel}}{{else}}{{#if ../ariaLabel}}{{../ariaLabel}} {{value}}/{{../count}}{{/if}}{{/if}}"
+        aria-pressed="{{#if active}}true{{else}}false{{/if}}"
+        data-action="{{../action}}"
+        data-blip-kind="{{../kind}}"
+        data-pip-value="{{value}}"
+        data-pip-active="{{#if active}}true{{else}}false{{/if}}"
+        data-fill-mode="{{../fillMode}}"
+        data-blip-count="{{../count}}"
+        data-blip-direction="{{../direction}}"
+        data-blip-color="{{../color}}"
+      ></button>
+    {{else}}
+      <span class="pip {{#if active}}active{{/if}}" aria-hidden="true"></span>
+    {{/if}}
+  {{/each}}
+</span>

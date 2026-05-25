@@ -1,0 +1,32 @@
+<section class="content pf-view journal-browser" data-region="journal-list">
+  <section class="section content-group pf-view-section journal-entry-list">
+    <div class="section-heading content-group-heading pf-view-section-heading journal-entry-list-heading">
+      <h2>Visible Entries</h2>
+    </div>
+    {{#if hasEntries}}
+      <div class="content-table content-list pf-view-list journal-list">
+        <div class="content-list-head journal-list-head" aria-hidden="true">
+          <span>Name</span>
+          <span>Pages</span>
+          <span></span>
+        </div>
+        {{#each entries}}
+          {{> "modules/pocket-foundry/templates/partials/content-list-row.hbs"
+            rowClass="journal-entry-row"
+            action="journal-open-entry"
+            entryUuid=uuid
+            icon=icon
+            iconText=iconText
+            title=name
+            subtitle="Journal Entry"
+            value=visiblePageCount
+            valueClass="journal-list-value"
+            actionLabel=pageCountLabel
+          }}
+        {{/each}}
+      </div>
+    {{else}}
+      {{> "modules/pocket-foundry/templates/partials/empty-state.hbs" title="No Visible Entries" body="Journal entries you can view will appear here."}}
+    {{/if}}
+  </section>
+</section>

@@ -1,0 +1,15 @@
+<button class="row" type="button" data-action="{{action}}" data-uuid="{{uuid}}">
+  <span class="item-icon" aria-hidden="true">{{iconText}}</span>
+  <span class="row-title">
+    <strong>{{title}}</strong>
+    {{#if subtitle}}<span>{{subtitle}}</span>{{/if}}
+  </span>
+  {{#if actionLabel}}<span class="row-action">{{actionLabel}}</span>{{/if}}
+  {{#if chips}}
+    <span class="meta-row">
+      {{#each chips}}
+        {{> "modules/pocket-foundry/templates/partials/chip.hbs"}}
+      {{/each}}
+    </span>
+  {{/if}}
+</button>

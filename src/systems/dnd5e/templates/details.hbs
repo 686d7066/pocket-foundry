@@ -1,0 +1,308 @@
+{{#if unavailable}}
+  {{> "modules/pocket-foundry/templates/partials/pane-unavailable.hbs" region="details-unavailable" title=title body=body}}
+{{else}}
+  <section class="content details-sheet" data-region="details-pane" data-swipe-region="character-pane">
+    <div class="ability-strip" data-region="details-abilities">
+      {{#each abilities}}
+        <div class="ability-tile" aria-label="{{label}} ability check">
+          <span>{{abbreviation}}</span>
+          <strong>{{modifierLabel}}</strong>
+          <em>{{value}}</em>
+        </div>
+      {{/each}}
+    </div>
+
+    <div class="details-grid">
+      <div class="left-stack">
+        <aside class="sheet-panel side-stats" data-region="details-dashboard">
+          <div class="hero-number">
+            <span>Armor Class</span>
+            <strong>{{header.ac}}</strong>
+            <em>Armor Class</em>
+          </div>
+          <div class="diamond-row">
+            <div><strong>{{dashboardSummary.initiative}}</strong><span>Initiative</span></div>
+            <div><strong>{{dashboardSummary.speed}}</strong><span>Speed</span></div>
+            <div><strong>{{dashboardSummary.proficiency}}</strong><span>Prof</span></div>
+          </div>
+          <span class="mini-stat death-save-stat death-save-panel">
+            <em class="death-save-title">Death Saves</em>
+            <b class="death-save-pips" aria-label="Death saves: {{deathSaves.success}} successes, {{deathSaves.failure}} failures">
+              <span class="death-save-label">Fail</span>
+              {{> "modules/pocket-foundry/templates/partials/fillable-blips.hbs"
+                pips=deathSaves.failurePips
+                count=3
+                direction="rtl"
+                fillMode="step"
+                color="failure"
+                canUpdate=deathSaves.canUpdate
+                action="details-death-save-pip"
+                kind="failure"
+                ariaLabel="Mark death save failure"
+              }}
+              <i class="fa-solid fa-skull death-save-divider" aria-hidden="true"></i>
+              {{> "modules/pocket-foundry/templates/partials/fillable-blips.hbs"
+                pips=deathSaves.successPips
+                count=3
+                direction="ltr"
+                fillMode="step"
+                color="success"
+                canUpdate=deathSaves.canUpdate
+                action="details-death-save-pip"
+                kind="success"
+                ariaLabel="Mark death save success"
+              }}
+              <span class="death-save-label">Success</span>
+            </b>
+          </span>
+          <div class="mini-grid">
+            <span class="mini-stat"><b>{{dashboardSummary.hitDice}}</b><em>Hit Dice</em></span>
+            <span class="mini-stat exhaustion-stat">
+              <b class="exhaustion-pips" aria-label="Exhaustion level {{exhaustion.value}}">
+                {{#each exhaustion.pipGroups}}
+                  <span class="pip-group">
+                    {{#each this}}
+                      <button class="{{#if active}}active{{/if}}" type="button" aria-label="Set exhaustion level {{value}}" aria-pressed="{{#if active}}true{{else}}false{{/if}}" data-action="details-exhaustion-pip" data-pip-value="{{value}}" data-pip-active="{{#if active}}true{{else}}false{{/if}}" {{#unless ../../exhaustion.canUpdate}}disabled aria-disabled="true"{{/unless}}></button>
+                    {{/each}}
+                  </span>
+                {{/each}}
+              </b>
+              <em>Exhaustion</em>
+            </span>
+            {{#if header.xp}}<span class="mini-stat"><b>{{header.xp.value}}</b><em>XP</em></span>{{/if}}
+          </div>
+          <div class="rest-actions" aria-label="Rest actions">
+            {{#each restActions}}
+              <button
+                class="rest-action"
+                type="button"
+                data-action="details-rest"
+                data-rest-type="{{type}}"
+                aria-label="{{label}}"
+                {{#unless canRest}}disabled{{/unless}}
+              >
+                <i class="{{icon}}" aria-hidden="true"></i>
+                <span>{{label}}</span>
+              </button>
+            {{/each}}
+          </div>
+          <section id="details-short-rest-dialog" class="mock-dialog" aria-label="Short Rest">
+            <button class="dialog-backdrop" type="button" data-action="details-close-dialog" aria-label="Cancel short rest"></button>
+            <div class="rest-dialog-panel" role="dialog" aria-modal="true">
+              <h2>Short Rest</h2>
+              <p>Recover short-rest resources, item uses, and pact spell slots according to dnd5e rules.</p>
+              <div class="rest-hp-readout" aria-label="Current hit points">
+                <span>Hit Points</span>
+                <strong>{{shortRest.hpLabel}}</strong>
+              </div>
+              <div class="rest-hit-dice">
+                <span>Spend Hit Dice</span>
+                <div class="rest-hit-dice-actions">
+                  {{#each shortRest.hitDice}}
+                    <button
+                      type="button"
+                      data-action="details-roll-hit-die"
+                      data-denomination="{{denomination}}"
+                      aria-label="Roll {{denomination}} hit die"
+                      {{#if disabled}}disabled{{/if}}
+                    >{{label}}</button>
+                  {{/each}}
+                </div>
+              </div>
+              {{#unless shortRest.canRollHitDice}}
+                <p class="rest-note">No Hit Dice are available to spend.</p>
+              {{/unless}}
+              {{#if shortRestLastRoll}}
+                <div class="rest-roll-result" role="status" aria-live="polite">
+                  <span>Last Roll</span>
+                  <strong>{{shortRestLastRoll.denomination}}{{#if shortRestLastRoll.total}}: {{shortRestLastRoll.total}}{{/if}}</strong>
+                  {{#if shortRestLastRoll.hpDelta}}<em>HP +{{shortRestLastRoll.hpDelta}}</em>{{/if}}
+                </div>
+              {{/if}}
+              <label class="rest-option">
+                <input type="checkbox" name="autoHD">
+                <span>
+                  <strong>Auto-spend Hit Dice</strong>
+                  <em>Spend available Hit Dice until missing HP is mostly recovered.</em>
+                </span>
+              </label>
+              <div class="dialog-actions">
+                <button type="button" data-action="details-close-dialog">Cancel</button>
+                <button class="primary-action" type="button" data-action="details-confirm-rest" data-rest-type="short">Rest</button>
+              </div>
+            </div>
+          </section>
+          <section id="details-long-rest-dialog" class="mock-dialog" aria-label="Long Rest">
+            <button class="dialog-backdrop" type="button" data-action="details-close-dialog" aria-label="Cancel long rest"></button>
+            <div class="rest-dialog-panel" role="dialog" aria-modal="true">
+              <h2>Long Rest</h2>
+              <p>Recover HP, Hit Dice, resources, item uses, spell slots, and exhaustion according to dnd5e rules.</p>
+              <label class="rest-option">
+                <input type="checkbox" name="newDay" checked>
+                <span>
+                  <strong>New Day</strong>
+                  <em>Recover daily resources and item uses.</em>
+                </span>
+              </label>
+              <label class="rest-option">
+                <input type="checkbox" name="recoverTemp" checked>
+                <span>
+                  <strong>Clear Temp HP</strong>
+                  <em>Remove temporary hit points during the rest.</em>
+                </span>
+              </label>
+              <label class="rest-option">
+                <input type="checkbox" name="recoverTempMax" checked>
+                <span>
+                  <strong>Clear Max HP Modifier</strong>
+                  <em>Remove temporary maximum HP modifiers.</em>
+                </span>
+              </label>
+              <div class="dialog-actions">
+                <button type="button" data-action="details-close-dialog">Cancel</button>
+                <button class="primary-action" type="button" data-action="details-confirm-rest" data-rest-type="long">Rest</button>
+              </div>
+            </div>
+          </section>
+        </aside>
+
+        <section class="section sheet-group sheet-panel saves-panel" data-region="details-saves">
+          <div class="section-heading sheet-group-heading">
+            <h2>Saving Throws</h2>
+          </div>
+          <div class="save-grid">
+            {{#each saves}}
+              <div class="save-item {{#if proficient}}trained{{/if}}" aria-label="{{label}} saving throw">
+                <span>{{ability}}</span>
+                <b>{{totalLabel}}</b>
+              </div>
+            {{/each}}
+          </div>
+        </section>
+      </div>
+
+      <section class="section sheet-group sheet-panel table-panel" data-region="details-skills">
+        <div class="section-heading sheet-group-heading">
+          <h2>Skills</h2>
+        </div>
+        <div class="detail-table skills-table">
+          <div class="detail-table-row detail-table-head" aria-hidden="true">
+            <span></span><span>Ability</span><span>Skill</span><span>Total</span><span>Passive</span>
+          </div>
+          {{#each skills}}
+            {{> "modules/pocket-foundry/systems/dnd5e/templates/partials/details-skill-row.hbs" this}}
+          {{/each}}
+        </div>
+      </section>
+
+      <section class="section sheet-group sheet-panel tools-panel" data-region="details-tools">
+        <div class="section-heading sheet-group-heading">
+          <h2>Tool Proficiencies</h2>
+        </div>
+        <div class="detail-table tool-table">
+          <div class="detail-table-row detail-table-head" aria-hidden="true">
+            <span></span><span>Ability</span><span>Tool</span><span>Total</span>
+          </div>
+          {{#each tools}}
+            {{> "modules/pocket-foundry/systems/dnd5e/templates/partials/details-tool-row.hbs" this}}
+          {{else}}
+            <div class="detail-table-row tool-row">
+              <span></span><span>-</span><strong>No tool proficiencies</strong><b>-</b>
+            </div>
+          {{/each}}
+        </div>
+      </section>
+
+      <section class="sheet-panel traits-panel" data-region="details-traits">
+        <div class="trait-groups">
+          {{#each traitGroups}}
+            {{#if (eq id "armor")}}{{else}}
+              {{#if (eq id "weapons")}}{{else}}
+                {{#if (eq id "languages")}}{{else}}
+                  <section class="trait-group {{#if warning}}warning{{/if}}">
+                    <h2>{{label}}</h2>
+                    {{#if origin}}
+                      <div class="origin-cards">
+                        {{#each pills}}
+                          {{#if referenceUuid}}
+                            {{> "modules/pocket-foundry/templates/partials/pill.hbs"
+                              button=true
+                              block=true
+                              label=label
+                              action="details-open-reference"
+                              uuid=referenceUuid
+                              swipeIgnore=true
+                            }}
+                          {{else}}
+                            {{> "modules/pocket-foundry/templates/partials/pill.hbs"
+                              button=true
+                              block=true
+                              label=label
+                              action="details-open-reference"
+                              disabled=true
+                              swipeIgnore=true
+                            }}
+                          {{/if}}
+                        {{/each}}
+                      </div>
+                    {{else}}
+                      <div class="pill-cluster {{#if warning}}warning-pills{{/if}}">
+                        {{#each pills}}
+                          {{> "modules/pocket-foundry/templates/partials/pill.hbs" label=label}}
+                        {{/each}}
+                      </div>
+                    {{/if}}
+                  </section>
+                {{/if}}
+              {{/if}}
+            {{/if}}
+          {{/each}}
+          <section class="trait-group proficiency-group">
+            <h2>Proficiencies</h2>
+            <div class="proficiency-cluster">
+              {{#each traitGroups}}
+                {{#if (eq id "armor")}}
+                  <section class="proficiency-block">
+                    <h3>{{label}}</h3>
+                    <div class="pill-cluster">
+                      {{#each pills}}
+                        {{> "modules/pocket-foundry/templates/partials/pill.hbs" label=label}}
+                      {{/each}}
+                    </div>
+                  </section>
+                {{/if}}
+              {{/each}}
+              {{#each traitGroups}}
+                {{#if (eq id "weapons")}}
+                  <section class="proficiency-block">
+                    <h3>{{label}}</h3>
+                    <div class="pill-cluster">
+                      {{#each pills}}
+                        {{> "modules/pocket-foundry/templates/partials/pill.hbs" label=label}}
+                      {{/each}}
+                    </div>
+                  </section>
+                {{/if}}
+              {{/each}}
+              {{#each traitGroups}}
+                {{#if (eq id "languages")}}
+                  <section class="proficiency-block">
+                    <h3>{{label}}</h3>
+                    <div class="pill-cluster">
+                      {{#each pills}}
+                        {{> "modules/pocket-foundry/templates/partials/pill.hbs" label=label}}
+                      {{/each}}
+                    </div>
+                  </section>
+                {{/if}}
+              {{/each}}
+            </div>
+          </section>
+        </div>
+      </section>
+    </div>
+  </section>
+{{/if}}
+
+
+

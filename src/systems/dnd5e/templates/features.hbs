@@ -1,0 +1,57 @@
+{{#if unavailable}}
+  {{> "modules/pocket-foundry/templates/partials/pane-unavailable.hbs" region="features-unavailable" title=title body=body}}
+{{else}}
+  <section class="content sheet-dense features-pane" data-region="features-pane" data-swipe-region="character-pane">
+    {{> "modules/pocket-foundry/templates/partials/pane-search-toolbar.hbs"
+      toolbarClass="features-toolbar"
+      searchClass="features-search"
+      region="features-toolbar"
+      placeholder="Search features"
+      ariaLabel="Search features"
+      clearAriaLabel="Clear feature search"
+      value=searchQuery
+      pane="Features"
+      canClear=canClearSearch
+    }}
+
+    <div class="sheet-status features-status" data-region="features-status">
+      {{#each status}}
+        <button class="feature-progress-card" type="button" data-action="features-open-item" data-item-uuid="{{uuid}}" data-swipe-ignore>
+          <b>{{primary}}</b>
+          <em>{{secondary}}</em>
+        </button>
+      {{else}}
+        <span><b>No classes</b><em>Progression appears here</em></span>
+      {{/each}}
+    </div>
+
+    <div class="features-sections" data-region="features-sections">
+      {{#each sections}}
+        <section class="section sheet-group features-section features-section-{{id}}" data-section="{{id}}">
+          <div class="section-heading sheet-group-heading features-section-heading">
+            <h2>{{label}}</h2>
+          </div>
+          <div class="sheet-table sheet-list features-list">
+            <div class="sheet-list-head features-list-head pf-list-schema pf-list-schema--icon-title-2meta-actions" aria-hidden="true">
+              <span>Name</span>
+              <span>Uses</span>
+              <span>Recovery</span>
+              <span></span>
+            </div>
+            {{#each items}}
+              {{> "modules/pocket-foundry/systems/dnd5e/templates/partials/feature-row.hbs" this}}
+            {{else}}
+              <div class="feature-card empty-feature-card">
+                <strong>No {{label}} features</strong>
+                <p class="mini">Features from this group appear here when present.</p>
+              </div>
+            {{/each}}
+          </div>
+        </section>
+      {{/each}}
+    </div>
+  </section>
+{{/if}}
+
+
+

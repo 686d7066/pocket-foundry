@@ -1,0 +1,45 @@
+<article class="tool-row-detail" data-favorite-context data-state-key="tool:{{id}}">
+  {{#*inline "summary"}}
+    <span class="prof-dot prof-dot-{{proficiencyIndicator}}"></span>
+    <span>{{abilityLabel}}</span>
+    <strong>{{label}}</strong>
+    <b>{{totalLabel}}</b>
+  {{/inline}}
+  {{#*inline "body"}}
+    {{#if detailText}}
+      <p class="tool-detail-text">{{detailText}}</p>
+      {{#if detailReferences}}
+        <div class="detail-reference-links">
+          {{#each detailReferences}}
+            <button
+              type="button"
+              class="detail-reference-link"
+              data-action="details-open-reference"
+              data-reference-uuid="{{uuid}}"
+              data-swipe-ignore
+            >{{label}}</button>
+          {{/each}}
+        </div>
+      {{/if}}
+    {{else}}
+      <p class="tool-detail-text">No additional details are available for this tool.</p>
+    {{/if}}
+  {{/inline}}
+  {{> "modules/pocket-foundry/templates/partials/expandable-detail-row.hbs"
+    drawerClass="tool-detail-drawer"
+    summaryClass="detail-table-row tool-row tool-row-summary"
+    bodyClass="tool-detail-body"
+  }}
+  {{> "modules/pocket-foundry/templates/partials/favorite-context-menu.hbs"
+    canToggleFavorite=canToggleFavorite
+    favorite=favorite
+    ariaLabel=label
+    addAction="context-add-favorite"
+    removeAction="context-remove-favorite"
+    addLabel="Add to Favorites"
+    removeLabel="Remove from Favorites"
+    favoriteType="tool"
+    favoriteId=id
+  }}
+</article>
+

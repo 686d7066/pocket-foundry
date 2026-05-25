@@ -1,0 +1,27 @@
+<div class="pocket-foundry-root mf-app" data-pocket-foundry-view="{{view}}">
+  <header class="mf-header">
+    <button class="icon-button" type="button" data-action="back" aria-label="{{backLabel}}">{{backIcon}}</button>
+    <div class="portrait" aria-hidden="true">{{portraitInitials}}</div>
+    <div class="title-block">
+      <h1>{{title}}</h1>
+      <p>{{subtitle}}</p>
+    </div>
+    <div class="header-stats">
+      {{#each headerChips}}
+        {{> "modules/pocket-foundry/templates/partials/chip.hbs"}}
+      {{/each}}
+    </div>
+  </header>
+
+  {{> "modules/pocket-foundry/templates/partials/pane-rail.hbs" panes=panes railClass="pane-rail"}}
+
+  <main class="content" data-region="content">
+    {{#each sections}}
+      {{> "modules/pocket-foundry/templates/partials/section.hbs"}}
+    {{else}}
+      {{> "modules/pocket-foundry/templates/partials/empty-state.hbs" title=emptyTitle body=emptyBody actionLabel=emptyActionLabel action=emptyAction}}
+    {{/each}}
+  </main>
+
+  {{> "modules/pocket-foundry/templates/partials/bottom-nav.hbs" items=navItems}}
+</div>

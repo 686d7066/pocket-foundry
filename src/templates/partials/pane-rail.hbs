@@ -1,0 +1,16 @@
+{{#if panes}}
+  <nav class="{{railClass}} rail" aria-label="{{label}}">
+    {{#each panes}}
+      <button
+        class="{{railClass}} {{#if active}}active{{/if}}"
+        type="button"
+        data-action="{{action}}"
+        data-pane="{{id}}"
+        aria-label="{{label}}"
+        {{#if active}}aria-current="page"{{/if}}
+      >
+        {{displayLabel}}
+      </button>
+    {{/each}}
+  </nav>
+{{/if}}

@@ -1,0 +1,95 @@
+{{#if unavailable}}
+  {{> "modules/pocket-foundry/templates/partials/pane-unavailable.hbs" region="spells-unavailable" title=title body=body}}
+{{else}}
+  <section class="content sheet-dense spells-pane" data-region="spells-pane" data-swipe-region="character-pane">
+    <div class="spell-summary" data-region="spell-summary">
+      <div class="spell-stats" data-region="spell-stats">
+        {{#each spellcasting}}
+          <button class="spellcasting-card {{#if primary}}primary{{/if}}" type="button" data-action="spells-set-primary" data-ability="{{ability}}" {{#unless canSetPrimary}}disabled{{/unless}} data-swipe-ignore>
+            <span class="spellcasting-title">{{label}}</span>
+            <span class="spellcasting-primary" aria-hidden="true"></span>
+            <span><em>Ability</em><strong>{{abilityMod}}</strong></span>
+            <span><em>Attack</em><strong>{{attack}}</strong></span>
+            <span><em>Spell DC</em><strong>{{save}}</strong></span>
+            <span><em>Prepared</em><strong>{{prepared}}</strong></span>
+          </button>
+        {{else}}
+          <span><b>No spellcasting</b><em>Spellcasting classes appear here</em></span>
+        {{/each}}
+      </div>
+    </div>
+
+    {{> "modules/pocket-foundry/templates/partials/pane-search-toolbar.hbs"
+      toolbarClass="spells-toolbar"
+      searchClass="spells-search"
+      region="spells-toolbar"
+      placeholder="Search spells"
+      ariaLabel="Search spells"
+      clearAriaLabel="Clear spell search"
+      value=searchQuery
+      pane="Spells"
+      canClear=canClearSearch
+    }}
+
+    <div class="compact-panels spell-sections" data-region="spell-sections">
+      {{#each sections}}
+        <section class="section sheet-group spells-section" data-section="{{id}}" data-method="{{method}}" data-level="{{level}}">
+          <div class="section-heading sheet-group-heading spells-section-heading">
+            <h2>{{label}}</h2>
+            {{#if slotTrack}}
+              <div class="slot-tracks spell-section-slots" aria-label="{{label}} slot controls" data-region="slot-tracks" data-favorite-context>
+                {{#each slotTrack.pips}}
+                  <button
+                    class="spell-slot-pip {{#if filled}}filled{{/if}} {{#if temporary}}temporary{{/if}}"
+                    type="button"
+                    data-action="spells-toggle-slot-pip"
+                    data-slot="{{../slotTrack.id}}"
+                    data-pip="{{n}}"
+                    aria-label="{{label}}"
+                    aria-pressed="{{#if filled}}true{{else}}false{{/if}}"
+                    {{#unless ../slotTrack.canUpdate}}disabled{{/unless}}
+                    data-swipe-ignore
+                  >
+                    <i class="fa-solid fa-shield" aria-hidden="true"></i>
+                  </button>
+                {{/each}}
+                {{> "modules/pocket-foundry/templates/partials/favorite-context-menu.hbs"
+                  canToggleFavorite=slotTrack.canToggleFavorite
+                  favorite=slotTrack.favorite
+                  ariaLabel=slotTrack.label
+                  addAction="context-add-favorite"
+                  removeAction="context-remove-favorite"
+                  addLabel="Add to Favorites"
+                  removeLabel="Remove from Favorites"
+                  favoriteType="slots"
+                  favoriteId=slotTrack.id
+                }}
+              </div>
+            {{/if}}
+          </div>
+          <div class="sheet-table sheet-list spells-table">
+            <div class="sheet-list-head spells-list-head pf-list-schema pf-list-schema--icon-title-4meta-actions" aria-hidden="true">
+              <span>Name</span>
+              <span>Time</span>
+              <span>Range</span>
+              <span>Target</span>
+              <span>Roll</span>
+              <span></span>
+            </div>
+            {{#each spells}}
+              {{> "modules/pocket-foundry/systems/dnd5e/templates/partials/spell-row.hbs" this}}
+            {{else}}
+              <div class="feature-card empty-spell-card">
+                <strong>No {{label}} spells</strong>
+                <p class="mini">Spells in this section appear here when present.</p>
+              </div>
+            {{/each}}
+          </div>
+        </section>
+      {{/each}}
+    </div>
+  </section>
+{{/if}}
+
+
+

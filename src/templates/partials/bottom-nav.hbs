@@ -1,0 +1,20 @@
+<nav class="bottom-nav" aria-label="{{label}}">
+  {{#each items}}
+    <button
+      class="{{#if active}}active{{/if}}{{#if warningIcon}} has-warning{{/if}}{{#if highlightBorder}} encounter-highlight{{/if}}{{#if backgroundImage}} encounter-has-image{{/if}}"
+      type="button"
+      data-action="{{action}}"
+      data-route="{{route}}"
+      {{#if backgroundImage}}style="--pf-encounter-nav-bg: url('{{backgroundImage}}');"{{/if}}
+      {{#if disabled}}disabled aria-disabled="true"{{/if}}
+      {{#if active}}aria-current="page"{{/if}}
+    >
+      {{#if icon}}
+        <i class="{{icon}}" aria-hidden="true"></i>
+        <span class="sr-only">{{label}}</span>
+      {{else}}
+        <span class="bottom-nav-label">{{#if warningIcon}}<i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>{{/if}} {{label}}</span>
+      {{/if}}
+    </button>
+  {{/each}}
+</nav>
