@@ -7,6 +7,25 @@ on:
   pull_request:
 
 jobs:
+  module-version-check:
+    name: Module Version Check
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Compare src/module.json versions
+        run: node --experimental-strip-types ./.github/workflows/check-module-version.ts "${{ github.event.pull_request.base.sha }}"
+
   validate:
     name: Test and Build
     runs-on: ubuntu-latest
@@ -57,7 +76,7 @@ jobs:
       - name: Get Version
         shell: bash
         id: get-version
-        run: echo "version=$(node ./.github/workflows/get-version.mjs)" >> "$GITHUB_OUTPUT"
+        run: echo "version=$(node --experimental-strip-types ./.github/workflows/get-version.ts)" >> "$GITHUB_OUTPUT"
 
       - name: Package Module
         shell: bash
