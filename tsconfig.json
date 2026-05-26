@@ -13,6 +13,7 @@
     ]
   },
   "include": [
+    ".github/workflows/**/*.ts",
     "src/**/*.ts",
     "scripts/**/*.ts",
     "tests/**/*.ts"

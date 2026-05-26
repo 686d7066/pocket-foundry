@@ -78,10 +78,15 @@ jobs:
         id: get-version
         run: echo "version=$(node --experimental-strip-types ./.github/workflows/get-version.ts)" >> "$GITHUB_OUTPUT"
 
+      - name: Get Module Id
+        shell: bash
+        id: get-module-id
+        run: echo "module_id=$(node --experimental-strip-types ./.github/workflows/get-module-id.ts)" >> "$GITHUB_OUTPUT"
+
       - name: Package Module
         shell: bash
         run: |
-          cd dist/pocket-foundry
+          cd "dist/${{ steps.get-module-id.outputs.module_id }}"
           zip -r ../../module.zip module.json scripts/ styles/ templates/ systems/
 
       - name: Create Release
@@ -92,6 +97,6 @@ jobs:
           draft: false
           prerelease: false
           token: ${{ secrets.GITHUB_TOKEN }}
-          artifacts: "./dist/pocket-foundry/module.json,./module.zip"
+          artifacts: "./dist/${{ steps.get-module-id.outputs.module_id }}/module.json,./module.zip"
           tag: ${{ steps.get-version.outputs.version }}
           commit: ${{ github.sha }}
