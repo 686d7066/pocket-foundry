@@ -86,8 +86,9 @@ jobs:
       - name: Package Module
         shell: bash
         run: |
-          cd "dist/${{ steps.get-module-id.outputs.module_id }}"
-          zip -r ../../module.zip module.json scripts/ styles/ templates/ systems/
+          module_root="dist/${{ steps.get-module-id.outputs.module_id }}"
+          cd "$module_root"
+          zip -r "$GITHUB_WORKSPACE/module.zip" .
 
       - name: Create Release
         uses: ncipollo/release-action@v1
