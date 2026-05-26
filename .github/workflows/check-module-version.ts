@@ -15,6 +15,22 @@ function run(command: string, args: string[]): string {
 }
 
 /**
+ * Determine whether the pull request changed module source files.
+ *
+ * @param baseSha Pull request base SHA.
+ * @returns True when at least one source file under src/ (except src/module.json) changed.
+ */
+function hasModuleSourceChanges(baseSha: string): boolean {
+  const changedFilesOutput = run("git", ["diff", "--name-only", `${baseSha}...HEAD`, "--", "src"]);
+  const changedFiles = changedFilesOutput
+    .split("\n")
+    .map((filePath) => filePath.trim())
+    .filter((filePath) => filePath.length > 0);
+
+  return changedFiles.some((filePath) => filePath !== "src/module.json");
+}
+
+/**
  * Parse version into numeric segments for strict ordering checks.
  *
  * @param version Semver-like version string.
@@ -56,6 +72,11 @@ function compareVersions(left: number[], right: number[]): number {
 const baseSha = process.argv[2];
 if (!baseSha) {
   throw new Error("Missing pull request base SHA argument.");
+}
+
+if (!hasModuleSourceChanges(baseSha)) {
+  console.log("No module source changes under src/. Skipping version bump check.");
+  process.exit(0);
 }
 
 const scriptPath = ".github/workflows/get-version.ts";
