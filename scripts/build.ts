@@ -1,14 +1,11 @@
 import { execFileSync } from "node:child_process";
-import { cpSync, existsSync, mkdirSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const addonRoot = resolve(projectRoot, "src");
 const tempRoot = resolve(projectRoot, ".build");
-const moduleId = "pocket-foundry";
-const tempModule = resolve(tempRoot, moduleId);
-const finalRoot = resolve(projectRoot, "dist", moduleId);
 const distRoot = resolve(projectRoot, "dist");
 const staticEntries = [
   "module.json",
@@ -21,6 +18,9 @@ if (process.argv.includes("--clean")) {
   process.exit(0);
 }
 
+const moduleId = getModuleId(resolve(addonRoot, "module.json"));
+const tempModule = resolve(tempRoot, moduleId);
+const finalRoot = resolve(projectRoot, "dist", moduleId);
 const tscPath = resolve(projectRoot, "node_modules/typescript/bin/tsc");
 const tailwindCliPath = resolve(projectRoot, "node_modules/@tailwindcss/cli/dist/index.mjs");
 
@@ -37,7 +37,7 @@ compileStyles();
 publishOutput();
 
 function clean(): void {
-  rmSync(finalRoot, { recursive: true, force: true });
+  rmSync(distRoot, { recursive: true, force: true });
   rmSync(tempRoot, { recursive: true, force: true });
 }
 
@@ -191,5 +191,18 @@ function retryFileOperation(operation: () => void, label: string): void {
   }
 
   throw new Error(`Could not ${label} after retries. Last error: ${String(lastError)}`);
+}
+
+function getModuleId(moduleManifestPath: string): string {
+  if (!existsSync(moduleManifestPath)) {
+    throw new Error(`Missing module manifest: ${moduleManifestPath}`);
+  }
+
+  const moduleManifest = JSON.parse(readFileSync(moduleManifestPath, "utf8")) as { id?: unknown };
+  if (typeof moduleManifest.id !== "string" || moduleManifest.id.length === 0) {
+    throw new Error(`module.json is missing a valid "id": ${moduleManifestPath}`);
+  }
+
+  return moduleManifest.id;
 }
 

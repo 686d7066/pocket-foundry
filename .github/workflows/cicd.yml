@@ -7,6 +7,25 @@ on:
   pull_request:
 
 jobs:
+  module-version-check:
+    name: Module Version Check
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Compare src/module.json versions
+        run: node --experimental-strip-types ./.github/workflows/check-module-version.ts "${{ github.event.pull_request.base.sha }}"
+
   validate:
     name: Test and Build
     runs-on: ubuntu-latest
@@ -57,13 +76,19 @@ jobs:
       - name: Get Version
         shell: bash
         id: get-version
-        run: echo "version=$(node ./.github/workflows/get-version.mjs)" >> "$GITHUB_OUTPUT"
+        run: echo "version=$(node --experimental-strip-types ./.github/workflows/get-version.ts)" >> "$GITHUB_OUTPUT"
+
+      - name: Get Module Id
+        shell: bash
+        id: get-module-id
+        run: echo "module_id=$(node --experimental-strip-types ./.github/workflows/get-module-id.ts)" >> "$GITHUB_OUTPUT"
 
       - name: Package Module
         shell: bash
         run: |
-          cd dist/pocket-foundry
-          zip -r ../../module.zip module.json scripts/ styles/ templates/ systems/
+          module_root="dist/${{ steps.get-module-id.outputs.module_id }}"
+          cd "$module_root"
+          zip -r "$GITHUB_WORKSPACE/module.zip" .
 
       - name: Create Release
         uses: ncipollo/release-action@v1
@@ -73,6 +98,6 @@ jobs:
           draft: false
           prerelease: false
           token: ${{ secrets.GITHUB_TOKEN }}
-          artifacts: "./dist/pocket-foundry/module.json,./module.zip"
+          artifacts: "./dist/${{ steps.get-module-id.outputs.module_id }}/module.json,./module.zip"
           tag: ${{ steps.get-version.outputs.version }}
           commit: ${{ github.sha }}
