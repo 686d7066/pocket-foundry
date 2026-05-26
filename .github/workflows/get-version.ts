@@ -13,7 +13,7 @@ function readModuleVersion(moduleJsonPath: string): string {
   };
 
   if (typeof moduleJson.version !== "string" || moduleJson.version.length === 0) {
-    throw new Error("src/module.json is missing a valid version string.");
+    throw new Error(`${moduleJsonPath} is missing a valid version string.`);
   }
 
   return moduleJson.version;
