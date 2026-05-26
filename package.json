@@ -6,6 +6,7 @@
   "scripts": {
     "clean": "node --experimental-transform-types scripts/build.ts --clean",
     "build": "node --experimental-transform-types scripts/build.ts",
+    "pr:comments": "node --experimental-transform-types scripts/pr-unresolved-comments.ts",
     "check:unused": "node node_modules/typescript/bin/tsc --noEmit --noUnusedLocals --noUnusedParameters",
     "test": "npm run check:unused && vitest run",
     "test:watch": "vitest"
