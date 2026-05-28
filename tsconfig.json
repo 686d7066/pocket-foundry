@@ -1,6 +1,17 @@
 {
   "compilerOptions": {
-    "target": "ES2022",
+    "target": "ESNext",
+    "lib": [
+      "ES2023",
+      "ESNext.Array",
+      "ESNext.AsyncIterable",
+      "ESNext.Collection",
+      "ESNext.Iterator",
+      "ESNext.Promise",
+      "DOM",
+      "DOM.Iterable",
+      "DOM.AsyncIterable"
+    ],
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "allowImportingTsExtensions": true,
