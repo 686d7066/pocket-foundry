@@ -5,6 +5,7 @@ Pocket Foundry is a Foundry VTT module that provides a mobile-optimized player e
 - Module ID: `pocket-foundry`
 - Foundry compatibility: v14 (`minimum: 14`, `verified: 14`)
 - Current built-in system adapter: `dnd5e`
+- Release notes: [CHANGELOG.md](CHANGELOG.md)
 
 ## Features
 
@@ -27,6 +28,20 @@ Pocket Foundry is a Foundry VTT module that provides a mobile-optimized player e
 
 ## Build From Source
 
+## Module Versioning
+
+Module versions use `x.y.z`:
+
+- `x` - Major version equals Foundry VTTs major version developed against
+- `y` - module feature version
+- `z` - module patch version
+
+When a PR changes the module version, generate and commit the changelog entry after the PR has been approved and before merging:
+
+```bash
+npm run changelog
+```
+
 ### Prerequisites
 
 - Node.js (current LTS recommended)
@@ -43,6 +58,8 @@ npm run build
 Build output is generated at:
 
 - `dist/pocket-foundry/`
+
+Copy this folder into your Foundry VTT module folder to use.
 
 Useful scripts:
 

@@ -22,9 +22,59 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: npm
+
+      - name: Install Dependencies
+        run: npm ci
 
       - name: Compare src/module.json versions
-        run: node --experimental-strip-types ./.github/workflows/check-module-version.ts "${{ github.event.pull_request.base.sha }}"
+        run: npm exec -- tsx ./.github/workflows/check-module-version.ts "${{ github.event.pull_request.base.sha }}"
+
+  repo-version-check:
+    name: Repo Version Check
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Compare package.json versions
+        run: npm exec -- tsx ./.github/workflows/check-repo-version.ts "${{ github.event.pull_request.base.sha }}"
+
+  changelog-check:
+    name: Changelog Check
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Verify changelog entry
+        run: npm exec -- tsx ./.github/workflows/check-changelog.ts "${{ github.event.pull_request.base.sha }}"
 
   validate:
     name: Test and Build
@@ -60,6 +110,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -70,20 +122,35 @@ jobs:
       - name: Install Dependencies
         run: npm ci
 
+      - name: Check Release Version
+        id: check-release-version
+        shell: bash
+        run: npm exec -- tsx ./.github/workflows/check-release-version.ts "${{ github.event.before }}"
+
       - name: Build
+        if: steps.check-release-version.outputs.should_release == 'true'
         run: npm run build
 
       - name: Get Version
+        if: steps.check-release-version.outputs.should_release == 'true'
         shell: bash
         id: get-version
-        run: echo "version=$(node --experimental-strip-types ./.github/workflows/get-version.ts)" >> "$GITHUB_OUTPUT"
+        run: echo "version=$(npm exec -- tsx ./.github/workflows/get-version.ts)" >> "$GITHUB_OUTPUT"
 
       - name: Get Module Id
+        if: steps.check-release-version.outputs.should_release == 'true'
         shell: bash
         id: get-module-id
-        run: echo "module_id=$(node --experimental-strip-types ./.github/workflows/get-module-id.ts)" >> "$GITHUB_OUTPUT"
+        run: echo "module_id=$(npm exec -- tsx ./.github/workflows/get-module-id.ts)" >> "$GITHUB_OUTPUT"
+
+      - name: Get Release Commit
+        if: steps.check-release-version.outputs.should_release == 'true'
+        shell: bash
+        id: get-release-commit
+        run: echo "commit_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Package Module
+        if: steps.check-release-version.outputs.should_release == 'true'
         shell: bash
         run: |
           module_root="dist/${{ steps.get-module-id.outputs.module_id }}"
@@ -91,6 +158,7 @@ jobs:
           zip -r "$GITHUB_WORKSPACE/module.zip" .
 
       - name: Create Release
+        if: steps.check-release-version.outputs.should_release == 'true'
         uses: ncipollo/release-action@v1
         with:
           allowUpdates: true
@@ -100,4 +168,4 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           artifacts: "./dist/${{ steps.get-module-id.outputs.module_id }}/module.json,./module.zip"
           tag: ${{ steps.get-version.outputs.version }}
-          commit: ${{ github.sha }}
+          commit: ${{ steps.get-release-commit.outputs.commit_sha }}

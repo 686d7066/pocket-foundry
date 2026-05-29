@@ -13,16 +13,8 @@ Build and deploy tooling belongs in the workspace root.
 
 ## Command And File Guardrails
 
-- Use `src` as the addon root. Do not recreate a nested `src\pocket-foundry\src` addon tree.
 - Prefer TypeScript source files. Do not add JavaScript source files.
-- Keep the current way of build and deploy
 - Never modify files inside a `node_modules` folder.
-- When asked a question, answer directly without making code changes unless the user also explicitly asks for changes.
-- Once concrete code changes are agreed upon, do not deviate from the agreed code shape without informing the user first and getting agreement before changing files.
-- After code changes, run `npm run check:unused` (equivalent to `tsc --noEmit --noUnusedLocals --noUnusedParameters`) and fix or explicitly report findings before final response.
-- Do not deviate materially from the planned implementation, concept documents, or agreed UI/workflow shape when creating proof-of-concepts or implementation code. If a new element, shortcut, screen, workflow, grouping, navigation item, or layout pattern is not clearly supported by the docs or prior agreement, ask before adding it.
-- Proof-of-concept UI must follow the provided reference images and concept documents closely. Do not replace dense sheet layouts with simple long lists or oversized generic cards when the docs or references call for information-dense tables, strips, grids, clusters, or grouped panels.
-- Do not copy branding, strings, identifiers, module names from reference addons.
 
 ## Research Permissions
 
@@ -39,12 +31,13 @@ Build and deploy tooling belongs in the workspace root.
 
 ## Documentation
 
-- When creating or updating functions make sure JsDoc documentation is added/updated as well.
+- When creating or updating functions make sure JsDoc documentation is added or updated respectively as well.
+- Never edit `CHANGELOG.md` manually. Changelog updates are owned by the GitHub workflow and will be auto-generated.
 
 ## Tests
 
 - When creating new features make sure tests are added to the existing test suite.
-- When updating existing code, evaluate if tests need to be updated or if the updated code is wrong.
+- When tests fail, do not automatically adjust them. Let the user decide wether the test fails because of errors in the logic or because the test needs to be adjusted.
 - After adding or updating code always run all tests to check for potential errors.
 
 ## Review guidelines
