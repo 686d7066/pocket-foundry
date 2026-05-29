@@ -1,6 +1,7 @@
 import type { ActorSheetPaneId, CharacterRoute, MobileRoute, OwnedDocumentRoute } from "../router/routes.ts";
 import type { FoundryUserLike, PermissionCheckedDocument } from "../services/permissions.ts";
 import type { CompendiumSearchCustomization, SearchAdapter } from "../services/search.ts";
+import type { FavoritesModel } from "../services/favorites.ts";
 
 /**
  * Minimal actor shape required to build character sheet navigation chrome.
@@ -77,9 +78,22 @@ export type CharacterSheetTemplatePaths = {
   spells: string;
   effects: string;
   biography: string;
-  favorites: string;
+  favorites?: string;
 };
 export type CharacterSheetPaneTemplatePaths = CharacterSheetTemplatePaths;
+
+/**
+ * Optional adapter capability for systems that expose the generic Favorites pane.
+ */
+export type CharacterSheetFavoritesCapability = {
+  context: "favorites";
+  groupPartials: readonly string[];
+  buildViewModel(options: {
+    actor: CharacterSheetNavigationActor | null | undefined;
+    user: FoundryUserLike;
+    route: CharacterRoute | OwnedDocumentRoute | MobileRoute;
+  }): FavoritesModel | Promise<FavoritesModel>;
+};
 
 /**
  * Extra adapter-owned templates that should be preloaded once the adapter is
@@ -220,6 +234,7 @@ export type CharacterSheetAdapter = {
   getHeaderPaneContext?(): string | null;
   getPaneSearchDrawerPrefix(pane: ActorSheetPaneId): string | null;
   getSearchAdapters(options: { user: FoundryUserLike }): SearchAdapter[];
+  getFavoritesCapability?(): CharacterSheetFavoritesCapability | null;
   /**
    * Optional system-owned compendium labels and type filters for generic
    * compendium search results.

@@ -1,6 +1,7 @@
 import { ShellDestination, type MobileRoute } from "../../router/routes.ts";
 import type { CharacterPickerViewModel } from "../../services/character-picker.ts";
 import type { CombatViewModel } from "../../services/combat.ts";
+import type { FavoritesModel } from "../../services/favorites.ts";
 import type { ItemDetailViewModel } from "../../services/item-detail.ts";
 import type { JournalEntrySummaryViewModel, JournalEntryViewModel, JournalPageSummaryViewModel, JournalPageViewModel, UnavailableJournalViewModel } from "../../services/journal.ts";
 import type { RecentsViewModel } from "../../services/recents.ts";
@@ -169,6 +170,7 @@ export type ShellViewModel = {
     showCharacterBanner: boolean;
     headerDetails?: Record<string, unknown>;
     paneTemplatePaths: CharacterSheetTemplatePaths;
+    favorites?: FavoritesModel;
     [paneContext: string]: unknown;
   };
   journal?: JournalShellViewModel;

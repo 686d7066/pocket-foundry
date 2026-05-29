@@ -24,6 +24,10 @@ import {
   DND5E_DEFAULT_OWNED_ITEM_PARENT_PANE,
   DND5E_DEFAULT_PANE
 } from "./character-panes.ts";
+import {
+  buildDnd5eFavoritesViewModel,
+  DND5E_FAVORITES_GROUP_PARTIAL
+} from "./favorites-view-model.ts";
 import { DND5E_COMPENDIUM_SEARCH_CUSTOMIZATION } from "./search.ts";
 
 /**
@@ -50,6 +54,11 @@ export const dnd5eCharacterSheetAdapter: CharacterSheetAdapter = {
   getHeaderPaneContext: () => getDnd5ePaneContext("Details"),
   getPaneSearchDrawerPrefix: pane => getDnd5ePaneSearchDrawerPrefix(normalizeCharacterPane(pane)),
   getSearchAdapters: (_options) => [],
+  getFavoritesCapability: () => ({
+    context: "favorites",
+    groupPartials: [DND5E_FAVORITES_GROUP_PARTIAL],
+    buildViewModel: options => buildDnd5eFavoritesViewModel({ actor: options.actor, user: options.user })
+  }),
   getCompendiumSearchCustomization: () => DND5E_COMPENDIUM_SEARCH_CUSTOMIZATION,
   getVisualMetadata: () => DND5E_VISUAL_METADATA,
   getDefaultPane: () => DND5E_DEFAULT_PANE,

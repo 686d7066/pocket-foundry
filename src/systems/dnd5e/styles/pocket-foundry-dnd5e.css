@@ -127,13 +127,20 @@
 
   .pocket-foundry-root .dense-table,
   .pocket-foundry-root .detail-table { @apply grid min-w-0 gap-0 px-2 pt-1 pb-2.5; }
-  .pocket-foundry-root .skills-table .detail-table-row { @apply grid grid-cols-[15px_minmax(36px,.5fr)_minmax(0,1.35fr)_minmax(36px,.45fr)_minmax(42px,.45fr)] items-center; }
+  .pocket-foundry-root .dnd5e-table-head { @apply min-h-[24px] border-b border-mf-line py-0 text-[.58rem] font-extrabold uppercase text-mf-muted; letter-spacing: 0; }
+  .pocket-foundry-root .dnd5e-table-head > * { @apply min-w-0 truncate px-1; overflow-wrap: normal; white-space: nowrap; }
+  .pocket-foundry-root .dnd5e-detail-schema,
+  .pocket-foundry-root .skills-table .detail-table-row,
+  .pocket-foundry-root .tool-table .detail-table-row { @apply grid items-center; grid-template-columns: var(--dnd5e-detail-cols); }
+  .pocket-foundry-root .dnd5e-detail-schema--skill,
+  .pocket-foundry-root .skills-table { --dnd5e-detail-cols: 15px 46px minmax(0, 1fr) 44px 46px; }
+  .pocket-foundry-root .dnd5e-detail-schema--tool,
+  .pocket-foundry-root .tool-table { --dnd5e-detail-cols: 15px 46px minmax(0, 1fr) 44px; }
   .pocket-foundry-root .skills-table .skill-row-detail,
   .pocket-foundry-root .skills-table .skill-detail-drawer { @apply block; }
   .pocket-foundry-root .skills-table .skill-detail-body { @apply px-1 pb-2; }
   .pocket-foundry-root .skill-detail-text { @apply m-0 px-1 py-0.5 text-[.74rem] leading-snug text-mf-text; overflow-wrap: anywhere; white-space: pre-line; }
   .pocket-foundry-root .tools-panel { grid-column: 1 / -1; }
-  .pocket-foundry-root .tool-table .detail-table-row { @apply grid grid-cols-[15px_minmax(36px,.5fr)_minmax(0,1fr)_minmax(36px,.45fr)] items-center; }
   .pocket-foundry-root .tool-table .tool-row-detail,
   .pocket-foundry-root .tool-table .tool-detail-drawer { @apply block; }
   .pocket-foundry-root .tool-table .tool-detail-body { @apply px-1 pb-2; }
@@ -144,14 +151,11 @@
   .pocket-foundry-root .detail-table-row > * { @apply min-h-7 min-w-0 border-b border-mf-row-line px-1 py-1 text-[.82rem] text-mf-text; overflow-wrap: anywhere; }
   .pocket-foundry-root .skills-table .detail-table-row > *,
   .pocket-foundry-root .tool-table .detail-table-row > * { @apply border-b-0; }
-  .pocket-foundry-root .skills-table .detail-table-head,
-  .pocket-foundry-root .tool-table .detail-table-head { @apply border-b border-mf-line; }
   .pocket-foundry-root .dense-table > span,
   .pocket-foundry-root .detail-table-row > span,
   .pocket-foundry-root .detail-table-head > * { @apply text-mf-muted; }
-  .pocket-foundry-root .skills-table .detail-table-head > :nth-child(4),
-  .pocket-foundry-root .skills-table .detail-table-head > :nth-child(5),
-  .pocket-foundry-root .tool-table .detail-table-head > :nth-child(4) { @apply text-right; }
+  .pocket-foundry-root .skills-table .dnd5e-table-head > :nth-child(2),
+  .pocket-foundry-root .tool-table .dnd5e-table-head > :nth-child(2) { @apply text-left; }
   .pocket-foundry-root .dense-table > b,
   .pocket-foundry-root .dense-table > em,
   .pocket-foundry-root .detail-table-row > b,
@@ -483,8 +487,10 @@
     .pocket-foundry-root .effects-sections { @apply grid-cols-1; }
     .pocket-foundry-root .effect-row-actions button { @apply min-w-5 px-0.5 text-[.6rem]; }
     .pocket-foundry-root .details-grid { @apply grid-cols-1; }
-    .pocket-foundry-root .skills-table .detail-table-row { @apply grid-cols-[13px_minmax(34px,.45fr)_minmax(0,1fr)_minmax(34px,.38fr)_minmax(38px,.38fr)]; }
-    .pocket-foundry-root .tool-table .detail-table-row { @apply grid-cols-[13px_minmax(34px,.45fr)_minmax(0,1fr)_minmax(34px,.38fr)]; }
+    .pocket-foundry-root .dnd5e-detail-schema--skill,
+    .pocket-foundry-root .skills-table { --dnd5e-detail-cols: 13px 42px minmax(0, 1fr) 38px 40px; }
+    .pocket-foundry-root .dnd5e-detail-schema--tool,
+    .pocket-foundry-root .tool-table { --dnd5e-detail-cols: 13px 42px minmax(0, 1fr) 40px; }
   }
 
   @media (min-width: 900px) {

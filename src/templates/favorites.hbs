@@ -1,0 +1,27 @@
+{{#if unavailable}}
+  {{> "modules/pocket-foundry/templates/partials/pane-unavailable.hbs" region="favorites-unavailable" title=title body=body}}
+{{else}}
+  <section class="content sheet-dense favorites-pane" data-region="favorites-pane" data-swipe-region="character-pane">
+    <p class="favorites-help">{{helpText}}</p>
+    {{#if empty}}
+      <div class="section favorites-panel" data-region="favorites-empty">
+        {{> "modules/pocket-foundry/templates/partials/empty-state.hbs" title=emptyTitle body=emptyBody}}
+      </div>
+    {{else}}
+      <div class="compact-panels favorites-sections" data-region="favorites-sections">
+        {{#each groups}}
+          <section class="section sheet-group favorites-section favorites-section-{{id}}" data-section="{{id}}" data-favorite-kind="{{kind}}">
+            <div class="section-heading sheet-group-heading favorites-section-heading">
+              <h2>{{label}}</h2>
+            </div>
+            {{#if partial}}
+              {{> (lookup this "partial") this}}
+            {{else}}
+              {{> "modules/pocket-foundry/templates/partials/favorite-basic-group.hbs" this}}
+            {{/if}}
+          </section>
+        {{/each}}
+      </div>
+    {{/if}}
+  </section>
+{{/if}}

@@ -186,8 +186,8 @@
           <h2>Skills</h2>
         </div>
         <div class="detail-table skills-table">
-          <div class="detail-table-row detail-table-head" aria-hidden="true">
-            <span></span><span>Ability</span><span>Skill</span><span>Total</span><span>Passive</span>
+          <div class="sheet-list-head dnd5e-table-head dnd5e-detail-schema dnd5e-detail-schema--skill" aria-hidden="true">
+            <span>Ability</span><span>Skill</span><span>Total</span><span>Passive</span>
           </div>
           {{#each skills}}
             {{> "modules/pocket-foundry/systems/dnd5e/templates/partials/details-skill-row.hbs" this}}
@@ -200,8 +200,8 @@
           <h2>Tool Proficiencies</h2>
         </div>
         <div class="detail-table tool-table">
-          <div class="detail-table-row detail-table-head" aria-hidden="true">
-            <span></span><span>Ability</span><span>Tool</span><span>Total</span>
+          <div class="sheet-list-head dnd5e-table-head dnd5e-detail-schema dnd5e-detail-schema--tool" aria-hidden="true">
+            <span>Ability</span><span>Tool</span><span>Total</span>
           </div>
           {{#each tools}}
             {{> "modules/pocket-foundry/systems/dnd5e/templates/partials/details-tool-row.hbs" this}}

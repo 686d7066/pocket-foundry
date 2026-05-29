@@ -579,12 +579,17 @@ function getEffectChanges(effect: Dnd5eActiveEffect, config: Dnd5eEffectsConfig)
   return (effect.changes ?? [])
     .map(change => {
       const key = getString(change.key);
+      if (isHiddenEffectChange(key)) return null;
       const value = formatEffectChangeValue(key, change.value, config);
       const label = formatEffectChangeLabel(key);
       if (!label && !value) return null;
       return { label: label || "Change", value };
     })
     .filter((change): change is { label: string; value: string } => Boolean(change));
+}
+
+function isHiddenEffectChange(key: string): boolean {
+  return key.startsWith("flags.dnd5e.");
 }
 
 function formatEffectChangeValue(key: string, rawValue: unknown, config: Dnd5eEffectsConfig): string {

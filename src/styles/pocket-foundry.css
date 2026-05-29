@@ -506,7 +506,10 @@
   .pocket-foundry-root .pf-expandable-detail-body { @apply grid gap-2 px-2 pb-2; }
   .pocket-foundry-root .pf-detail-description { @apply text-[.78rem] leading-snug text-mf-text; overflow-wrap: anywhere; }
   .pocket-foundry-root .pf-detail-description p { @apply mt-0 mb-2; }
-  .pocket-foundry-root .pf-detail-facts { @apply m-0 grid grid-cols-[repeat(auto-fit,minmax(120px,1fr))] gap-x-2 gap-y-1; }
+  .pocket-foundry-root .pf-detail-facts {
+    @apply m-0 grid gap-x-3 gap-y-1;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 160px), 1fr));
+  }
   .pocket-foundry-root .pf-detail-facts > div { @apply min-w-0; }
   .pocket-foundry-root .pf-detail-facts dt { @apply m-0 truncate text-[.7rem] font-extrabold text-mf-muted; }
   .pocket-foundry-root .pf-detail-facts dd { @apply m-0 truncate text-[.72rem] text-mf-text; }
