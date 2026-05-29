@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## [14.9.0] - Persist user favorites and recents server side
+
+- Favorites, Recents and Favorite Characters are now saved in Foundry instead of local storage.
+
 ## [14.8.1] - Entrytype may not use system-specific types outside a system
 
 - Removed static dnd5e item type reference from global search.
