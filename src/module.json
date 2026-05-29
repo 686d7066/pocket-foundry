@@ -2,7 +2,7 @@
     "id": "pocket-foundry",
     "title": "Pocket Foundry",
     "description": "Mobile-native character sheets and player content browsing for Foundry VTT.",
-    "version": "14.8.0",
+    "version": "14.8.1",
     "type": "module",
     "url": "https://github.com/686d7066/pocket-foundry",
     "manifest": "https://github.com/686d7066/pocket-foundry/releases/latest/download/module.json",

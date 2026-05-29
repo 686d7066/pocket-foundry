@@ -99,6 +99,33 @@ test("opening Search from bottom navigation focuses input and restores route sta
   assert.equal(latestModel.search?.typeFilters[0]?.label, "All");
   assert.deepEqual(
     latestModel.search?.typeFilters.map(filter => filter.label),
+    ["All", "Character", "Item", "Journal Entry", "Journal Page"]
+  );
+});
+
+test("dnd5e search exposes system-owned compendium result filters", async () => {
+  const root = createElement();
+  const searchInput = createInput();
+  const renderModels: unknown[] = [];
+
+  installShellFixtureRuntime({
+    root,
+    searchInput,
+    systemId: "dnd5e",
+    renderTemplate: async (_path, data) => {
+      renderModels.push(data);
+      return "<input data-search-input><button data-action=\"navigate\" data-route=\"search\">Search</button>";
+    }
+  });
+
+  const shell = createMobileShellController();
+  await shell.mount();
+  root.dispatch("click", createActionEvent({ action: "navigate", route: "search" }));
+  await settle();
+
+  const latestModel = renderModels.at(-1) as ShellTemplateData;
+  assert.deepEqual(
+    latestModel.search?.typeFilters.map(filter => filter.label),
     ["All", "Character", "Item", "Journal Entry", "Journal Page", "Spell"]
   );
 });
@@ -156,7 +183,7 @@ test("search UI debounces live results, ignores stale responses, filters by type
   await settle();
   assert.deepEqual(
     renderModels.at(-1)?.search?.typeFilters.map(filter => `${filter.label}:${filter.active}`),
-    ["All:false", "Character:false", "Item:true", "Journal Entry:false", "Journal Page:false", "Spell:false"]
+    ["All:false", "Character:false", "Item:true", "Journal Entry:false", "Journal Page:false"]
   );
 
   root.dispatch("click", createActionEvent({ action: "open-search-result", resultId: "Item.arcane-focus" }));
@@ -270,6 +297,7 @@ function installShellFixtureRuntime(options: {
   items?: unknown;
   journals?: unknown;
   packs?: unknown;
+  systemId?: string;
   renderTemplate: (path: string, data: object) => Promise<string>;
 }): void {
   Object.defineProperty(globalThis, "Element", { configurable: true, value: Object });
@@ -293,6 +321,7 @@ function installShellFixtureRuntime(options: {
       items: options.items ?? [],
       journal: options.journals ?? [],
       packs: options.packs ?? [],
+      system: options.systemId ? { id: options.systemId } : undefined,
       user,
       settings: {
         get: () => true,

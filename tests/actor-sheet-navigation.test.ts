@@ -79,6 +79,7 @@ test("character sheet adapter uses dnd5e only for dnd5e or fixture runtimes", ()
 
   Object.defineProperty(globalThis, "game", { configurable: true, value: { system: { id: "dnd5e" } } });
 
+  assert.deepEqual(getCharacterSheetAdapter().getCompendiumSearchCustomization?.().resultTypes, ["Spell"]);
   assert.equal(
     getCharacterSheetAdapter().buildNavigationViewModel({ actor, user, activePane: "Inventory" }).unavailable,
     false

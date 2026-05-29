@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## [14.8.1] - Entrytype may not use system-specific types outside a system
+
+- Removed static dnd5e item type reference from global search.
+
 ## [14.8.0] - Upgrade to typescript 6.x
 
 - Upgraded Typescript version to 6.x.
