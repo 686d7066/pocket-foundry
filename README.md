@@ -36,6 +36,12 @@ Module versions use `x.y.z`:
 - `y` - module feature version
 - `z` - module patch version
 
+When a PR changes the module version, generate and commit the changelog entry after the PR has been approved and before merging:
+
+```bash
+npm run changelog
+```
+
 ### Prerequisites
 
 - Node.js (current LTS recommended)

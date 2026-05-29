@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## [14.8.0] - Upgrade to typescript 6.x
+
+- Upgraded Typescript version to 6.x.
+
 ## [14.7.0] - Initial Version
 
 - Initial release of Pocket Foundry for Foundry VTT v14.
@@ -11,7 +15,3 @@ All notable changes to this project will be documented in this file.
 - Added mobile content views for search, recents, item details, journal browsing, journal entries, journal pages, and combat.
 - Added player-focused combat visibility handling, including optional support for the `inverted-encounter-visibility` module flag when that module is active.
 - Added settings for Mobile View, Character Sheet Banner, and Color-Blind Mode.
-
-## [14.8.0] - 2026-05-29
-
-- Upgrade to typescript 6x

@@ -1,7 +1,6 @@
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
-import { tmpdir } from "node:os";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 
 type PreReleaseIdentifier = number | string;
 
@@ -35,6 +34,41 @@ function hasModuleSourceChanges(baseSha: string): boolean {
     .filter((filePath) => filePath.length > 0);
 
   return changedFiles.some((filePath) => filePath !== "src/module.json");
+}
+
+/**
+ * Read and validate the module version from module.json content.
+ *
+ * @param moduleJsonText Raw module.json content.
+ * @returns Version string from module.json.
+ */
+function readModuleVersionFromText(moduleJsonText: string): string {
+  const moduleJson = JSON.parse(moduleJsonText) as { version?: unknown };
+
+  if (typeof moduleJson.version !== "string" || moduleJson.version.length === 0) {
+    throw new Error("module.json is missing a valid version string.");
+  }
+
+  return moduleJson.version;
+}
+
+/**
+ * Read the current module version from the working tree.
+ *
+ * @returns Current module version.
+ */
+function readCurrentModuleVersion(): string {
+  return readModuleVersionFromText(readFileSync(resolve("src/module.json"), "utf8"));
+}
+
+/**
+ * Read the module version from a git ref.
+ *
+ * @param ref Git ref or SHA to read.
+ * @returns Version at the ref.
+ */
+function readModuleVersionAtRef(ref: string): string {
+  return readModuleVersionFromText(run("git", ["show", `${ref}:src/module.json`]));
 }
 
 /**
@@ -157,26 +191,14 @@ function main(baseSha: string): void {
     return;
   }
 
-  const scriptPath = ".github/workflows/get-version.ts";
-  const headVersion = run("node", ["--experimental-strip-types", scriptPath]);
+  const headVersion = readCurrentModuleVersion();
+  const baseVersion = readModuleVersionAtRef(baseSha);
 
-  const tempDirectory = mkdtempSync(join(tmpdir(), "pocket-foundry-base-"));
-  const baseModuleJsonPath = join(tempDirectory, "module.json");
+  console.log(`Base version: ${baseVersion}`);
+  console.log(`Head version: ${headVersion}`);
 
-  try {
-    const baseModuleJson = run("git", ["show", `${baseSha}:src/module.json`]);
-    writeFileSync(baseModuleJsonPath, baseModuleJson, "utf8");
-
-    const baseVersion = run("node", ["--experimental-strip-types", scriptPath, baseModuleJsonPath]);
-
-    console.log(`Base version: ${baseVersion}`);
-    console.log(`Head version: ${headVersion}`);
-
-    if (compareSemVer(headVersion, baseVersion) <= 0) {
-      throw new Error("src/module.json version must be increased for this PR.");
-    }
-  } finally {
-    rmSync(tempDirectory, { force: true, recursive: true });
+  if (compareSemVer(headVersion, baseVersion) <= 0) {
+    throw new Error("src/module.json version must be increased for this PR.");
   }
 }
 

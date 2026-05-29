@@ -1,44 +1,56 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  hasChangelogVersion,
   insertVersionEntry,
-  parseChangelogItems
-} from "../.github/workflows/update-changelog.ts";
+  normalizeCommitTitles
+} from "../scripts/update-changelog.ts";
 
-describe("parseChangelogItems", () => {
-  it("uses bullet lines from the pull request body", () => {
-    expect(parseChangelogItems("Improve mobile combat\n\n- Add combat turn controls\n- Respect hidden combatants")).toEqual([
-      "- Add combat turn controls",
-      "- Respect hidden combatants"
-    ]);
+describe("hasChangelogVersion", () => {
+  it("matches an existing version heading", () => {
+    expect(hasChangelogVersion("# Changelog\n\n## [14.8.1] - branch\n", "14.8.1")).toBe(true);
   });
 
-  it("falls back to the subject when no bullets exist", () => {
-    expect(parseChangelogItems("Improve mobile combat (#12)")).toEqual(["- Improve mobile combat"]);
+  it("does not match plain body text", () => {
+    expect(hasChangelogVersion("# Changelog\n\n- Updated 14.8.1\n", "14.8.1")).toBe(false);
   });
 });
 
 describe("insertVersionEntry", () => {
-  it("appends a version section after the changelog introduction", () => {
+  it("inserts a version section with the branch name as title", () => {
     const result = insertVersionEntry(
       "# Changelog\n\nAll notable changes to this project will be documented in this file.\n",
-      "14.10.0",
-      "2026-05-29",
-      ["- Upgrade TypeScript to 6"]
+      "14.8.1",
+      "11-upgrade-to-typescript-6x",
+      ["Upgrade TypeScript to 6", "Update package lock"]
     );
 
-    expect(result.changed).toBe(true);
-    expect(result.content).toContain(
-      "All notable changes to this project will be documented in this file.\n\n## [14.10.0] - 2026-05-29"
-    );
-    expect(result.content).toContain("## [14.10.0] - 2026-05-29\n\n- Upgrade TypeScript to 6");
+    expect(result).toContain("## [14.8.1] - 11-upgrade-to-typescript-6x\n\n- Upgrade TypeScript to 6\n- Update package lock");
   });
 
-  it("does not duplicate an existing version section", () => {
-    const changelog = "# Changelog\n\n## [14.10.0] - 2026-05-29\n";
-    const result = insertVersionEntry(changelog, "14.10.0", "2026-05-29", ["- Upgrade TypeScript to 6"]);
+  it("inserts newer version sections above older version sections", () => {
+    const result = insertVersionEntry(
+      "# Changelog\n\nAll notable changes to this project will be documented in this file.\n\n## [14.7.0] - Initial Version\n\n- Older change\n",
+      "14.8.1",
+      "11-upgrade-to-typescript-6x",
+      ["Newer change"]
+    );
 
-    expect(result.changed).toBe(false);
-    expect(result.content).toBe(changelog);
+    expect(result).toContain("## [14.8.1] - 11-upgrade-to-typescript-6x\n\n- Newer change\n\n## [14.7.0]");
+  });
+
+  it("throws when the version already exists", () => {
+    expect(() => insertVersionEntry("# Changelog\n\n## [14.8.1] - branch\n", "14.8.1", "branch", ["Change"])).toThrow(
+      "CHANGELOG.md already contains an entry for version 14.8.1."
+    );
+  });
+});
+
+describe("normalizeCommitTitles", () => {
+  it("removes commit titles shorter than 10 characters", () => {
+    expect(normalizeCommitTitles(["Updated tsconfig", ".", "abcd12345", "Upgrade TypeScript"])).toEqual([
+      "Updated tsconfig",
+      "Upgrade TypeScript"
+    ]);
   });
 });

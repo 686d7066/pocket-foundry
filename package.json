@@ -1,12 +1,13 @@
 {
   "name": "pocket-foundry",
   "private": true,
-  "version": "1.0.1",
+  "version": "1.0.2",
   "type": "module",
   "scripts": {
-    "clean": "node --experimental-transform-types scripts/build.ts --clean",
-    "build": "node --experimental-transform-types scripts/build.ts",
-    "pr:comments": "node --experimental-transform-types scripts/pr-unresolved-comments.ts",
+    "clean": "tsx scripts/build.ts --clean",
+    "build": "tsx scripts/build.ts",
+    "changelog": "tsx scripts/update-changelog.ts",
+    "pr:comments": "tsx scripts/pr-unresolved-comments.ts",
     "check:unused": "node node_modules/typescript/bin/tsc --noEmit --noUnusedLocals --noUnusedParameters",
     "test": "npm run check:unused && vitest run",
     "test:watch": "vitest"
@@ -16,6 +17,7 @@
     "@types/node": "^22.15.0",
     "esbuild": "^0.25.0",
     "tailwindcss": "^4.3.0",
+    "tsx": "^4.22.3",
     "typescript": "^6.0.0",
     "vitest": "^4.0.8"
   }

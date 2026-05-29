@@ -22,9 +22,13 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: npm
+
+      - name: Install Dependencies
+        run: npm ci
 
       - name: Compare src/module.json versions
-        run: node --experimental-strip-types ./.github/workflows/check-module-version.ts "${{ github.event.pull_request.base.sha }}"
+        run: npm exec -- tsx ./.github/workflows/check-module-version.ts "${{ github.event.pull_request.base.sha }}"
 
   repo-version-check:
     name: Repo Version Check
@@ -41,49 +45,36 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: npm
+
+      - name: Install Dependencies
+        run: npm ci
 
       - name: Compare package.json versions
-        run: node --experimental-strip-types ./.github/workflows/check-repo-version.ts "${{ github.event.pull_request.base.sha }}"
+        run: npm exec -- tsx ./.github/workflows/check-repo-version.ts "${{ github.event.pull_request.base.sha }}"
 
-  changelog:
-    name: Changelog
-    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+  changelog-check:
+    name: Changelog Check
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
 
     steps:
-      - name: Checkout Pull Request Branch
+      - name: Checkout
         uses: actions/checkout@v4
         with:
-          repository: ${{ github.event.pull_request.head.repo.full_name }}
-          ref: ${{ github.event.pull_request.head.ref }}
           fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: npm
 
-      - name: Update Changelog
-        id: update-changelog
-        shell: bash
-        env:
-          CHANGELOG_COMMIT_MESSAGE: |
-            ${{ github.event.pull_request.title }}
+      - name: Install Dependencies
+        run: npm ci
 
-            ${{ github.event.pull_request.body }}
-        run: node --experimental-strip-types ./.github/workflows/update-changelog.ts "${{ github.event.pull_request.base.sha }}"
-
-      - name: Commit Changelog
-        if: steps.update-changelog.outputs.changelog_changed == 'true'
-        shell: bash
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add CHANGELOG.md
-          git commit -m "docs: update changelog for v${{ steps.update-changelog.outputs.version }}"
-          git push
+      - name: Verify changelog entry
+        run: npm exec -- tsx ./.github/workflows/check-changelog.ts "${{ github.event.pull_request.base.sha }}"
 
   validate:
     name: Test and Build
@@ -128,33 +119,38 @@ jobs:
           node-version: 22
           cache: npm
 
-      - name: Check Release Version
-        id: update-changelog
-        shell: bash
-        run: node --experimental-strip-types ./.github/workflows/update-changelog.ts "${{ github.event.before }}" --check-only
-
       - name: Install Dependencies
-        if: steps.update-changelog.outputs.should_release == 'true'
         run: npm ci
 
+      - name: Check Release Version
+        id: check-release-version
+        shell: bash
+        run: npm exec -- tsx ./.github/workflows/check-release-version.ts "${{ github.event.before }}"
+
       - name: Build
-        if: steps.update-changelog.outputs.should_release == 'true'
+        if: steps.check-release-version.outputs.should_release == 'true'
         run: npm run build
 
       - name: Get Version
-        if: steps.update-changelog.outputs.should_release == 'true'
+        if: steps.check-release-version.outputs.should_release == 'true'
         shell: bash
         id: get-version
-        run: echo "version=$(node --experimental-strip-types ./.github/workflows/get-version.ts)" >> "$GITHUB_OUTPUT"
+        run: echo "version=$(npm exec -- tsx ./.github/workflows/get-version.ts)" >> "$GITHUB_OUTPUT"
 
       - name: Get Module Id
-        if: steps.update-changelog.outputs.should_release == 'true'
+        if: steps.check-release-version.outputs.should_release == 'true'
         shell: bash
         id: get-module-id
-        run: echo "module_id=$(node --experimental-strip-types ./.github/workflows/get-module-id.ts)" >> "$GITHUB_OUTPUT"
+        run: echo "module_id=$(npm exec -- tsx ./.github/workflows/get-module-id.ts)" >> "$GITHUB_OUTPUT"
+
+      - name: Get Release Commit
+        if: steps.check-release-version.outputs.should_release == 'true'
+        shell: bash
+        id: get-release-commit
+        run: echo "commit_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Package Module
-        if: steps.update-changelog.outputs.should_release == 'true'
+        if: steps.check-release-version.outputs.should_release == 'true'
         shell: bash
         run: |
           module_root="dist/${{ steps.get-module-id.outputs.module_id }}"
@@ -162,7 +158,7 @@ jobs:
           zip -r "$GITHUB_WORKSPACE/module.zip" .
 
       - name: Create Release
-        if: steps.update-changelog.outputs.should_release == 'true'
+        if: steps.check-release-version.outputs.should_release == 'true'
         uses: ncipollo/release-action@v1
         with:
           allowUpdates: true
@@ -172,4 +168,4 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           artifacts: "./dist/${{ steps.get-module-id.outputs.module_id }}/module.json,./module.zip"
           tag: ${{ steps.get-version.outputs.version }}
-          commit: ${{ github.sha }}
+          commit: ${{ steps.get-release-commit.outputs.commit_sha }}
