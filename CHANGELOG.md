@@ -2,10 +2,6 @@
 
 All notable changes to this project will be documented in this file.
 
-## [14.8.1] - 2026-05-29
-
-- Added Foundry package manifest metadata required for module installation and updates.
-
 ## [14.7.0] - Initial Version
 
 - Initial release of Pocket Foundry for Foundry VTT v14.

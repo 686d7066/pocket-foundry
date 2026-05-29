@@ -32,6 +32,7 @@ Build and deploy tooling belongs in the workspace root.
 ## Documentation
 
 - When creating or updating functions make sure JsDoc documentation is added or updated respectively as well.
+- Never edit `CHANGELOG.md` manually. Changelog updates are owned by the GitHub workflow and will be auto-generated.
 
 ## Tests
 

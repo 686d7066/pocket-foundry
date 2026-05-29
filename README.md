@@ -5,6 +5,7 @@ Pocket Foundry is a Foundry VTT module that provides a mobile-optimized player e
 - Module ID: `pocket-foundry`
 - Foundry compatibility: v14 (`minimum: 14`, `verified: 14`)
 - Current built-in system adapter: `dnd5e`
+- Release notes: [CHANGELOG.md](CHANGELOG.md)
 
 ## Features
 
