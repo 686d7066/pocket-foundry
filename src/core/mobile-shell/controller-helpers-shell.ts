@@ -18,7 +18,7 @@ import {
 import {
     buildRecentsViewModel,
     createMobileRecentsService,
-    createRecentRoutesStorageKey
+    createFoundryRecentRouteRecordStorage
 } from "../../services/recents.ts";
 import { getCharacterSheetAdapter } from "../../systems/character-sheet-adapter-registry.ts";
 import { MODULE_ID } from "../constants.ts";
@@ -42,7 +42,7 @@ export async function renderShell(rootElement: HTMLElement, router: MobileRouter
   const selectedCharacterRoute = router.getSelectedCharacterRoute();
   if (searchState) await prepareSearchForRender(activeRoute, searchState);
   persistSelectedCharacterRoute(selectedCharacterRoute);
-  createFoundryRecentsService()?.recordRoute(activeRoute);
+  await createFoundryRecentsService()?.recordRoute(activeRoute);
   rootElement.innerHTML = await runtime.renderTemplate(SHELL_TEMPLATE, await buildShellViewModel(activeRoute, router.canGoBack(), selectedCharacterRoute, searchState));
   restoreRouteScroll(rootElement, router.getCurrentRoute());
   restoreSearchFocus(rootElement, activeRoute);
@@ -242,7 +242,7 @@ export async function buildShellContentViewModel(
       };
     case ShellDestination.Recents:
       return {
-        recents: await buildRecentsViewModel(createFoundryRecentsService() ?? createMobileRecentsService({ storageKey: createRecentRoutesStorageKey(["unavailable"]) }))
+        recents: await buildRecentsViewModel(createFoundryRecentsService() ?? createMobileRecentsService({ storage: createFoundryRecentRouteRecordStorage() }))
       };
     case ShellDestination.Search:
       return {

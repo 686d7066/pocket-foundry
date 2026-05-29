@@ -1,8 +1,9 @@
-import { getCollectionContents, getInitials, getNumber, getObject, getString } from "../../core/utils.ts";
+import { getInitials, getNumber, getObject, getString } from "../../core/utils.ts";
 import { canUpdateDocument, canViewDocument, type FoundryUserLike, type PermissionCheckedDocument } from "../../services/permissions.ts";
 import { buildDnd5eDetailsViewModel, type Dnd5eDetailsSkillViewModel, type Dnd5eDetailsToolViewModel } from "./details-view-model.ts";
 import { buildDnd5eEffectsViewModel, type Dnd5eEffectRowViewModel } from "./effects-view-model.ts";
 import { buildDnd5eFeaturesViewModel, type Dnd5eFeatureItemViewModel } from "./features-view-model.ts";
+import { getDnd5eFavoriteEntries, setDnd5eFavoriteEntry } from "./favorites-storage.ts";
 import { buildDnd5eInventoryViewModel, type Dnd5eInventoryItemViewModel } from "./inventory-view-model.ts";
 import { buildDnd5eSpellsViewModel, type Dnd5eSpellRowViewModel, type Dnd5eSpellSlotTrackViewModel } from "./spells-view-model.ts";
 import { canViewOwnedDocument, clampNumber, formatNumber, getConfigLabel } from "./view-model-helpers.ts";
@@ -333,13 +334,7 @@ export async function setContextFavorite(
 ): Promise<Dnd5eFavoritesControlResult> {
   if (!actor) return { ok: false, reason: "unavailable" };
   if (!canUpdateDocument(actor, user)) return { ok: false, reason: "forbidden" };
-  const system = getObject(actor.system);
-  const action = favorite ? system?.addFavorite : system?.removeFavorite;
-  if (typeof action !== "function") return { ok: false, reason: "unsupported" };
-
-  const payload = favorite ? { type, id: favoriteId } : favoriteId;
-  await (action as (target: unknown) => Promise<unknown>).call(system, payload);
-  return { ok: true };
+  return (await setDnd5eFavoriteEntry(actor, type, favoriteId, favorite)) ? { ok: true } : { ok: false, reason: "unsupported" };
 }
 
 function buildLegacyResourceRows(actor: Dnd5eFavoritesActor, canUpdate: boolean): Dnd5eFavoriteRowViewModel[] {
@@ -592,26 +587,7 @@ function buildAdjustment(id: string, title: string, value: number, max: number):
 }
 
 function getFavoriteEntries(actor: Dnd5eFavoritesActor): Dnd5eFavoriteEntry[] {
-  return getCollectionContents(getObject(actor.system)?.favorites)
-    .map((entry, index) => normalizeFavoriteEntry(entry, index))
-    .filter((entry): entry is Dnd5eFavoriteEntry => entry !== null)
-    .sort((left, right) => left.sort - right.sort);
-}
-
-function normalizeFavoriteEntry(entry: unknown, index: number): Dnd5eFavoriteEntry | null {
-  if (typeof entry === "string") return { id: entry, type: inferFavoriteType(entry), sort: index * SORT_DENSITY };
-  const object = getObject(entry);
-  const id = getString(object?.id);
-  const type = getString(object?.type) || inferFavoriteType(id);
-  if (!id || !type) return null;
-  return { id, type, sort: getNumber(object?.sort) ?? index * SORT_DENSITY };
-}
-
-function inferFavoriteType(id: string): string {
-  if (id.startsWith("resources.")) return "resource";
-  if (id.includes("ActiveEffect.")) return "effect";
-  if (id.includes("Activity.")) return "activity";
-  return id.includes(".") ? "item" : "";
+  return getDnd5eFavoriteEntries(actor);
 }
 
 function canViewFavoriteTarget(actor: Dnd5eFavoritesActor, target: Dnd5eFavoriteDocument, user: FoundryUserLike): boolean {

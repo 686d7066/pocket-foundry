@@ -1,4 +1,5 @@
-import { getCollectionContents, getInitials, getNumber, getObject, getString } from "../../../core/utils.ts";
+import { getInitials, getNumber, getObject, getString } from "../../../core/utils.ts";
+import { canToggleDnd5eFavorites, hasDnd5eFavoriteReference } from "../favorites-storage.ts";
 import { toSearchTerms } from "../view-model-helpers.ts";
 import type {
   Dnd5eSpellActivity,
@@ -237,7 +238,7 @@ function buildSlotTrack(
     prop: `system.spells.${slotId}.value`,
     canUpdate,
     favorite: isSlotFavorite(actor, slotId),
-    canToggleFavorite: canUpdate && (typeof getObject(actor.system)?.addFavorite === "function" || typeof getObject(actor.system)?.removeFavorite === "function"),
+    canToggleFavorite: canUpdate && canToggleDnd5eFavorites(actor),
     pips: Array.from({ length: displayMax }, (_unused, index) => {
       const n = index + 1;
       const temporary = n > max;
@@ -253,12 +254,7 @@ function buildSlotTrack(
 }
 
 function isSlotFavorite(actor: Dnd5eSpellsActor, slotId: string): boolean {
-  const favorites = getCollectionContents(getObject(actor.system)?.favorites);
-  return favorites.some(favorite => {
-    if (typeof favorite === "string") return favorite === slotId;
-    const object = getObject(favorite);
-    return getString(object?.type) === "slots" && getString(object?.id) === slotId;
-  });
+  return hasDnd5eFavoriteReference(actor, [slotId], ["id"]);
 }
 
 function buildSpellRow(
@@ -334,7 +330,7 @@ function buildSpellRow(
       canPrepare: canPrepareSpell(item, config, canUpdate),
       canRecharge: canUpdate && item.hasRecharge === true && typeof uses?.rollRecharge === "function",
       canAdjustUses: adjustment !== null,
-      canToggleFavorite: canUpdate && (typeof getObject(actor.system)?.addFavorite === "function" || typeof getObject(actor.system)?.removeFavorite === "function")
+      canToggleFavorite: canUpdate && canToggleDnd5eFavorites(actor)
     },
     favorite: isFavorite(actor, item)
   };

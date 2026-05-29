@@ -2,6 +2,7 @@ import { canUpdateDocument, canViewDocument, type FoundryUserLike } from "../../
 import { getFoundryRuntime } from "../../../core/foundry-globals.ts";
 import { getObject, getNumber } from "../../../core/utils.ts";
 import { enrichSectionRows } from "../../../services/rich-text-enrichment.ts";
+import { setDnd5eFavoriteEntry } from "../favorites-storage.ts";
 import { isGmUser } from "../view-model-helpers.ts";
 import { buildSpellcastingCards, buildSpellSections, filterSpellSections } from "./builders.ts";
 import {
@@ -18,7 +19,6 @@ import {
   normalizeSearchQuery
 } from "./format.ts";
 import type {
-  Dnd5eSpellItem,
   Dnd5eSpellsActor,
   Dnd5eSpellsConfig,
   Dnd5eSpellsControlResult,
@@ -200,12 +200,7 @@ export async function setSpellFavorite(
   if (!actor || !item) return { ok: false, reason: "unavailable" };
   if (!canUpdateOwnedSpell(actor, item, user)) return { ok: false, reason: "forbidden" };
 
-  const system = getObject(actor.system);
-  const action = favorite ? system?.addFavorite : system?.removeFavorite;
-  if (typeof action !== "function") return { ok: false, reason: "unsupported" };
-
-  await (action as (target: Dnd5eSpellItem | string) => Promise<unknown>).call(system, item);
-  return { ok: true };
+  return (await setDnd5eFavoriteEntry(actor, "item", item.uuid ?? item.id ?? item._id ?? "", favorite, { legacyAddTarget: item, legacyRemoveTarget: item })) ? { ok: true } : { ok: false, reason: "unsupported" };
 }
 
 async function updateOwnedSpell(

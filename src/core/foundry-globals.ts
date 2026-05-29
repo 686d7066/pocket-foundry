@@ -11,7 +11,7 @@ export type FoundrySettingConfig<T> = {
   hint: string;
   scope: FoundrySettingScope;
   config: boolean;
-  type: BooleanConstructor;
+  type: BooleanConstructor | ObjectConstructor;
   default: T;
   onChange?: (value: T) => void | Promise<void>;
 };

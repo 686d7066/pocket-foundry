@@ -2,6 +2,7 @@ import { getFoundryRuntime } from "../../../core/foundry-globals.ts";
 import { getCollectionContents, getNumber, getObject, getString } from "../../../core/utils.ts";
 import { canUpdateDocument, canViewDocument, type FoundryUserLike } from "../../../services/permissions.ts";
 import { summarizeRichTextWithReferences, type RichTextReference } from "../../../services/rich-text-links.ts";
+import { canToggleDnd5eFavorites, hasDnd5eFavoriteReference } from "../favorites-storage.ts";
 import { clampNumber, formatPair, getConfigLabel, uniqueStrings } from "../view-model-helpers.ts";
 import { Dnd5eProficiencyIndicator } from "./types.ts";
 import type {
@@ -63,9 +64,9 @@ export async function buildDnd5eDetailsViewModel(options: {
   const hpModel = buildHpModel(hp, canUpdate);
   const abilities = buildAbilities(system, config);
   const saves = buildSaves(abilities, attributes);
-  const skills = await buildSkills(system, config, canUpdate);
+  const skills = await buildSkills(actor, system, config, canUpdate);
   const skillGroups = buildSkillGroups(skills);
-  const tools = await buildTools(system, config, canUpdate);
+  const tools = await buildTools(actor, system, config, canUpdate);
   const traitGroups = await buildTraitGroups(actor, system, config);
   const level = getNumber(details.level);
   const epicBoons = getNumber(xp.boonsEarned);
@@ -530,7 +531,7 @@ function buildSaves(abilities: Dnd5eDetailsAbilityViewModel[], attributes: Recor
   }));
 }
 
-async function buildSkills(system: Record<string, unknown>, config: Dnd5eDetailsConfig, canUpdate: boolean): Promise<Dnd5eDetailsSkillViewModel[]> {
+async function buildSkills(actor: Dnd5eDetailsActor, system: Record<string, unknown>, config: Dnd5eDetailsConfig, canUpdate: boolean): Promise<Dnd5eDetailsSkillViewModel[]> {
   const skills = getObject(system.skills) ?? {};
   const rows = Object.entries(skills)
     .map(([id, rawSkill]) => {
@@ -538,7 +539,7 @@ async function buildSkills(system: Record<string, unknown>, config: Dnd5eDetails
       const skillConfig = getObject(config.skills?.[id]);
       const ability = getString(skill.ability) || "wis";
       const reference = getString(skill.reference) || getString(skillConfig?.reference);
-      const canToggleFavorite = canUpdate && hasFavoriteApi(system);
+      const canToggleFavorite = canUpdate && canToggleDnd5eFavorites(actor);
       const proficiencyMultiplier = getProficiencyMultiplier(skill);
       return {
         id,
@@ -553,7 +554,7 @@ async function buildSkills(system: Record<string, unknown>, config: Dnd5eDetails
         ...(reference ? { reference } : {}),
         __rawSkill: skill,
         __skillConfig: skillConfig,
-        ...(canToggleFavorite ? { favorite: isFavorite(system, "skill", id), canToggleFavorite } : {})
+        ...(canToggleFavorite ? { favorite: isFavorite(actor, "skill", id), canToggleFavorite } : {})
       };
     })
     .sort((a, b) => a.label.localeCompare(b.label));
@@ -587,7 +588,7 @@ function buildSkillGroups(skills: Dnd5eDetailsSkillViewModel[]): Dnd5eDetailsSki
     }));
 }
 
-async function buildTools(system: Record<string, unknown>, config: Dnd5eDetailsConfig, canUpdate: boolean): Promise<Dnd5eDetailsToolViewModel[]> {
+async function buildTools(actor: Dnd5eDetailsActor, system: Record<string, unknown>, config: Dnd5eDetailsConfig, canUpdate: boolean): Promise<Dnd5eDetailsToolViewModel[]> {
   const tools = getObject(system.tools) ?? {};
 
   const rows = Object.entries(tools)
@@ -598,7 +599,7 @@ async function buildTools(system: Record<string, unknown>, config: Dnd5eDetailsC
       const total = getNumber(tool.total);
       const reference = getString(tool.reference) || getString(toolConfig?.reference);
       const baseItemUuid = getToolBaseItemUuid(toolConfig);
-      const canToggleFavorite = canUpdate && hasFavoriteApi(system);
+      const canToggleFavorite = canUpdate && canToggleDnd5eFavorites(actor);
       const proficiencyMultiplier = getProficiencyMultiplier(tool);
       return {
         id,
@@ -614,7 +615,7 @@ async function buildTools(system: Record<string, unknown>, config: Dnd5eDetailsC
         __toolConfig: toolConfig,
         __reference: reference,
         __baseItemUuid: baseItemUuid,
-        ...(canToggleFavorite ? { favorite: isFavorite(system, "tool", id), canToggleFavorite } : {})
+        ...(canToggleFavorite ? { favorite: isFavorite(actor, "tool", id), canToggleFavorite } : {})
       };
     })
     .sort((a, b) => a.label.localeCompare(b.label));
@@ -656,17 +657,8 @@ function getProficiencyIndicator(multiplier: number): Dnd5eProficiencyIndicator 
   return Dnd5eProficiencyIndicator.None;
 }
 
-function hasFavoriteApi(system: Record<string, unknown>): boolean {
-  return typeof system.addFavorite === "function" || typeof system.removeFavorite === "function";
-}
-
-function isFavorite(system: Record<string, unknown>, type: "skill" | "tool", id: string): boolean {
-  const favorites = getCollectionContents(system.favorites);
-  return favorites.some(favorite => {
-    if (typeof favorite === "string") return favorite === id;
-    const object = getObject(favorite);
-    return getString(object?.type) === type && getString(object?.id) === id;
-  });
+function isFavorite(actor: Dnd5eDetailsActor, type: "skill" | "tool", id: string): boolean {
+  return hasDnd5eFavoriteReference(actor, [id], ["id", type]);
 }
 
 async function buildTraitGroups(actor: Dnd5eDetailsActor, system: Record<string, unknown>, config: Dnd5eDetailsConfig): Promise<Dnd5eDetailsTraitGroupViewModel[]> {

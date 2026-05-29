@@ -14,12 +14,12 @@ import {
   getEntityUuid,
   getRemainingUses,
   getUsesLabel,
-  hasFavoriteReference,
   isGmUser,
   normalizeSearchQuery,
   toSearchTerms,
   uniqueStrings
 } from "./view-model-helpers.ts";
+import { canToggleDnd5eFavorites, hasDnd5eFavoriteReference, setDnd5eFavoriteEntry } from "./favorites-storage.ts";
 
 export type Dnd5eFeaturesActor = PermissionCheckedDocument & {
   uuid?: string;
@@ -306,12 +306,7 @@ export async function setFeatureFavorite(
   if (!actor || !item) return { ok: false, reason: "unavailable" };
   if (!canUpdateOwnedItem(actor, item, user)) return { ok: false, reason: "forbidden" };
 
-  const system = getObject(actor.system);
-  const action = favorite ? system?.addFavorite : system?.removeFavorite;
-  if (typeof action !== "function") return { ok: false, reason: "unsupported" };
-
-  await (action as (target: Dnd5eFeaturesItem | string) => Promise<unknown>).call(system, item);
-  return { ok: true };
+  return (await setDnd5eFavoriteEntry(actor, "item", getItemUuid(item), favorite, { legacyAddTarget: item, legacyRemoveTarget: item })) ? { ok: true } : { ok: false, reason: "unsupported" };
 }
 
 export async function endFeatureConcentration(
@@ -449,7 +444,7 @@ function buildFeatureItemViewModel(
       canUse: canUpdate && !isPassiveFeature(item) && typeof item.use === "function" && activities.length <= 1,
       canRecharge: canUpdate && item.hasRecharge === true && typeof uses?.rollRecharge === "function",
       canAdjustUses: adjustment !== null,
-      canToggleFavorite: canUpdate && (typeof getObject(actor.system)?.addFavorite === "function" || typeof getObject(actor.system)?.removeFavorite === "function"),
+      canToggleFavorite: canUpdate && canToggleDnd5eFavorites(actor),
       canEndConcentration: canUpdate && concentrating && typeof actor.endConcentration === "function"
     },
     favorite,
@@ -712,7 +707,7 @@ function getSaveLabel(save: Record<string, unknown> | null): string {
 function isFavorite(actor: Dnd5eFeaturesActor, item: Dnd5eFeaturesItem): boolean {
   const id = getItemId(item);
   const uuid = getItemUuid(item);
-  return hasFavoriteReference(getObject(actor.system)?.favorites, [id, uuid], ["id", "item", "uuid"]);
+  return hasDnd5eFavoriteReference(actor, [id, uuid], ["id", "item", "uuid"]);
 }
 
 function isConcentrating(actor: Dnd5eFeaturesActor, item: Dnd5eFeaturesItem): boolean {

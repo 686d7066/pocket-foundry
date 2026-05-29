@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { test } from "vitest";
+import { afterEach, test } from "vitest";
+import { FAVORITES_SETTING } from "../src/core/settings.ts";
 import {
   adjustFavoriteValue,
   buildDnd5eFavoritesViewModel,
@@ -28,6 +29,10 @@ const config: Dnd5eFavoritesConfig = {
     pact: { img: "pact-{id}.svg", isSR: true }
   }
 };
+
+afterEach(() => {
+  Reflect.deleteProperty(globalThis, "game");
+});
 
 test("favorites view model preserves dnd5e order and maps prepared display fields", async () => {
   const actor = createFavoritesActor();
@@ -111,6 +116,59 @@ test("favorites view model requires observer permission before rendering", async
     title: "Favorites Unavailable",
     body: "These favorites are not available to the current user."
   });
+});
+
+test("favorites restore and persist through Foundry settings by current system, user, and actor", async () => {
+  const actor = createFavoritesActor();
+  actor.system.favorites = [];
+  const settingValues = new Map<string, unknown>([
+    [
+      FAVORITES_SETTING,
+      {
+        dnd5e: {
+          player: {
+            "Actor.arlen": [{ type: "skill", id: "arc", sort: 1000 }]
+          }
+        }
+      }
+    ]
+  ]);
+  Object.defineProperty(globalThis, "game", {
+    configurable: true,
+    value: {
+      user: { id: "player" },
+      system: { id: "dnd5e" },
+      settings: {
+        get: (_namespace: string, key: string) => settingValues.get(key) ?? {},
+        set: async (_namespace: string, key: string, value: unknown) => {
+          settingValues.set(key, value);
+        }
+      }
+    }
+  });
+
+  const model = await buildDnd5eFavoritesViewModel({ actor, user, config, fromUuid: createResolver(actor) });
+  assert.equal(model.unavailable, false);
+  if (model.unavailable) return;
+  assert.deepEqual(model.rows.map(row => [row.type, row.title]), [
+    ["resource", "Infernal Favor"],
+    ["skill", "Arcana"]
+  ]);
+
+  assert.deepEqual(await setContextFavorite(actor, user, "tool", "thieves", true), { ok: true });
+  assert.deepEqual(
+    (((settingValues.get(FAVORITES_SETTING) as Record<string, unknown>).dnd5e as Record<string, unknown>).player as Record<string, unknown>)["Actor.arlen"],
+    [
+      { type: "skill", id: "arc", sort: 1000 },
+      { type: "tool", id: "thieves", sort: 101000 }
+    ]
+  );
+
+  (globalThis as typeof globalThis & { game: { system: { id: string } } }).game.system.id = "pf2e";
+  const otherSystemModel = await buildDnd5eFavoritesViewModel({ actor, user, config, fromUuid: createResolver(actor) });
+  assert.equal(otherSystemModel.unavailable, false);
+  if (otherSystemModel.unavailable) return;
+  assert.deepEqual(otherSystemModel.rows.map(row => [row.type, row.title]), [["resource", "Infernal Favor"]]);
 });
 
 test("favorite play actions check permissions and call dnd5e document APIs", async () => {

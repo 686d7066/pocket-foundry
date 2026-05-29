@@ -18,7 +18,22 @@ export const CHARACTER_SHEET_BANNER_ENABLED_SETTING = "characterSheetBannerEnabl
 export const COLOR_BLIND_MODE_SETTING = "colorBlindMode";
 
 /**
- * Registers Pocket Foundry user-scoped settings and binds them to shell state.
+ * Hidden user-scoped setting key storing mobile sheet favorites for this world.
+ */
+export const FAVORITES_SETTING = "favorites";
+
+/**
+ * Hidden user-scoped setting key storing character picker favorites for this world.
+ */
+export const CHARACTER_PICKER_FAVORITES_SETTING = "characterPickerFavorites";
+
+/**
+ * Hidden user-scoped setting key storing recent mobile routes for this world.
+ */
+export const RECENT_ROUTES_SETTING = "recentRoutes";
+
+/**
+ * Registers Pocket Foundry settings and binds user-facing preferences to shell state.
  */
 export function registerMobileViewSetting(shell: MobileShellController): void {
   const runtime = getFoundryRuntime();
@@ -60,6 +75,33 @@ export function registerMobileViewSetting(shell: MobileShellController): void {
     onChange: () => {
       void shell.refresh();
     }
+  });
+
+  runtime.game.settings.register(MODULE_ID, CHARACTER_PICKER_FAVORITES_SETTING, {
+    name: "Pocket Foundry Character Favorites",
+    hint: "Server-side storage for this user's system-specific character favorites in this world.",
+    scope: "user",
+    config: false,
+    type: Object,
+    default: {}
+  });
+
+  runtime.game.settings.register(MODULE_ID, FAVORITES_SETTING, {
+    name: "Pocket Foundry Favorites",
+    hint: "Server-side storage for this user's system-specific mobile sheet favorites in this world.",
+    scope: "user",
+    config: false,
+    type: Object,
+    default: {}
+  });
+
+  runtime.game.settings.register(MODULE_ID, RECENT_ROUTES_SETTING, {
+    name: "Pocket Foundry Recent Views",
+    hint: "Server-side storage for this user's system-scoped recent mobile views in this world.",
+    scope: "user",
+    config: false,
+    type: Object,
+    default: {}
   });
 }
 

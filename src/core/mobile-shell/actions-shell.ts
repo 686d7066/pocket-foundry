@@ -38,8 +38,7 @@ export async function handleShellClickAction(context: MobileShellActionContext, 
 
         if (target.dataset.action === "clear-recents") {
           consumeShellActionEvent(event);
-          createFoundryRecentsService()?.clearRoutes();
-          void renderShell(element, router, searchState);
+          void createFoundryRecentsService()?.clearRoutes().then(() => renderShell(element, router, searchState));
           return true;
         }
 
@@ -69,8 +68,7 @@ export async function handleShellClickAction(context: MobileShellActionContext, 
           const actorUuid = target.dataset.favoriteId ?? target.dataset.uuid;
           if (!actorUuid) return true;
 
-          setCharacterPickerRouteFavorite(actorUuid, target.dataset.action === "character-picker-add-favorite");
-          void renderShell(element, router, searchState);
+          void setCharacterPickerRouteFavorite(actorUuid, target.dataset.action === "character-picker-add-favorite").then(() => renderShell(element, router, searchState));
           return true;
         }
 
