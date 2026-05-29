@@ -27,6 +27,14 @@ Pocket Foundry is a Foundry VTT module that provides a mobile-optimized player e
 
 ## Build From Source
 
+## Module Versioning
+
+Module versions use `x.y.z`:
+
+- `x` - Major version equals Foundry VTTs major version developed against
+- `y` - module feature version
+- `z` - module patch version
+
 ### Prerequisites
 
 - Node.js (current LTS recommended)
@@ -43,6 +51,8 @@ npm run build
 Build output is generated at:
 
 - `dist/pocket-foundry/`
+
+Copy this folder into your Foundry VTT module folder to use.
 
 Useful scripts:
 

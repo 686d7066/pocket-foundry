@@ -1,7 +1,7 @@
 {
   "name": "pocket-foundry",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.0.1",
   "type": "module",
   "scripts": {
     "clean": "node --experimental-transform-types scripts/build.ts --clean",

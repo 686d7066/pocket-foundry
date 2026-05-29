@@ -26,6 +26,65 @@ jobs:
       - name: Compare src/module.json versions
         run: node --experimental-strip-types ./.github/workflows/check-module-version.ts "${{ github.event.pull_request.base.sha }}"
 
+  repo-version-check:
+    name: Repo Version Check
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Compare package.json versions
+        run: node --experimental-strip-types ./.github/workflows/check-repo-version.ts "${{ github.event.pull_request.base.sha }}"
+
+  changelog:
+    name: Changelog
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout Pull Request Branch
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Update Changelog
+        id: update-changelog
+        shell: bash
+        env:
+          CHANGELOG_COMMIT_MESSAGE: |
+            ${{ github.event.pull_request.title }}
+
+            ${{ github.event.pull_request.body }}
+        run: node --experimental-strip-types ./.github/workflows/update-changelog.ts "${{ github.event.pull_request.base.sha }}"
+
+      - name: Commit Changelog
+        if: steps.update-changelog.outputs.changelog_changed == 'true'
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add CHANGELOG.md
+          git commit -m "docs: update changelog for v${{ steps.update-changelog.outputs.version }}"
+          git push
+
   validate:
     name: Test and Build
     runs-on: ubuntu-latest
@@ -60,6 +119,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -67,23 +128,33 @@ jobs:
           node-version: 22
           cache: npm
 
+      - name: Check Release Version
+        id: update-changelog
+        shell: bash
+        run: node --experimental-strip-types ./.github/workflows/update-changelog.ts "${{ github.event.before }}" --check-only
+
       - name: Install Dependencies
+        if: steps.update-changelog.outputs.should_release == 'true'
         run: npm ci
 
       - name: Build
+        if: steps.update-changelog.outputs.should_release == 'true'
         run: npm run build
 
       - name: Get Version
+        if: steps.update-changelog.outputs.should_release == 'true'
         shell: bash
         id: get-version
         run: echo "version=$(node --experimental-strip-types ./.github/workflows/get-version.ts)" >> "$GITHUB_OUTPUT"
 
       - name: Get Module Id
+        if: steps.update-changelog.outputs.should_release == 'true'
         shell: bash
         id: get-module-id
         run: echo "module_id=$(node --experimental-strip-types ./.github/workflows/get-module-id.ts)" >> "$GITHUB_OUTPUT"
 
       - name: Package Module
+        if: steps.update-changelog.outputs.should_release == 'true'
         shell: bash
         run: |
           module_root="dist/${{ steps.get-module-id.outputs.module_id }}"
@@ -91,6 +162,7 @@ jobs:
           zip -r "$GITHUB_WORKSPACE/module.zip" .
 
       - name: Create Release
+        if: steps.update-changelog.outputs.should_release == 'true'
         uses: ncipollo/release-action@v1
         with:
           allowUpdates: true
