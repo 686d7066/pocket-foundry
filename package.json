@@ -1,7 +1,7 @@
 {
   "name": "pocket-foundry",
   "private": true,
-  "version": "0.1.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "clean": "node --experimental-transform-types scripts/build.ts --clean",
@@ -16,7 +16,7 @@
     "@types/node": "^22.15.0",
     "esbuild": "^0.25.0",
     "tailwindcss": "^4.3.0",
-    "typescript": "^5.8.0",
+    "typescript": "^6.0.0",
     "vitest": "^4.0.8"
   }
 }
