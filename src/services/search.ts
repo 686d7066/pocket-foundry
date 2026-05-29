@@ -12,6 +12,7 @@ import {
  * Search result type label produced by registered search adapters.
  */
 export type SearchResultType = string;
+export type SearchDocumentType = Extract<MobileRoute, { view: RouteView.DocumentDetail }>["documentType"];
 
 /**
  * Special type filter value that queries every registered adapter.
@@ -32,6 +33,7 @@ export type MobileSearchQuery = {
 export type MobileSearchResult = {
   uuid: string;
   type: SearchResultType;
+  documentType?: SearchDocumentType;
   name: string;
   icon?: string | null;
   source?: string | null;
@@ -161,6 +163,31 @@ export type SearchableCompendiumPack = {
 };
 
 /**
+ * Context passed to a system-owned compendium result type resolver.
+ */
+export type CompendiumSearchResultTypeContext = {
+  pack: SearchableCompendiumPack;
+  entry: SearchableCompendiumIndexEntry;
+  documentName: string;
+  entryType: string;
+};
+
+/**
+ * System-owned hook for labeling compendium subtypes without leaking concrete
+ * system item types into the generic search service.
+ */
+export type CompendiumSearchResultTypeResolver = (context: CompendiumSearchResultTypeContext) => SearchResultType | null | undefined;
+
+/**
+ * Optional system-owned compendium search metadata consumed by the generic
+ * compendium adapter.
+ */
+export type CompendiumSearchCustomization = {
+  resultTypes?: readonly SearchResultType[];
+  resolveResultType?: CompendiumSearchResultTypeResolver;
+};
+
+/**
  * Runtime options for constructing the search service.
  */
 export type MobileSearchServiceOptions = {
@@ -180,7 +207,7 @@ export type SearchAdapterEnvironment<TDocument extends SearchableDocumentLike = 
 /**
  * Runtime options for searching compendium pack indexes.
  */
-export type CompendiumSearchAdapterEnvironment = {
+export type CompendiumSearchAdapterEnvironment = CompendiumSearchCustomization & {
   // Packs are runtime-provided and may be absent as null or undefined depending
   // on Foundry/system state and fixture wiring.
   packs: Iterable<SearchableCompendiumPack> | { contents?: SearchableCompendiumPack[] } | undefined | null;
@@ -313,9 +340,11 @@ export function createJournalPageSearchAdapter(environment: SearchAdapterEnviron
  * Creates an adapter for searchable compendium pack indexes.
  */
 export function createCompendiumSearchAdapter(environment: CompendiumSearchAdapterEnvironment): SearchAdapter {
+  const types = [...new Set(["Character", "Item", "Journal Entry", ...(environment.resultTypes ?? [])])];
+
   return {
     type: "Compendium",
-    types: ["Character", "Item", "Spell", "Journal Entry"],
+    types,
     search: async query => {
       const results: MobileSearchResult[] = [];
 
@@ -325,7 +354,7 @@ export function createCompendiumSearchAdapter(environment: CompendiumSearchAdapt
         const entries = await getCompendiumIndexEntries(pack);
         for (const entry of entries) {
           if (!matchesCompendiumIndexEntry(entry, query.normalizedQuery)) continue;
-          const result = createCompendiumResult(pack, entry);
+          const result = createCompendiumResult(pack, entry, environment.resolveResultType);
           if (result) results.push(result);
         }
       }
@@ -452,6 +481,7 @@ function createActorResult(document: SearchableDocumentLike): MobileSearchResult
   return {
     uuid,
     type: "Character",
+    documentType: "character",
     name: getDocumentName(document, "Character"),
     icon: document.img ?? null,
     source: getSourceLabel(document.type),
@@ -464,6 +494,7 @@ function createWorldItemResult(document: SearchableDocumentLike): MobileSearchRe
   return {
     uuid,
     type: "Item",
+    documentType: "item",
     name: getDocumentName(document, "Item"),
     icon: document.img ?? null,
     source: getSourceLabel(document.type),
@@ -483,6 +514,7 @@ function createOwnedItemResult(item: SearchableDocumentLike, actor: SearchableDo
   return {
     uuid,
     type: "Item",
+    documentType: "item",
     name: getDocumentName(item, "Item"),
     icon: item.img ?? null,
     source: `Owned by ${actorName}`,
@@ -502,6 +534,7 @@ function createJournalEntryResult(document: SearchableDocumentLike): MobileSearc
   return {
     uuid,
     type: "Journal Entry",
+    documentType: "journal-entry",
     name: getDocumentName(document, "Journal Entry"),
     icon: document.img ?? null,
     route: {
@@ -519,6 +552,7 @@ function createJournalPageResult(page: SearchableJournalPageLike, entry: Searcha
   return {
     uuid,
     type: "Journal Page",
+    documentType: "journal-page",
     name: getDocumentName(page, "Journal Page"),
     icon: page.img ?? page.src ?? null,
     source: entryName,
@@ -537,7 +571,7 @@ function createDocumentDetailRoute(result: MobileSearchResult): MobileRoute {
   return {
     view: RouteView.DocumentDetail,
     documentUuid: result.uuid,
-    documentType: getDocumentTypeFromResultType(result.type)
+    documentType: result.documentType ?? getDocumentTypeFromResultType(result.type)
   };
 }
 
@@ -545,7 +579,6 @@ function getDocumentTypeFromResultType(type: string): Extract<MobileRoute, { vie
   switch (type) {
     case "Character":
       return "character";
-    case "Spell":
     case "Item":
       return "item";
     case "Journal Entry":
@@ -575,33 +608,60 @@ function matchesCompendiumIndexEntry(entry: SearchableCompendiumIndexEntry, norm
   return normalizeForSearch(getString(entry.name)).includes(normalizedQuery);
 }
 
-function createCompendiumResult(pack: SearchableCompendiumPack, entry: SearchableCompendiumIndexEntry): MobileSearchResult | null {
+function createCompendiumResult(
+  pack: SearchableCompendiumPack,
+  entry: SearchableCompendiumIndexEntry,
+  resolveResultType: CompendiumSearchResultTypeResolver | undefined
+): MobileSearchResult | null {
   const uuid = getCompendiumEntryUuid(pack, entry);
   if (!uuid) return null;
 
-  const resultType = getCompendiumResultType(pack, entry);
+  const documentName = entry.documentName ?? getCompendiumDocumentName(pack);
+  const documentType = getDocumentTypeFromCompendiumDocumentName(documentName);
+  const resultType = getCompendiumResultType(pack, entry, documentName, resolveResultType);
+  const source = getCompendiumPackLabel(pack);
   return {
     uuid,
     type: resultType,
+    documentType,
     name: getString(entry.name) || resultType,
     icon: entry.img ?? null,
-    source: getCompendiumPackLabel(pack),
+    source,
     route: {
       view: RouteView.DocumentDetail,
       documentUuid: uuid,
-      documentType: getDocumentTypeFromResultType(resultType),
-      ...(getCompendiumPackLabel(pack) ? { source: getCompendiumPackLabel(pack) ?? undefined } : {})
+      documentType,
+      ...(source ? { source } : {})
     }
   };
 }
 
-function getCompendiumResultType(pack: SearchableCompendiumPack, entry: SearchableCompendiumIndexEntry): SearchResultType {
-  const documentName = entry.documentName ?? getCompendiumDocumentName(pack);
+function getCompendiumResultType(
+  pack: SearchableCompendiumPack,
+  entry: SearchableCompendiumIndexEntry,
+  documentName: string,
+  resolveResultType: CompendiumSearchResultTypeResolver | undefined
+): SearchResultType {
+  const resolvedType = resolveResultType?.({
+    pack,
+    entry,
+    documentName,
+    entryType: getString(entry.type)
+  });
+  if (resolvedType) return resolvedType;
+
   if (documentName === "Actor") return "Character";
   if (documentName === "JournalEntry") return "Journal Entry";
-  if (documentName === "Item" && entry.type === "spell") return "Spell";
   if (documentName === "Item") return "Item";
   return "Compendium";
+}
+
+function getDocumentTypeFromCompendiumDocumentName(documentName: string): SearchDocumentType {
+  if (documentName === "Actor") return "character";
+  if (documentName === "Item") return "item";
+  if (documentName === "JournalEntry") return "journal-entry";
+  if (documentName === "JournalEntryPage") return "journal-page";
+  return "unknown";
 }
 
 function getCompendiumEntryUuid(pack: SearchableCompendiumPack, entry: SearchableCompendiumIndexEntry): string {

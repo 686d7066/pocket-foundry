@@ -3,6 +3,7 @@ import { RouteView, type ActorSheetPaneId, type MobileRoute } from "../../router
 import { createDocumentLookupService, type FoundryDocumentLike } from "../../services/document-lookup.ts";
 import {
     ALL_SEARCH_RESULT_TYPES,
+    type CompendiumSearchCustomization,
     createActorSearchAdapter,
     createCompendiumSearchAdapter,
     createItemSearchAdapter,
@@ -66,7 +67,8 @@ export async function prepareSearchForRender(route: MobileRoute, searchState: Se
       searchState,
       createFoundrySearchService({
         parentPaneForOwnedItems: getCharacterSheetAdapter().getDefaultOwnedItemParentPane(),
-        additionalAdapters: getCharacterSheetSearchAdapters()
+        additionalAdapters: getCharacterSheetSearchAdapters(),
+        compendiumSearch: getCharacterSheetAdapter().getCompendiumSearchCustomization?.()
       })
     );
   }
@@ -82,7 +84,8 @@ export function buildSearchViewModel(activeRoute: MobileRoute, searchState: Sear
   const characterSheetAdapter = getCharacterSheetAdapter();
   const service = createFoundrySearchService({
     parentPaneForOwnedItems: characterSheetAdapter.getDefaultOwnedItemParentPane(),
-    additionalAdapters: getCharacterSheetSearchAdapters()
+    additionalAdapters: getCharacterSheetSearchAdapters(),
+    compendiumSearch: characterSheetAdapter.getCompendiumSearchCustomization?.()
   });
   const resultTypes = service.getResultTypes();
 
@@ -112,7 +115,11 @@ export function createPaneSearchDrawer(pane: ActorSheetPaneId, query: string): s
 /**
  * Creates the live Foundry-backed search service for the current runtime.
  */
-export function createFoundrySearchService(options: { parentPaneForOwnedItems: ActorSheetPaneId; additionalAdapters?: SearchAdapter[] }): MobileSearchService {
+export function createFoundrySearchService(options: {
+  parentPaneForOwnedItems: ActorSheetPaneId;
+  additionalAdapters?: SearchAdapter[];
+  compendiumSearch?: CompendiumSearchCustomization;
+}): MobileSearchService {
   const runtime = getFoundryRuntime();
   const user = runtime.game?.user ?? null;
   const parentPaneForOwnedItems = options.parentPaneForOwnedItems;
@@ -125,7 +132,10 @@ export function createFoundrySearchService(options: { parentPaneForOwnedItems: A
       createOwnedItemSearchAdapter({ collection: runtime.game?.actors as SearchableCollection | undefined, user, parentPane: parentPaneForOwnedItems }),
       createJournalEntrySearchAdapter({ collection: runtime.game?.journal as SearchableCollection | undefined, user }),
       createJournalPageSearchAdapter({ collection: runtime.game?.journal as SearchableCollection | undefined, user }),
-      createCompendiumSearchAdapter({ packs: runtime.game?.packs as (Iterable<SearchableCompendiumPack> & { contents?: SearchableCompendiumPack[] }) | undefined }),
+      createCompendiumSearchAdapter({
+        packs: runtime.game?.packs as (Iterable<SearchableCompendiumPack> & { contents?: SearchableCompendiumPack[] }) | undefined,
+        ...options.compendiumSearch
+      }),
       ...additionalAdapters
     ]
   });
@@ -180,7 +190,8 @@ export async function runSearchImmediately(element: HTMLElement, router: MobileR
     searchState,
     createFoundrySearchService({
       parentPaneForOwnedItems: getCharacterSheetAdapter().getDefaultOwnedItemParentPane(),
-      additionalAdapters: getCharacterSheetSearchAdapters()
+      additionalAdapters: getCharacterSheetSearchAdapters(),
+      compendiumSearch: getCharacterSheetAdapter().getCompendiumSearchCustomization?.()
     })
   );
   await renderShell(element, router, searchState);
@@ -422,8 +433,9 @@ export function createUnavailableSearchDetailRoute(
 }
 
 export function getDocumentDetailTypeFromSearchResult(result: MobileSearchResult): Extract<MobileRoute, { view: RouteView.DocumentDetail }>["documentType"] {
+  if (result.documentType) return result.documentType;
   if (result.type === "Character") return "character";
-  if (result.type === "Item" || result.type === "Spell") return "item";
+  if (result.type === "Item") return "item";
   if (result.type === "Journal Entry") return "journal-entry";
   if (result.type === "Journal Page") return "journal-page";
   return "unknown";

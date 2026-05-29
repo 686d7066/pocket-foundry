@@ -11,11 +11,16 @@ import {
   createMobileSearchService,
   createOwnedItemSearchAdapter,
   createRouteForSearchResult,
+  type CompendiumSearchCustomization,
   type SearchableCollection,
   type SearchableDocumentLike
 } from "../src/services/search.ts";
 
 const user = { id: "player" };
+const dnd5eCompendiumSearchCustomization: CompendiumSearchCustomization = {
+  resultTypes: ["Spell"],
+  resolveResultType: context => (context.documentName === "Item" && context.entryType === "spell" ? "Spell" : null)
+};
 
 type FixtureDocument = SearchableDocumentLike & {
   uuid: string;
@@ -386,10 +391,33 @@ test("owned item and journal page adapters inspect visible parents even when par
   assert.equal(journalSearchCalls, 0);
 });
 
-test("compendium adapter searches pack indexes and returns spell results with pack context", async () => {
+test("compendium adapter keeps item subtypes generic without system customization", async () => {
   const service = createMobileSearchService({
     adapters: [
       createCompendiumSearchAdapter({
+        packs: [
+          {
+            collection: "example.spells",
+            documentName: "Item",
+            metadata: { label: "Spells" },
+            getIndex: async () => [{ _id: "bane", name: "Bane", type: "spell" }]
+          }
+        ]
+      })
+    ]
+  });
+
+  const results = await service.search({ query: "bane" });
+
+  assert.deepEqual(service.getResultTypes(), ["Character", "Item", "Journal Entry"]);
+  assert.deepEqual(results.map(result => `${result.type}:${result.name}:${result.documentType}`), ["Item:Bane:item"]);
+});
+
+test("compendium adapter accepts system-owned result types for pack context", async () => {
+  const service = createMobileSearchService({
+    adapters: [
+      createCompendiumSearchAdapter({
+        ...dnd5eCompendiumSearchCustomization,
         packs: [
           {
             collection: "dnd5e.spells",

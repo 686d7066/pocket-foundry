@@ -11,7 +11,7 @@ import { canViewDocument, type FoundryUserLike } from "../../services/permission
 import type {
     CharacterSheetActionContext,
     CharacterSheetActionResult,
-    CharacterSheetAdapter, CharacterSheetHeaderStat, CharacterSheetNavigationActor, CharacterSheetNavigationViewModel, CharacterSheetPaneItem, CharacterSheetPaneSpec,
+    CharacterSheetHeaderStat, CharacterSheetNavigationActor, CharacterSheetNavigationViewModel, CharacterSheetPaneItem, CharacterSheetPaneSpec,
     CharacterSheetPaneTemplatePaths, CharacterSheetPaneViewModel, CharacterSheetVisualMetadata, PaneSwipeGesture, UnavailableCharacterSheetNavigationViewModel
 } from "../character-sheet-adapter.ts";
 import {
@@ -21,7 +21,6 @@ import {
 import {
     DND5E_CHARACTER_PANE_CONFIG,
     DND5E_CHARACTER_PANES,
-    DND5E_DEFAULT_OWNED_ITEM_PARENT_PANE,
     DND5E_DEFAULT_PANE,
     type Dnd5eCharacterPane
 } from "./character-panes.ts";
@@ -108,7 +107,7 @@ const MAX_VERTICAL_DOMINANCE_RATIO = 0.72;
 const DND5E_SHEET_BANNER_IMAGE = "/systems/dnd5e/ui/official/banner-character-dark.webp";
 const DND5E_SHORT_REST_ROLLS_BY_ACTOR = new Map<string, unknown>();
 
-const DND5E_PANE_TEMPLATE_PATHS: CharacterSheetPaneTemplatePaths = {
+export const DND5E_PANE_TEMPLATE_PATHS: CharacterSheetPaneTemplatePaths = {
   details: "modules/pocket-foundry/systems/dnd5e/templates/details.hbs",
   inventory: "modules/pocket-foundry/systems/dnd5e/templates/inventory.hbs",
   features: "modules/pocket-foundry/systems/dnd5e/templates/features.hbs",
@@ -117,7 +116,7 @@ const DND5E_PANE_TEMPLATE_PATHS: CharacterSheetPaneTemplatePaths = {
   biography: "modules/pocket-foundry/systems/dnd5e/templates/biography.hbs",
   favorites: "modules/pocket-foundry/systems/dnd5e/templates/favorites.hbs"
 };
-const DND5E_PANE_PARTIAL_PATHS = [
+export const DND5E_PANE_PARTIAL_PATHS = [
   "modules/pocket-foundry/systems/dnd5e/templates/partials/details-skill-row.hbs",
   "modules/pocket-foundry/systems/dnd5e/templates/partials/details-tool-row.hbs",
   "modules/pocket-foundry/systems/dnd5e/templates/partials/effect-row.hbs",
@@ -125,16 +124,16 @@ const DND5E_PANE_PARTIAL_PATHS = [
   "modules/pocket-foundry/systems/dnd5e/templates/partials/inventory-list-row.hbs",
   "modules/pocket-foundry/systems/dnd5e/templates/partials/spell-row.hbs"
 ] as const;
-const DND5E_STYLE_PATHS = ["modules/pocket-foundry/systems/dnd5e/styles/pocket-foundry-dnd5e.css"] as const;
+export const DND5E_STYLE_PATHS = ["modules/pocket-foundry/systems/dnd5e/styles/pocket-foundry-dnd5e.css"] as const;
 
-const DND5E_VISUAL_METADATA: CharacterSheetVisualMetadata = {
+export const DND5E_VISUAL_METADATA: CharacterSheetVisualMetadata = {
   bannerImage: DND5E_SHEET_BANNER_IMAGE,
   bannerLabel: "Character Sheet Banner",
   bannerHint: "Show the character sheet banner texture at the top of mobile character sheets.",
   bannerAriaLabel: "Character Sheet Banner"
 };
 
-const DND5E_PANE_SPECS: CharacterSheetPaneSpec[] = DND5E_CHARACTER_PANE_CONFIG.map(pane => ({
+export const DND5E_PANE_SPECS: CharacterSheetPaneSpec[] = DND5E_CHARACTER_PANE_CONFIG.map(pane => ({
   ...pane,
   routeKey: pane.routeKey ?? pane.id,
   legacyRouteKeys: pane.legacyRouteKeys ?? [pane.id],
@@ -304,39 +303,18 @@ export function isCharacterRoute(route: MobileRoute): route is CharacterRoute {
 }
 
 /**
- * dnd5e character sheet adapter consumed by the system-agnostic shell.
+ * Stores the latest short rest hit-die roll for the next dnd5e details render.
  */
-export const dnd5eCharacterSheetAdapter: CharacterSheetAdapter = {
-  buildNavigationViewModel: buildActorSheetNavigationViewModel,
-  getPaneSpecs: _options => DND5E_PANE_SPECS,
-  buildPaneViewModel: options => buildCharacterSheetPaneViewModel(options),
-  runPaneAction: options => runCharacterSheetPaneAction(options),
-  onPaneActionResult: ({ actionContext, result }) => {
-    if (actionContext.route.view !== RouteView.Character || !result.ok || actionContext.action !== "details-roll-hit-die") return;
-    const roll = result.data?.shortRestRoll;
-    if (roll === undefined) return;
-    DND5E_SHORT_REST_ROLLS_BY_ACTOR.set(actionContext.actorUuid, roll);
-  },
-  clearTransientState: route => {
-    if (route.view === RouteView.Character) DND5E_SHORT_REST_ROLLS_BY_ACTOR.delete(route.actorUuid);
-  },
-  createPaneRoute: createCharacterPaneRoute,
-  createOwnedDocumentRoute,
-  getPaneTemplatePaths: () => DND5E_PANE_TEMPLATE_PATHS,
-  getTemplatePaths: () => [...Object.values(DND5E_PANE_TEMPLATE_PATHS), ...DND5E_PANE_PARTIAL_PATHS],
-  getStylePaths: () => [...DND5E_STYLE_PATHS],
-  getPaneContext: pane => getDnd5ePaneContext(pane),
-  getHeaderPaneContext: () => getDnd5ePaneContext("Details"),
-  getPaneSearchDrawerPrefix: pane => getDnd5ePaneSearchDrawerPrefix(normalizeCharacterPane(pane)),
-  getSearchAdapters: (_options) => [],
-  getVisualMetadata: () => DND5E_VISUAL_METADATA,
-  getDefaultPane: () => DND5E_DEFAULT_PANE,
-  getDefaultOwnedItemParentPane: () => DND5E_DEFAULT_OWNED_ITEM_PARENT_PANE,
-  getPaneFromSwipe,
-  normalizePane: normalizeCharacterPane,
-  isInteractiveSwipeTarget,
-  isCharacterRoute
-};
+export function rememberDnd5eShortRestRoll(actorUuid: string, roll: unknown): void {
+  DND5E_SHORT_REST_ROLLS_BY_ACTOR.set(actorUuid, roll);
+}
+
+/**
+ * Clears transient dnd5e render state for routes that own such state.
+ */
+export function clearDnd5eTransientState(route: MobileRoute): void {
+  if (route.view === RouteView.Character) DND5E_SHORT_REST_ROLLS_BY_ACTOR.delete(route.actorUuid);
+}
 
 /**
  * Builds the user-facing class/species summary shown in the persistent header.
@@ -394,7 +372,7 @@ function getActorItems(actor: ActorSheetNavigationActor): Array<{ name?: string;
   return getCollectionContents(actor.items) as Array<{ name?: string; type?: string; system?: Record<string, unknown> }>;
 }
 
-function runCharacterSheetPaneAction(options: CharacterSheetActionContext): CharacterSheetActionResult | Promise<CharacterSheetActionResult> {
+export function runCharacterSheetPaneAction(options: CharacterSheetActionContext): CharacterSheetActionResult | Promise<CharacterSheetActionResult> {
   const actor = options.actor;
   const user = options.user;
   const data = options.data ?? {};
@@ -538,7 +516,7 @@ function buildDetailsRestConfig(data: Readonly<Record<string, string>>): Dnd5eDe
   };
 }
 
-async function buildCharacterSheetPaneViewModel(options: {
+export async function buildCharacterSheetPaneViewModel(options: {
   pane: ActorSheetPaneId;
   actor: ActorSheetNavigationActor | null | undefined;
   user: FoundryUserLike;
@@ -588,11 +566,11 @@ async function buildCharacterSheetPaneViewModel(options: {
   return routeModel;
 }
 
-function getDnd5ePaneContext(pane: ActorSheetPaneId): string {
+export function getDnd5ePaneContext(pane: ActorSheetPaneId): string {
   return getDnd5ePaneSpec(normalizeCharacterPane(pane)).context;
 }
 
-function getDnd5ePaneSearchDrawerPrefix(pane: ActorSheetPaneId): string | null {
+export function getDnd5ePaneSearchDrawerPrefix(pane: ActorSheetPaneId): string | null {
   return getDnd5ePaneSpec(normalizeCharacterPane(pane)).searchDrawerPrefix ?? null;
 }
 

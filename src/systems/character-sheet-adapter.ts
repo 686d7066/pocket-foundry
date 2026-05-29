@@ -1,6 +1,6 @@
 import type { ActorSheetPaneId, CharacterRoute, MobileRoute, OwnedDocumentRoute } from "../router/routes.ts";
 import type { FoundryUserLike, PermissionCheckedDocument } from "../services/permissions.ts";
-import type { SearchAdapter } from "../services/search.ts";
+import type { CompendiumSearchCustomization, SearchAdapter } from "../services/search.ts";
 
 /**
  * Minimal actor shape required to build character sheet navigation chrome.
@@ -220,6 +220,11 @@ export type CharacterSheetAdapter = {
   getHeaderPaneContext?(): string | null;
   getPaneSearchDrawerPrefix(pane: ActorSheetPaneId): string | null;
   getSearchAdapters(options: { user: FoundryUserLike }): SearchAdapter[];
+  /**
+   * Optional system-owned compendium labels and type filters for generic
+   * compendium search results.
+   */
+  getCompendiumSearchCustomization?(): CompendiumSearchCustomization;
   getVisualMetadata(): CharacterSheetVisualMetadata;
   getPaneFromSwipe(activePane: ActorSheetPaneId | undefined, gesture: PaneSwipeGesture): ActorSheetPaneId | null;
   normalizePane(pane: string | undefined): ActorSheetPaneId;
