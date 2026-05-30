@@ -17,6 +17,7 @@ export const FOUNDRY_PERMISSION_LEVELS = {
   OBSERVER: 2,
   OWNER: 3
 } as const satisfies Record<FoundryPermissionLevelName, number>;
+const FOUNDRY_PERMISSION_LEVEL_NAMES = ["NONE", "LIMITED", "OBSERVER", "OWNER"] as const satisfies readonly FoundryPermissionLevelName[];
 
 /**
  * User object passed through to Foundry permission methods.
@@ -44,18 +45,39 @@ export type NormalizedDocumentPermissions = {
 };
 
 /**
- * Checks whether a user can observe a document.
+ * Checks whether a user has at least the requested Foundry permission level.
  */
-export function canViewDocument(document: PermissionCheckedDocument | null | undefined, user: FoundryUserLike): boolean {
+export function hasDocumentPermission(
+  document: PermissionCheckedDocument | null | undefined,
+  user: FoundryUserLike,
+  level: FoundryPermissionLevelName
+): boolean {
   if (!document) return false;
 
   if (typeof document.testUserPermission === "function") {
-    return document.testUserPermission(user, "OBSERVER") === true;
+    const minimumLevel = FOUNDRY_PERMISSION_LEVELS[level];
+    return FOUNDRY_PERMISSION_LEVEL_NAMES
+      .filter(candidate => FOUNDRY_PERMISSION_LEVELS[candidate] >= minimumLevel)
+      .some(candidate => document.testUserPermission?.(user, candidate) === true);
   }
 
-  const level = getDocumentUserLevel(document, user);
-  if (level === null && isCompendiumDocument(document)) return true;
-  return level !== null && level >= FOUNDRY_PERMISSION_LEVELS.OBSERVER;
+  const userLevel = getDocumentUserLevel(document, user);
+  if (userLevel === null && isCompendiumDocument(document)) return true;
+  return userLevel !== null && userLevel >= FOUNDRY_PERMISSION_LEVELS[level];
+}
+
+/**
+ * Checks whether a user can observe a document.
+ */
+export function canViewDocument(document: PermissionCheckedDocument | null | undefined, user: FoundryUserLike): boolean {
+  return hasDocumentPermission(document, user, "OBSERVER");
+}
+
+/**
+ * Checks whether a user has at least Foundry's limited visibility for a document.
+ */
+export function canViewLimitedDocument(document: PermissionCheckedDocument | null | undefined, user: FoundryUserLike): boolean {
+  return hasDocumentPermission(document, user, "LIMITED");
 }
 
 /**

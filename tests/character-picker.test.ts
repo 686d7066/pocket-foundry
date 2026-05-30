@@ -196,6 +196,8 @@ test("character picker rows use anchor semantics and two-line grid rows", () => 
   assert.match(css, /\.pocket-foundry-root a \{ @apply text-inherit no-underline; \}/);
   assert.match(css, /\.pocket-foundry-root \.row \{ @apply grid min-h-\[62px\]/);
   assert.match(css, /\.pocket-foundry-root \.character-folder-node/);
+  assert.match(css, /\.pocket-foundry-root \.character-folder-toggle \{[\s\S]*position: relative; z-index: 0;/);
+  assert.match(css, /\.pocket-foundry-root \.character-folder-children \{[\s\S]*position: relative; z-index: 1;/);
   assert.match(css, /\.pocket-foundry-root \.character-picker-title-block strong \{ @apply block truncate text-\[1\.05rem\]/);
   assert.match(css, /\.pocket-foundry-root \.character-picker-header-stats \.header-stat b \{ @apply text-\[\.64rem\]; \}/);
   assert.match(css, /\.pocket-foundry-root \.character-picker-help-toggle/);

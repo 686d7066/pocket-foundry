@@ -50,6 +50,18 @@ function createCharacter(): ActorSheetNavigationActor {
   };
 }
 
+function createLimitedCharacter(): ActorSheetNavigationActor {
+  return {
+    ...createCharacter(),
+    uuid: "Actor.limited",
+    id: "limited",
+    name: "Lima Tallow",
+    img: "limited.webp",
+    testUserPermission: (_user, level) => level === "LIMITED",
+    getUserLevel: () => 1
+  };
+}
+
 test("actor sheet pane list contains every normal dnd5e character pane", () => {
   const model = buildActorSheetNavigationViewModel({
     actor: createCharacter(),
@@ -72,6 +84,24 @@ test("actor sheet pane list contains every normal dnd5e character pane", () => {
   assert.equal(model.panes[0]?.railClass, "icon-only");
   assert.equal(model.actorName, "Arlen Mire");
   assert.equal(model.classSummary, "Human Warlock 3");
+});
+
+test("limited dnd5e characters render identity only instead of normal sheet panes", () => {
+  const model = buildActorSheetNavigationViewModel({
+    actor: createLimitedCharacter(),
+    user,
+    activePane: "Details"
+  });
+
+  assert.equal(model.unavailable, false);
+  if (model.unavailable) return;
+
+  assert.equal(model.limited, true);
+  assert.equal(model.actorName, "Lima Tallow");
+  assert.equal(model.portraitImage, "limited.webp");
+  assert.equal(model.classSummary, "");
+  assert.deepEqual(model.panes, []);
+  assert.deepEqual(model.headerStats, []);
 });
 
 test("character sheet adapter uses dnd5e only for dnd5e or fixture runtimes", () => {
@@ -218,6 +248,9 @@ test("actor sheet template preserves required regions and Character terminology"
   assert.match(template, /class="header-inspiration-button .*inspiration-toggle/);
   assert.match(template, /aria-label="Heroic Inspiration"/);
   assert.match(template, /\{\{#if headerDetails\}\}/);
+  assert.match(template, /\{\{#unless limited\}\}[\s\S]*class="header-stats/);
+  assert.match(template, /\{\{#unless limited\}\}[\s\S]*railClass="pane-rail"/);
+  assert.match(template, /class="content actor-pane-content limited-character-view"/);
   assert.match(template, /headerDetails\.header\.hp\.value/);
   assert.match(template, /railClass="pane-rail"/);
   const paneRailTemplate = readFileSync(new URL("../src/templates/partials/pane-rail.hbs", import.meta.url), "utf8");
@@ -238,6 +271,7 @@ test("actor sheet template preserves required regions and Character terminology"
   assert.match(css, /--pf-header-height: 72px/);
   assert.match(css, /\.pocket-foundry-root \.header-inspiration-button/);
   assert.match(css, /\.pocket-foundry-root \.header-stats \{ @apply flex min-w-0 flex-nowrap items-center justify-end gap-1 overflow-visible/);
+  assert.match(css, /\.pocket-foundry-root \.limited-character-view/);
   assert.doesNotMatch(css, /\.pocket-foundry-root \.header-stats::-webkit-scrollbar/);
   assert.doesNotMatch(template, /\bActors?\b/);
 });
@@ -330,6 +364,91 @@ test("mobile shell hydrates the initial character route from the browser hash be
   assert.equal(renderedData?.actorSheet?.headerDetails?.unavailable, false);
   assert.equal(renderedData?.actorSheet?.details, undefined);
   assert.equal(writtenUrls.at(-1), `http://localhost/game#${RouteHashKey.Character}=Actor.arlen&pane=Inventory`);
+  assert.ok(!writtenUrls.includes(`http://localhost/game#${RouteHashKey.Characters}`));
+});
+
+test("mobile shell allows limited character routes and renders limited identity state", async () => {
+  const root = createRootElement();
+  const actor = createLimitedCharacter();
+  const writtenUrls: string[] = [];
+  let renderedData: { contentType?: string; actorSheet?: { unavailable: boolean; limited?: boolean; actorName?: string; headerDetails?: unknown; details?: unknown } } | undefined;
+
+  Object.defineProperty(globalThis, "Element", { configurable: true, value: Object });
+  Object.defineProperty(globalThis, "addEventListener", { configurable: true, value: () => undefined });
+  Object.defineProperty(globalThis, "document", {
+    configurable: true,
+    value: {
+      body: {
+        dataset: {},
+        append: (element: unknown) => {
+          root.children.push(element as TestRootElement);
+        }
+      },
+      createElement: () => root,
+      getElementById: () => root,
+      querySelectorAll: () => []
+    }
+  });
+  Object.defineProperty(globalThis, "game", {
+    configurable: true,
+    value: {
+      system: { id: "dnd5e" },
+      user,
+      actors: [actor],
+      settings: {
+        get: () => true,
+        register: () => undefined,
+        set: async () => undefined
+      }
+    }
+  });
+  Object.defineProperty(globalThis, "foundry", {
+    configurable: true,
+    value: {
+      utils: {
+        fromUuidSync: (uuid: string) => (uuid === "Actor.limited" ? actor : null)
+      }
+    }
+  });
+  Object.defineProperty(globalThis, "history", {
+    configurable: true,
+    value: {
+      length: 1,
+      state: null,
+      pushState: (_state: unknown, _unused: string, url?: string | URL | null) => {
+        writtenUrls.push(String(url));
+      },
+      replaceState: (_state: unknown, _unused: string, url?: string | URL | null) => {
+        writtenUrls.push(String(url));
+      },
+      back: () => undefined
+    }
+  });
+  Object.defineProperty(globalThis, "location", {
+    configurable: true,
+    value: {
+      href: `http://localhost/game#${RouteHashKey.Character}=Actor.limited&pane=Details`,
+      hash: `#${RouteHashKey.Character}=Actor.limited&pane=Details`
+    }
+  });
+  Object.defineProperty(globalThis, "renderTemplate", {
+    configurable: true,
+    value: async (_path: string, data: typeof renderedData) => {
+      renderedData = data;
+      return `<main class="pocket-foundry-root mf-app" data-view="${ShellDestination.Characters}"></main>`;
+    }
+  });
+
+  const shell = createMobileShellController();
+  await shell.mount();
+
+  assert.equal(renderedData?.contentType, "character");
+  assert.equal(renderedData?.actorSheet?.unavailable, false);
+  assert.equal(renderedData?.actorSheet?.limited, true);
+  assert.equal(renderedData?.actorSheet?.actorName, "Lima Tallow");
+  assert.equal(renderedData?.actorSheet?.headerDetails, undefined);
+  assert.equal(renderedData?.actorSheet?.details, undefined);
+  assert.equal(writtenUrls.at(-1), `http://localhost/game#${RouteHashKey.Character}=Actor.limited&pane=Details`);
   assert.ok(!writtenUrls.includes(`http://localhost/game#${RouteHashKey.Characters}`));
 });
 

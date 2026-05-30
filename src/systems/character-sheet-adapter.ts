@@ -129,6 +129,8 @@ export type CharacterSheetNavigationViewModel = {
   activePaneLabel: string;
   panes: CharacterSheetPaneItem[];
   headerStats: CharacterSheetHeaderStat[];
+  /** True when the current user can only see Foundry's limited actor view. */
+  limited?: boolean;
   unavailable: false;
 };
 

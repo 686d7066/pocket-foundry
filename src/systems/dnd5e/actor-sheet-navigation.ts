@@ -7,7 +7,7 @@ import {
     type MobileRoute,
     type OwnedDocumentRoute
 } from "../../router/routes.ts";
-import { canViewDocument, type FoundryUserLike } from "../../services/permissions.ts";
+import { canViewDocument, canViewLimitedDocument, type FoundryUserLike } from "../../services/permissions.ts";
 import type {
     CharacterSheetActionContext,
     CharacterSheetActionResult,
@@ -169,7 +169,7 @@ export function buildActorSheetNavigationViewModel(options: {
   activePane: ActorSheetPaneId | undefined;
 }): ActorSheetNavigationModel {
   const actor = options.actor;
-  if (!actor || actor.type !== "character" || !canViewDocument(actor, options.user)) {
+  if (!actor || actor.type !== "character" || !canViewLimitedDocument(actor, options.user)) {
     return {
       unavailable: true,
       title: "Character Unavailable",
@@ -179,10 +179,27 @@ export function buildActorSheetNavigationViewModel(options: {
 
   const actorName = actor.name?.trim() || "Unnamed Character";
   const activePane = normalizeCharacterPane(options.activePane);
+  const actorUuid = actor.uuid ?? (actor.id ? `Actor.${actor.id}` : "");
+
+  if (!canViewDocument(actor, options.user)) {
+    return {
+      unavailable: false,
+      limited: true,
+      actorUuid,
+      actorName,
+      portraitInitials: getInitials(actorName),
+      portraitImage: actor.img || null,
+      classSummary: "",
+      activePane,
+      activePaneLabel: activePane,
+      panes: [],
+      headerStats: []
+    };
+  }
 
   return {
     unavailable: false,
-    actorUuid: actor.uuid ?? (actor.id ? `Actor.${actor.id}` : ""),
+    actorUuid,
     actorName,
     portraitInitials: getInitials(actorName),
     portraitImage: actor.img || null,

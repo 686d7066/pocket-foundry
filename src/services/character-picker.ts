@@ -1,6 +1,6 @@
 import {
   canUpdateDocument,
-  canViewDocument,
+  canViewLimitedDocument,
   getDocumentUserLevel,
   FOUNDRY_PERMISSION_LEVELS,
   type FoundryUserLike,
@@ -153,10 +153,7 @@ export function buildCharacterPickerViewModel(environment: CharacterPickerEnviro
 }
 
 function canListCharacter(actor: CharacterPickerActor, user: FoundryUserLike): boolean {
-  if (canViewDocument(actor, user)) return true;
-  if (typeof actor.testUserPermission === "function" && actor.testUserPermission(user, "LIMITED") === true) return true;
-  const level = getDocumentUserLevel(actor, user);
-  return level !== null && level >= FOUNDRY_PERMISSION_LEVELS.LIMITED;
+  return canViewLimitedDocument(actor, user);
 }
 
 function buildCharacterPickerRow(actor: CharacterPickerActor, user: FoundryUserLike, favoriteActorUuids: Set<string>): CharacterPickerRow {
