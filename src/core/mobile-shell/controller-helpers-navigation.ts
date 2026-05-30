@@ -243,6 +243,8 @@ export function canViewDocumentByUuid(
   expectedType?: MobileDocumentType,
   minimumPermission: FoundryPermissionLevelName = "OBSERVER"
 ): boolean {
+  if (!uuid.trim()) return false;
+
   const runtime = getFoundryRuntime();
   const fromUuidSync = runtime.foundry?.utils?.fromUuidSync;
   const user = runtime.game?.user;
@@ -250,13 +252,17 @@ export function canViewDocumentByUuid(
   // visible there so pure router behavior can be tested without a live world.
   if (!fromUuidSync || !user) return true;
 
-  const document = fromUuidSync(uuid) as FoundryDocumentLike | null | undefined;
-  if (!document) return false;
+  try {
+    const document = fromUuidSync(uuid) as FoundryDocumentLike | null | undefined;
+    if (!document) return false;
 
-  const documentType = getMobileDocumentType(document);
-  if (expectedType && documentType !== expectedType) return false;
-  if (document.parent && !hasDocumentPermission(document.parent, user, minimumPermission)) return false;
-  return hasDocumentPermission(document, user, minimumPermission);
+    const documentType = getMobileDocumentType(document);
+    if (expectedType && documentType !== expectedType) return false;
+    if (document.parent && !hasDocumentPermission(document.parent, user, minimumPermission)) return false;
+    return hasDocumentPermission(document, user, minimumPermission);
+  } catch {
+    return false;
+  }
 }
 
 /**

@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { afterEach, test } from "vitest";
 import { createMobileRouter } from "../src/router/mobile-router.ts";
 import { createMobileShellController } from "../src/core/mobile-shell/controller.ts";
+import { canViewDocumentByUuid, createFoundryRoutePermissionResolver } from "../src/core/mobile-shell/controller-helpers-navigation.ts";
 import { RouteHashKey } from "../src/router/browser-history.ts";
 import { RouteView, ShellDestination } from "../src/router/routes.ts";
 import { DND5E_CHARACTER_PANE_CONFIG } from "../src/systems/dnd5e/character-panes.ts";
@@ -451,6 +452,35 @@ test("mobile shell allows limited character routes and renders limited identity 
   assert.equal(renderedData?.actorSheet?.details, undefined);
   assert.equal(writtenUrls.at(-1), `http://localhost/game#${RouteHashKey.Character}=Actor.limited&pane=Details`);
   assert.ok(!writtenUrls.includes(`http://localhost/game#${RouteHashKey.Characters}`));
+});
+
+test("route permission UUID lookup errors fall back instead of escaping", () => {
+  Object.defineProperty(globalThis, "game", {
+    configurable: true,
+    value: {
+      user,
+      system: { id: "dnd5e" }
+    }
+  });
+  Object.defineProperty(globalThis, "foundry", {
+    configurable: true,
+    value: {
+      utils: {
+        fromUuidSync: () => {
+          throw new Error("Malformed UUID");
+        }
+      }
+    }
+  });
+
+  assert.equal(canViewDocumentByUuid("Actor.bad", "character", "LIMITED"), false);
+
+  const router = createMobileRouter({
+    initialRoute: { view: RouteView.Character, actorUuid: "Actor.bad", pane: "Details" },
+    permissions: createFoundryRoutePermissionResolver()
+  });
+
+  assert.deepEqual(router.getCurrentRoute(), { view: RouteView.Characters });
 });
 
 class TestElement {

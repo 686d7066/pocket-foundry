@@ -398,6 +398,7 @@
   .pocket-foundry-root .character-picker-list .character-picker-row + .character-picker-row { @apply mt-0; }
   .pocket-foundry-root .character-picker-list .character-picker-row:last-child { @apply border-b-0; }
   .pocket-foundry-root .character-picker-row.character-picker-row-header { @apply min-h-[62px] grid-cols-[48px_minmax(0,1fr)_max-content] gap-2 px-2 py-1.5; }
+  .pocket-foundry-root .character-picker-row.character-picker-row-limited { @apply grid-cols-[48px_minmax(0,1fr)]; }
   .pocket-foundry-root .character-picker-portrait { @apply h-12 w-12 text-[.92rem]; }
   .pocket-foundry-root .character-picker-title-block { @apply min-w-0; }
   .pocket-foundry-root .character-picker-title-block strong { @apply block truncate text-[1.05rem] leading-tight font-extrabold text-mf-text; }
