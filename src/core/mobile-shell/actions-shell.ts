@@ -2,6 +2,7 @@ import { RouteView } from "../../router/routes.ts";
 import { ALL_SEARCH_RESULT_TYPES } from "../../services/search.ts";
 import { getCharacterSheetAdapter } from "../../systems/character-sheet-adapter-registry.ts";
 import { getCharacterSheetBannerEnabled, getColorBlindMode, getMobileViewEnabled, setCharacterSheetBannerEnabled, setColorBlindMode, setMobileViewEnabled } from "../settings.ts";
+import { getFoundryRuntime } from "../foundry-globals.ts";
 import { navigateShellDestination } from "../shell-navigation.ts";
 import { createFoundryRecentsService, isShellDestination, navigateCharacterPane, normalizeSearchTypeFilter, rememberCurrentRouteScroll, setCharacterPickerRouteFavorite, updateCharacterPickerFolderExpansion, updateCharacterPickerSearch } from "./controller-helpers-navigation.ts";
 import { openRecentRoute, openSearchResult, runSearchImmediately } from "./controller-helpers-search.ts";
@@ -39,6 +40,12 @@ export async function handleShellClickAction(context: MobileShellActionContext, 
         if (target.dataset.action === "clear-recents") {
           consumeShellActionEvent(event);
           void createFoundryRecentsService()?.clearRoutes().then(() => renderShell(element, router, searchState));
+          return true;
+        }
+
+        if (target.dataset.action === "logout") {
+          consumeShellActionEvent(event);
+          getFoundryRuntime().game?.logOut?.();
           return true;
         }
 

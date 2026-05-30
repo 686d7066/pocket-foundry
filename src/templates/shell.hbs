@@ -106,6 +106,25 @@
             >Clear</button>
           </div>
         {{/"modules/pocket-foundry/templates/partials/section.hbs"}}
+        {{#> "modules/pocket-foundry/templates/partials/section.hbs"
+          id="session"
+          title="Session"
+          sectionClass="pf-view-section"
+          headingClass="pf-view-section-heading"
+        }}
+          <div class="setting-row">
+            <div>
+              <strong>Log Out</strong>
+              <p class="mini">Return to Foundry's join screen.</p>
+            </div>
+            <button
+              class="setting-action danger-action"
+              type="button"
+              data-action="logout"
+              data-app="logout"
+            >Log Out</button>
+          </div>
+        {{/"modules/pocket-foundry/templates/partials/section.hbs"}}
       {{/if}}
     </section>
   {{/if}}

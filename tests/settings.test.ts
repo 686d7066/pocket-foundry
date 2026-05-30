@@ -153,6 +153,22 @@ test("settings templates expose a clear Recents action", () => {
   assert.match(css, /\.pocket-foundry-root \.setting-action/);
 });
 
+test("settings templates expose Foundry logout action", () => {
+  const shellTemplate = readFileSync(new URL("../src/templates/shell.hbs", import.meta.url), "utf8");
+  const settingsTemplate = readFileSync(new URL("../src/templates/settings.hbs", import.meta.url), "utf8");
+  const actionsSource = readFileSync(new URL("../src/core/mobile-shell/actions-shell.ts", import.meta.url), "utf8");
+  const foundryGlobalsSource = readFileSync(new URL("../src/core/foundry-globals.ts", import.meta.url), "utf8");
+  const css = readFileSync(new URL("../src/styles/pocket-foundry.css", import.meta.url), "utf8");
+
+  assert.match(shellTemplate, /data-action="logout"/);
+  assert.match(settingsTemplate, /data-action="logout"/);
+  assert.match(shellTemplate + settingsTemplate, /data-app="logout"/);
+  assert.match(shellTemplate + settingsTemplate, /Log Out/);
+  assert.match(actionsSource, /game\?\.logOut\?\.\(\)/);
+  assert.match(foundryGlobalsSource, /logOut\?: \(\) => void/);
+  assert.match(css, /\.pocket-foundry-root \.setting-action\.danger-action/);
+});
+
 test("settings templates expose the character sheet banner toggle", () => {
   const shellTemplate = readFileSync(new URL("../src/templates/shell.hbs", import.meta.url), "utf8");
   const settingsTemplate = readFileSync(new URL("../src/templates/settings.hbs", import.meta.url), "utf8");

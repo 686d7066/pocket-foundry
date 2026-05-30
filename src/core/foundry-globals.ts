@@ -38,6 +38,7 @@ export type FoundryActorCollection = Iterable<unknown> & {
  */
 export type FoundryGame = {
   settings: FoundrySettings;
+  logOut?: () => void;
   actors?: FoundryActorCollection;
   folders?: FoundryActorCollection;
   items?: FoundryActorCollection;
