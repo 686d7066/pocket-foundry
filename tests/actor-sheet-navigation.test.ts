@@ -271,6 +271,7 @@ test("actor sheet template preserves required regions and Character terminology"
   assert.match(css, /--pf-header-height: 72px/);
   assert.match(css, /\.pocket-foundry-root \.header-inspiration-button/);
   assert.match(css, /\.pocket-foundry-root \.header-stats \{ @apply flex min-w-0 flex-nowrap items-center justify-end gap-1 overflow-visible/);
+  assert.match(css, /\.pocket-foundry-root \.actor-sheet-shell\.character-banner-enabled \.actor-top-chrome \{ @apply bg-mf-surface\/70; \}/);
   assert.match(css, /\.pocket-foundry-root \.limited-character-view/);
   assert.doesNotMatch(css, /\.pocket-foundry-root \.header-stats::-webkit-scrollbar/);
   assert.doesNotMatch(template, /\bActors?\b/);

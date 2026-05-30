@@ -219,7 +219,7 @@
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
   }
-  .pocket-foundry-root .actor-sheet-shell.character-banner-enabled .actor-top-chrome { @apply bg-mf-surface/70 backdrop-blur-sm; }
+  .pocket-foundry-root .actor-sheet-shell.character-banner-enabled .actor-top-chrome { @apply bg-mf-surface/70; }
   .pocket-foundry-root .rail button,
   .pocket-foundry-root .rail a,
   .pocket-foundry-root .rail span { @apply shrink-0 min-w-[82px] rounded-lg border border-mf-line bg-mf-surface px-2.5 py-2 text-center text-[.82rem] font-bold text-mf-muted; }
