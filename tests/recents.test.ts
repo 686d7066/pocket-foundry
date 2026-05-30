@@ -2,12 +2,13 @@ import assert from "node:assert/strict";
 import { afterEach, test } from "vitest";
 import { createMobileRouter } from "../src/router/mobile-router.ts";
 import { RouteView, type MobileRoute } from "../src/router/routes.ts";
-import { createRecentRoutesStorageKey, createMobileRecentsService, getRecentRouteId } from "../src/services/recents.ts";
+import { createFoundryRecentRouteRecordStorage, createRecentRoutesStorageKey, createMobileRecentsService, getRecentRouteId } from "../src/services/recents.ts";
 import type { FoundryDocumentLike } from "../src/services/document-lookup.ts";
 
 const user = { id: "player" };
 
 afterEach(() => {
+  Reflect.deleteProperty(globalThis, "game");
   Reflect.deleteProperty(globalThis, "localStorage");
 });
 
@@ -17,7 +18,7 @@ test("recent actor pane route restores the exact actor UUID and pane", async () 
   ]);
   const route: MobileRoute = { view: RouteView.Character, actorUuid: "Actor.arlen", pane: "Spells", scrollTop: 88 };
 
-  service.recordRoute(route, Date.UTC(2026, 4, 21, 10, 30));
+  await service.recordRoute(route, Date.UTC(2026, 4, 21, 10, 30));
 
   const rows = await service.listRows();
   assert.equal(rows.length, 1);
@@ -35,9 +36,9 @@ test("character recents dedupe by character instead of pane", async () => {
   const inventoryRoute: MobileRoute = { view: RouteView.Character, actorUuid: "Actor.mira", pane: "Inventory", scrollTop: 20 };
   const featuresRoute: MobileRoute = { view: RouteView.Character, actorUuid: "Actor.mira", pane: "Features", scrollTop: 30 };
 
-  service.recordRoute(detailsRoute, 1);
-  service.recordRoute(inventoryRoute, 2);
-  service.recordRoute(featuresRoute, 3);
+  await service.recordRoute(detailsRoute, 1);
+  await service.recordRoute(inventoryRoute, 2);
+  await service.recordRoute(featuresRoute, 3);
 
   const rows = await service.listRows();
   assert.equal(rows.length, 1);
@@ -60,7 +61,7 @@ test("recent journal page route restores entry UUID, page UUID, and scroll state
     scrollTop: 320
   };
 
-  service.recordRoute(route, Date.UTC(2026, 4, 21, 11, 15));
+  await service.recordRoute(route, Date.UTC(2026, 4, 21, 11, 15));
 
   const rows = await service.listRows();
   assert.equal(rows.length, 1);
@@ -74,23 +75,23 @@ test("search routes are not recorded or rendered in Recents", async () => {
   const service = createFixtureRecentsService([]);
   const route: MobileRoute = { view: RouteView.Search, query: "bane", typeFilter: "Spell", focusedResultId: "spell-bane", scrollTop: 12 };
 
-  service.recordRoute(route, Date.UTC(2026, 4, 21, 12, 45));
+  await service.recordRoute(route, Date.UTC(2026, 4, 21, 12, 45));
 
   const rows = await service.listRows();
   assert.equal(rows.length, 0);
   assert.equal(await service.getRouteById(getRecentRouteId(route)), null);
 });
 
-test("recents can be cleared from local client storage", async () => {
+test("recents can be cleared from saved storage", async () => {
   const service = createFixtureRecentsService([
     createDocument({ uuid: "Item.bane", name: "Bane", documentName: "Item" })
   ]);
   const route: MobileRoute = { view: RouteView.DocumentDetail, documentUuid: "Item.bane", documentType: "item" };
 
-  service.recordRoute(route, Date.UTC(2026, 4, 21, 12, 45));
+  await service.recordRoute(route, Date.UTC(2026, 4, 21, 12, 45));
   assert.equal((await service.listRows()).length, 1);
 
-  service.clearRoutes();
+  await service.clearRoutes();
 
   assert.equal((await service.listRows()).length, 0);
   assert.equal(await service.getRouteById(getRecentRouteId(route)), null);
@@ -102,7 +103,7 @@ test("item-like recents use recents row style class", async () => {
     createDocument({ uuid: "Item.bane", name: "Bane", documentName: "Item" })
   ]);
 
-  service.recordRoute(
+  await service.recordRoute(
     {
       view: RouteView.OwnedDocument,
       actorUuid: "Actor.rider",
@@ -126,14 +127,61 @@ test("deleted or inaccessible recent route targets do not render", async () => {
     createDocument({ uuid: "JournalEntry.gate.JournalEntryPage.hidden", name: "Secret Page", documentName: "JournalEntryPage", parentUuid: "JournalEntry.gate", visible: false })
   ]);
 
-  service.recordRoute({ view: RouteView.Character, actorUuid: "Actor.visible", pane: "Details" }, 4);
-  service.recordRoute({ view: RouteView.Character, actorUuid: "Actor.hidden", pane: "Details" }, 3);
-  service.recordRoute({ view: RouteView.Character, actorUuid: "Actor.deleted", pane: "Details" }, 2);
-  service.recordRoute({ view: RouteView.Journal, entryUuid: "JournalEntry.gate", pageUuid: "JournalEntry.gate.JournalEntryPage.hidden" }, 1);
+  await service.recordRoute({ view: RouteView.Character, actorUuid: "Actor.visible", pane: "Details" }, 4);
+  await service.recordRoute({ view: RouteView.Character, actorUuid: "Actor.hidden", pane: "Details" }, 3);
+  await service.recordRoute({ view: RouteView.Character, actorUuid: "Actor.deleted", pane: "Details" }, 2);
+  await service.recordRoute({ view: RouteView.Journal, entryUuid: "JournalEntry.gate", pageUuid: "JournalEntry.gate.JournalEntryPage.hidden" }, 1);
 
   const rows = await service.listRows();
   assert.deepEqual(rows.map(row => row.title), ["Visible Hero"]);
   assert.doesNotMatch(JSON.stringify(rows), /Hidden Hero|Secret Page|deleted/i);
+});
+
+test("Foundry recents storage is scoped by current system and user inside the server setting", async () => {
+  const settingValues = new Map<string, unknown>();
+  const runtime = globalThis as typeof globalThis & {
+    game?: {
+      settings: {
+        get: (_namespace: string, key: string) => unknown;
+        set: (_namespace: string, key: string, value: unknown) => Promise<void>;
+      };
+      user: { id: string };
+      system: { id: string };
+      world: { id: string };
+    };
+  };
+  runtime.game = {
+    settings: {
+      get: (_namespace, key) => settingValues.get(key) ?? {},
+      set: async (_namespace, key, value) => {
+        settingValues.set(key, value);
+      }
+    },
+    user: { id: "User1" },
+    system: { id: "dnd5e" },
+    world: { id: "World1" }
+  };
+
+  const dnd5eService = createMobileRecentsService({
+    storage: createFoundryRecentRouteRecordStorage()
+  });
+  await dnd5eService.recordRoute({ view: RouteView.Character, actorUuid: "Actor.arlen", pane: "Details" }, 10);
+
+  runtime.game.system.id = "pf2e";
+  const pf2eService = createMobileRecentsService({
+    storage: createFoundryRecentRouteRecordStorage()
+  });
+  assert.equal((await pf2eService.listRows()).length, 0);
+
+  runtime.game.system.id = "dnd5e";
+  runtime.game.user.id = "User2";
+  const secondUserService = createMobileRecentsService({
+    storage: createFoundryRecentRouteRecordStorage()
+  });
+  assert.equal((await secondUserService.listRows()).length, 0);
+
+  runtime.game.user.id = "User1";
+  assert.equal((await dnd5eService.listRows()).length, 1);
 });
 
 test("opening a recent entry goes through the internal mobile router", async () => {

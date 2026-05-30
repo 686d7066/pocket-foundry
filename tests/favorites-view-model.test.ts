@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { test } from "vitest";
+import { afterEach, test } from "vitest";
+import { FAVORITES_SETTING } from "../src/core/settings.ts";
 import {
   adjustFavoriteValue,
   buildDnd5eFavoritesViewModel,
@@ -28,6 +29,10 @@ const config: Dnd5eFavoritesConfig = {
     pact: { img: "pact-{id}.svg", isSR: true }
   }
 };
+
+afterEach(() => {
+  Reflect.deleteProperty(globalThis, "game");
+});
 
 test("favorites view model preserves dnd5e order and maps prepared display fields", async () => {
   const actor = createFavoritesActor();
@@ -70,16 +75,17 @@ test("favorites view model preserves dnd5e order and maps prepared display field
   assert.equal(effect?.primary.kind, "toggle");
   assert.equal(effect?.primary.value, "on");
 
-  assert.deepEqual(model.sections.map(section => [section.kind, section.label]), [
+  assert.deepEqual(model.groups.map(section => [section.kind, section.label]), [
     ["skills", "Skills"],
     ["tools", "Tools"],
     ["inventory", "Inventory"],
     ["effects", "Effects"],
     ["legacy-resources", "Resources"]
   ]);
-  const inventorySection = model.sections.find(section => section.kind === "inventory");
+  assert.equal(model.groups.every(group => group.partial?.includes("favorites-group.hbs")), true);
+  const inventorySection = model.groups.find(section => section.kind === "inventory");
   assert.equal(inventorySection?.kind === "inventory" ? inventorySection.items[0]?.name : "", "Dagger");
-  const skillSection = model.sections.find(section => section.kind === "skills");
+  const skillSection = model.groups.find(section => section.kind === "skills");
   assert.equal(skillSection?.kind === "skills" ? skillSection.skills[0]?.id : "", "arc");
 });
 
@@ -111,6 +117,59 @@ test("favorites view model requires observer permission before rendering", async
     title: "Favorites Unavailable",
     body: "These favorites are not available to the current user."
   });
+});
+
+test("favorites restore and persist through Foundry settings by current system, user, and actor", async () => {
+  const actor = createFavoritesActor();
+  actor.system.favorites = [];
+  const settingValues = new Map<string, unknown>([
+    [
+      FAVORITES_SETTING,
+      {
+        dnd5e: {
+          player: {
+            "Actor.arlen": [{ type: "skill", id: "arc", sort: 1000 }]
+          }
+        }
+      }
+    ]
+  ]);
+  Object.defineProperty(globalThis, "game", {
+    configurable: true,
+    value: {
+      user: { id: "player" },
+      system: { id: "dnd5e" },
+      settings: {
+        get: (_namespace: string, key: string) => settingValues.get(key) ?? {},
+        set: async (_namespace: string, key: string, value: unknown) => {
+          settingValues.set(key, value);
+        }
+      }
+    }
+  });
+
+  const model = await buildDnd5eFavoritesViewModel({ actor, user, config, fromUuid: createResolver(actor) });
+  assert.equal(model.unavailable, false);
+  if (model.unavailable) return;
+  assert.deepEqual(model.rows.map(row => [row.type, row.title]), [
+    ["resource", "Infernal Favor"],
+    ["skill", "Arcana"]
+  ]);
+
+  assert.deepEqual(await setContextFavorite(actor, user, "tool", "thieves", true), { ok: true });
+  assert.deepEqual(
+    (((settingValues.get(FAVORITES_SETTING) as Record<string, unknown>).dnd5e as Record<string, unknown>).player as Record<string, unknown>)["Actor.arlen"],
+    [
+      { type: "skill", id: "arc", sort: 1000 },
+      { type: "tool", id: "thieves", sort: 101000 }
+    ]
+  );
+
+  (globalThis as typeof globalThis & { game: { system: { id: string } } }).game.system.id = "pf2e";
+  const otherSystemModel = await buildDnd5eFavoritesViewModel({ actor, user, config, fromUuid: createResolver(actor) });
+  assert.equal(otherSystemModel.unavailable, false);
+  if (otherSystemModel.unavailable) return;
+  assert.deepEqual(otherSystemModel.rows.map(row => [row.type, row.title]), [["resource", "Infernal Favor"]]);
 });
 
 test("favorite play actions check permissions and call dnd5e document APIs", async () => {
@@ -154,7 +213,9 @@ test("favorite play actions check permissions and call dnd5e document APIs", asy
 });
 
 test("favorites template, styles, and shell wiring preserve required regions", () => {
-  const template = readFileSync(new URL("../src/systems/dnd5e/templates/favorites.hbs", import.meta.url), "utf8");
+  const template = readFileSync(new URL("../src/templates/favorites.hbs", import.meta.url), "utf8");
+  const dnd5eGroupTemplate = readFileSync(new URL("../src/systems/dnd5e/templates/partials/favorites-group.hbs", import.meta.url), "utf8");
+  const fallbackGroupTemplate = readFileSync(new URL("../src/templates/partials/favorite-basic-group.hbs", import.meta.url), "utf8");
   const favoriteContextMenuTemplate = readFileSync(new URL("../src/templates/partials/favorite-context-menu.hbs", import.meta.url), "utf8");
   const actorShellTemplate = readFileSync(new URL("../src/templates/actor-sheet-shell.hbs", import.meta.url), "utf8");
   const detailsTemplate = readFileSync(new URL("../src/systems/dnd5e/templates/details.hbs", import.meta.url), "utf8");
@@ -177,15 +238,21 @@ test("favorites template, styles, and shell wiring preserve required regions", (
   assert.match(template, /\{\{helpText\}\}/);
   assert.match(template, /class="compact-panels favorites-sections"/);
   assert.match(template, /data-favorite-kind="\{\{kind\}\}"/);
-  assert.match(template, /partials\/details-skill-row\.hbs/);
-  assert.match(template, /partials\/details-tool-row\.hbs/);
-  assert.match(template, /partials\/inventory-list-row\.hbs/);
-  assert.match(template, /partials\/spell-row\.hbs/);
-  assert.match(template, /partials\/feature-row\.hbs/);
-  assert.match(template, /partials\/effect-row\.hbs/);
-  assert.match(template, /partials\/favorite-context-menu\.hbs/);
-  assert.match(template, /class="item-icon"/);
-  assert.match(template, /removeAction="favorites-remove-context"/);
+  assert.match(template, /\{\{> \(lookup this "partial"\) this\}\}/);
+  assert.match(template, /partials\/favorite-basic-group\.hbs/);
+  assert.match(dnd5eGroupTemplate, /partials\/details-skill-row\.hbs/);
+  assert.match(dnd5eGroupTemplate, /partials\/details-tool-row\.hbs/);
+  assert.match(dnd5eGroupTemplate, /partials\/inventory-list-row\.hbs/);
+  assert.match(dnd5eGroupTemplate, /partials\/spell-row\.hbs/);
+  assert.match(dnd5eGroupTemplate, /partials\/feature-row\.hbs/);
+  assert.match(dnd5eGroupTemplate, /partials\/effect-row\.hbs/);
+  assert.match(dnd5eGroupTemplate, /pf-list-schema--icon-title-3meta-actions/);
+  assert.match(dnd5eGroupTemplate, /pf-list-schema--icon-title-4meta-actions/);
+  assert.match(dnd5eGroupTemplate, /pf-list-schema--icon-title-2meta-actions/);
+  assert.match(dnd5eGroupTemplate, /pf-list-schema--icon-title-source-actions/);
+  assert.match(dnd5eGroupTemplate, /partials\/favorite-context-menu\.hbs/);
+  assert.match(fallbackGroupTemplate, /class="item-icon"/);
+  assert.match(dnd5eGroupTemplate, /removeAction="favorites-remove-context"/);
   assert.match(favoriteContextMenuTemplate, /class="favorite-context-menu"/);
   assert.match(detailsTemplate, /partials\/details-skill-row\.hbs/);
   assert.match(detailsSkillRowTemplate, /addAction="context-add-favorite"/);
@@ -193,10 +260,13 @@ test("favorites template, styles, and shell wiring preserve required regions", (
   assert.doesNotMatch(template, /data-action="create"|data-action="delete"|Open Sheet|sub-rail|favorites-mode-rail|fa-ellipsis-vertical/);
   assert.doesNotMatch(detailsTemplate, /<h2>Favorites<\/h2>|data-region="details-favorites"/);
   assert.match(moduleSource, /getTemplatePaths/);
+  assert.match(moduleSource, /favorites\.hbs/);
+  assert.match(moduleSource, /favorite-basic-group\.hbs/);
   assert.match(actorSheetNavigationSource, /buildDnd5eFavoritesViewModel/);
   assert.match(actorSheetNavigationSource, /case "Favorites":/);
   assert.match(actorSheetNavigationSource, /favorites-remove-context/);
   assert.match(actorSheetNavigationSource, /getFavoriteContextGestureLabel/);
+  assert.match(actorShellTemplate, /templates\/favorites\.hbs/);
   assert.match(eventsSource, /contextmenu/);
   assert.match(eventsSource, /favoriteLongPressTimer/);
   assert.match(eventsSource, /openFavoriteContextMenu/);
@@ -206,6 +276,9 @@ test("favorites template, styles, and shell wiring preserve required regions", (
   assert.match(css, /\.pocket-foundry-root \.favorites-help/);
   assert.match(css, /\.pocket-foundry-root \.favorites-list/);
   assert.match(css, /\.pocket-foundry-root \.favorite-row/);
+  assert.match(css, /\.pocket-foundry-root \.dnd5e-table-head > \*/);
+  assert.match(css, /white-space: nowrap/);
+  assert.match(css, /overflow-wrap: normal/);
   assert.match(css, /\.pocket-foundry-root \.favorite-primary/);
   assert.match(css, /\.pocket-foundry-root \.favorite-secondary/);
   assert.match(css, /\.pocket-foundry-root \.favorite-context-menu/);

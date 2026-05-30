@@ -506,7 +506,10 @@
   .pocket-foundry-root .pf-expandable-detail-body { @apply grid gap-2 px-2 pb-2; }
   .pocket-foundry-root .pf-detail-description { @apply text-[.78rem] leading-snug text-mf-text; overflow-wrap: anywhere; }
   .pocket-foundry-root .pf-detail-description p { @apply mt-0 mb-2; }
-  .pocket-foundry-root .pf-detail-facts { @apply m-0 grid grid-cols-[repeat(auto-fit,minmax(120px,1fr))] gap-x-2 gap-y-1; }
+  .pocket-foundry-root .pf-detail-facts {
+    @apply m-0 grid gap-x-3 gap-y-1;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 160px), 1fr));
+  }
   .pocket-foundry-root .pf-detail-facts > div { @apply min-w-0; }
   .pocket-foundry-root .pf-detail-facts dt { @apply m-0 truncate text-[.7rem] font-extrabold text-mf-muted; }
   .pocket-foundry-root .pf-detail-facts dd { @apply m-0 truncate text-[.72rem] text-mf-text; }
@@ -530,6 +533,7 @@
   .pocket-foundry-root .item-detail-description > :last-child { @apply mb-0; }
   .pocket-foundry-root .setting-row { @apply grid min-h-[68px] grid-cols-[minmax(0,1fr)_auto] items-center gap-3 p-2.5; }
   .pocket-foundry-root .setting-action { @apply min-h-10 min-w-[72px] rounded-lg border border-mf-line bg-mf-subtle px-3 text-[.82rem] font-extrabold text-mf-accent; }
+  .pocket-foundry-root .setting-action.danger-action { @apply border-mf-danger bg-mf-danger text-white; }
   .pocket-foundry-root .toggle { @apply block h-[30px] w-[52px] rounded-full bg-mf-accent p-[3px]; }
   .pocket-foundry-root .toggle::before { @apply ml-auto block h-6 w-6 rounded-full bg-mf-surface content-['']; }
   .pocket-foundry-root .toggle.off { @apply bg-mf-muted; }

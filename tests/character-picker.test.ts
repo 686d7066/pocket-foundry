@@ -6,7 +6,7 @@ import { createMobileRouter } from "../src/router/mobile-router.ts";
 import { RouteHashKey } from "../src/router/browser-history.ts";
 import { RouteView } from "../src/router/routes.ts";
 import { buildCharacterPickerViewModel, type CharacterPickerActor } from "../src/services/character-picker.ts";
-import { characterPickerFavoritesCodec } from "../src/services/character-picker-favorites.ts";
+import { characterPickerFavoritesCodec, createFoundryCharacterPickerFavoritesStorage, readCharacterPickerFavoritesFromStorage, setCharacterPickerFavoriteInStorage } from "../src/services/character-picker-favorites.ts";
 import { createCharacterPaneRoute } from "../src/systems/dnd5e/actor-sheet-navigation.ts";
 
 const user = { id: "player" };
@@ -513,6 +513,95 @@ test("character picker favorites codec deduplicates and normalizes actor UUIDs",
   const parsed = characterPickerFavoritesCodec.parse(`["Actor.a"," Actor.a ","","Actor.b"]`);
   assert.deepEqual(parsed, ["Actor.a", "Actor.b"]);
   assert.equal(characterPickerFavoritesCodec.serialize(["Actor.b", "Actor.b", " Actor.c "]), `["Actor.b","Actor.c"]`);
+});
+
+test("Foundry character picker favorites are scoped by current system and user inside the server setting", async () => {
+  const settingValues = new Map<string, unknown>();
+  const runtime = globalThis as typeof globalThis & {
+    game?: {
+      settings: {
+        get: (_namespace: string, key: string) => unknown;
+        set: (_namespace: string, key: string, value: unknown) => Promise<void>;
+      };
+      user: { id: string };
+      system: { id: string };
+      world: { id: string };
+    };
+  };
+  runtime.game = {
+    settings: {
+      get: (_namespace, key) => settingValues.get(key) ?? {},
+      set: async (_namespace, key, value) => {
+        settingValues.set(key, value);
+      }
+    },
+    user: { id: "User1" },
+    system: { id: "dnd5e" },
+    world: { id: "World1" }
+  };
+
+  await setCharacterPickerFavoriteInStorage(createFoundryCharacterPickerFavoritesStorage(), "Actor.arlen", true);
+  assert.deepEqual(readCharacterPickerFavoritesFromStorage(createFoundryCharacterPickerFavoritesStorage()), ["Actor.arlen"]);
+
+  runtime.game.system.id = "pf2e";
+  assert.deepEqual(readCharacterPickerFavoritesFromStorage(createFoundryCharacterPickerFavoritesStorage()), []);
+
+  runtime.game.system.id = "dnd5e";
+  runtime.game.user.id = "User2";
+  assert.deepEqual(readCharacterPickerFavoritesFromStorage(createFoundryCharacterPickerFavoritesStorage()), []);
+
+  runtime.game.user.id = "User1";
+  assert.deepEqual(readCharacterPickerFavoritesFromStorage(createFoundryCharacterPickerFavoritesStorage()), ["Actor.arlen"]);
+});
+
+test("character picker view model does not show favorites from a previous Foundry user", async () => {
+  const settingValues = new Map<string, unknown>();
+  const runtime = globalThis as typeof globalThis & {
+    game?: {
+      settings: {
+        get: (_namespace: string, key: string) => unknown;
+        set: (_namespace: string, key: string, value: unknown) => Promise<void>;
+      };
+      user: { id: string };
+      system: { id: string };
+      world: { id: string };
+    };
+  };
+  runtime.game = {
+    settings: {
+      get: (_namespace, key) => settingValues.get(key) ?? {},
+      set: async (_namespace, key, value) => {
+        settingValues.set(key, value);
+      }
+    },
+    user: { id: "User1" },
+    system: { id: "dnd5e" },
+    world: { id: "World1" }
+  };
+  const actors = [
+    createActor({ uuid: "Actor.arlen", name: "Arlen Mire" }),
+    createActor({ uuid: "Actor.mira", name: "Mira Valen" })
+  ];
+
+  await setCharacterPickerFavoriteInStorage(createFoundryCharacterPickerFavoritesStorage(), "Actor.arlen", true);
+
+  const firstUserModel = buildCharacterPickerViewModel({
+    actors,
+    user,
+    favoriteActorUuids: readCharacterPickerFavoritesFromStorage(createFoundryCharacterPickerFavoritesStorage())
+  });
+  assert.equal(firstUserModel.characters.find(character => character.uuid === "Actor.arlen")?.favorite, true);
+
+  runtime.game.user.id = "User2";
+  const secondUserModel = buildCharacterPickerViewModel({
+    actors,
+    user,
+    favoriteActorUuids: readCharacterPickerFavoritesFromStorage(createFoundryCharacterPickerFavoritesStorage())
+  });
+
+  assert.equal(secondUserModel.characters.find(character => character.uuid === "Actor.arlen")?.favorite, false);
+  assert.deepEqual(secondUserModel.favorites, []);
+  assert.equal(secondUserModel.hasFavorites, false);
 });
 
 type TestElement = {

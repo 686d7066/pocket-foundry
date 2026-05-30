@@ -15,12 +15,12 @@ import {
   getEntityUuid,
   getRemainingUses,
   getUsesLabel,
-  hasFavoriteReference,
   isGmUser,
   normalizeSearchQuery,
   toSearchTerms,
   uniqueStrings
 } from "./view-model-helpers.ts";
+import { canToggleDnd5eFavorites, hasDnd5eFavoriteReference, setDnd5eFavoriteEntry } from "./favorites-storage.ts";
 
 export type Dnd5eInventoryActor = PermissionCheckedDocument & {
   uuid?: string;
@@ -381,14 +381,8 @@ export async function setInventoryFavorite(
   if (!actor || !item) return { ok: false, reason: "unavailable" };
   if (!canUpdateOwnedItem(actor, item, user)) return { ok: false, reason: "forbidden" };
 
-  const system = getObject(actor.system);
-  const action = favorite ? system?.addFavorite : system?.removeFavorite;
-  if (typeof action !== "function") return { ok: false, reason: "unsupported" };
-
   const favoriteId = getItemUuid(item);
-  // Reference API note (dnd5e): addFavorite expects a favorite object, removeFavorite expects a string id.
-  await (action as (target: unknown) => Promise<unknown>).call(system, favorite ? { type: "item", id: favoriteId } : favoriteId);
-  return { ok: true };
+  return (await setDnd5eFavoriteEntry(actor, "item", favoriteId, favorite)) ? { ok: true } : { ok: false, reason: "unsupported" };
 }
 
 export async function setInventoryCurrency(
@@ -581,7 +575,7 @@ function buildItemViewModel(item: Dnd5eInventoryItem, sectionId: InventorySectio
   const usesCurrent = usesMax === null ? null : getNumber(uses?.value) ?? getRemainingUses(uses) ?? usesMax;
   const quantityAdjustment = canUpdate && quantity !== null ? buildAdjustment("quantity", quantity, null, formatNullableQuantity(quantity)) : null;
   const chargesAdjustment = canUpdate && usesMax !== null && usesCurrent !== null ? buildAdjustment("charges", usesCurrent, usesMax, usesLabel) : null;
-  const canToggleFavorite = canUpdate && (typeof getObject(item.parent?.system)?.addFavorite === "function" || typeof getObject(item.parent?.system)?.removeFavorite === "function");
+  const canToggleFavorite = canUpdate && canToggleDnd5eFavorites(item.parent);
 
   const itemViewModel: Dnd5eInventoryItemViewModel = {
     id: getItemId(item),
@@ -841,7 +835,7 @@ function isFavorite(item: Dnd5eInventoryItem): boolean {
   const actor = item.parent;
   const id = getItemId(item);
   const uuid = getItemUuid(item);
-  return hasFavoriteReference(getObject(actor?.system)?.favorites, [id, uuid], ["id", "uuid"]);
+  return hasDnd5eFavoriteReference(actor, [id, uuid], ["id", "uuid"]);
 }
 
 function getContainerId(item: Dnd5eInventoryItem): string {

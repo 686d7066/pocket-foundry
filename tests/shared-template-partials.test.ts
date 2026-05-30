@@ -12,7 +12,9 @@ test("shared partials are preloaded and used by core and dnd5e templates", () =>
   const detailsTemplate = readFileSync(new URL("../src/systems/dnd5e/templates/details.hbs", import.meta.url), "utf8");
   const inventoryTemplate = readFileSync(new URL("../src/systems/dnd5e/templates/inventory.hbs", import.meta.url), "utf8");
   const biographyTemplate = readFileSync(new URL("../src/systems/dnd5e/templates/biography.hbs", import.meta.url), "utf8");
-  const favoritesTemplate = readFileSync(new URL("../src/systems/dnd5e/templates/favorites.hbs", import.meta.url), "utf8");
+  const favoritesTemplate = readFileSync(new URL("../src/templates/favorites.hbs", import.meta.url), "utf8");
+  const favoriteBasicGroupTemplate = readFileSync(new URL("../src/templates/partials/favorite-basic-group.hbs", import.meta.url), "utf8");
+  const dnd5eFavoritesGroupTemplate = readFileSync(new URL("../src/systems/dnd5e/templates/partials/favorites-group.hbs", import.meta.url), "utf8");
   const spellsTemplate = readFileSync(new URL("../src/systems/dnd5e/templates/spells.hbs", import.meta.url), "utf8");
   const featuresTemplate = readFileSync(new URL("../src/systems/dnd5e/templates/features.hbs", import.meta.url), "utf8");
   const effectsTemplate = readFileSync(new URL("../src/systems/dnd5e/templates/effects.hbs", import.meta.url), "utf8");
@@ -25,6 +27,7 @@ test("shared partials are preloaded and used by core and dnd5e templates", () =>
 
   assert.match(moduleSource, /partials\/content-list-row\.hbs/);
   assert.match(moduleSource, /partials\/expandable-detail-row\.hbs/);
+  assert.match(moduleSource, /partials\/favorite-basic-group\.hbs/);
   assert.match(moduleSource, /partials\/favorite-context-menu\.hbs/);
   assert.match(moduleSource, /partials\/number-adjust-dialog\.hbs/);
   assert.match(moduleSource, /partials\/pane-search-toolbar\.hbs/);
@@ -42,6 +45,8 @@ test("shared partials are preloaded and used by core and dnd5e templates", () =>
   assert.match(inventoryTemplate, /partials\/pane-unavailable\.hbs/);
   assert.match(biographyTemplate, /partials\/pane-unavailable\.hbs/);
   assert.match(favoritesTemplate, /partials\/pane-unavailable\.hbs/);
+  assert.match(favoritesTemplate, /partials\/favorite-basic-group\.hbs/);
+  assert.match(favoriteBasicGroupTemplate, /partials\/favorite-context-menu\.hbs/);
   assert.match(spellsTemplate, /partials\/pane-search-toolbar\.hbs/);
   assert.match(featuresTemplate, /partials\/pane-search-toolbar\.hbs/);
   assert.match(effectsTemplate, /partials\/pane-search-toolbar\.hbs/);
@@ -59,12 +64,19 @@ test("shared partials are preloaded and used by core and dnd5e templates", () =>
   assert.match(toolRowTemplate, /partials\/favorite-context-menu\.hbs/);
   assert.match(effectRowTemplate, /partials\/expandable-detail-row\.hbs/);
   assert.match(effectRowTemplate, /partials\/favorite-context-menu\.hbs/);
+  assert.match(dnd5eFavoritesGroupTemplate, /partials\/details-skill-row\.hbs/);
+  assert.match(dnd5eFavoritesGroupTemplate, /partials\/details-tool-row\.hbs/);
+  assert.match(dnd5eFavoritesGroupTemplate, /partials\/inventory-list-row\.hbs/);
+  assert.match(dnd5eFavoritesGroupTemplate, /partials\/spell-row\.hbs/);
+  assert.match(dnd5eFavoritesGroupTemplate, /partials\/feature-row\.hbs/);
+  assert.match(dnd5eFavoritesGroupTemplate, /partials\/effect-row\.hbs/);
 });
 
 test("shared partials expose reusable parameterized hooks", () => {
   const contentListRowTemplate = readFileSync(new URL("../src/templates/partials/content-list-row.hbs", import.meta.url), "utf8");
   const expandableDetailRowTemplate = readFileSync(new URL("../src/templates/partials/expandable-detail-row.hbs", import.meta.url), "utf8");
   const favoriteContextMenuTemplate = readFileSync(new URL("../src/templates/partials/favorite-context-menu.hbs", import.meta.url), "utf8");
+  const favoriteBasicGroupTemplate = readFileSync(new URL("../src/templates/partials/favorite-basic-group.hbs", import.meta.url), "utf8");
   const numberAdjustDialogTemplate = readFileSync(new URL("../src/templates/partials/number-adjust-dialog.hbs", import.meta.url), "utf8");
   const paneSearchTemplate = readFileSync(new URL("../src/templates/partials/pane-search-toolbar.hbs", import.meta.url), "utf8");
   const paneUnavailableTemplate = readFileSync(new URL("../src/templates/partials/pane-unavailable.hbs", import.meta.url), "utf8");
@@ -88,6 +100,10 @@ test("shared partials expose reusable parameterized hooks", () => {
   assert.match(favoriteContextMenuTemplate, /data-favorite-type="\{\{favoriteType\}\}"/);
   assert.match(favoriteContextMenuTemplate, /data-favorite-id="\{\{favoriteId\}\}"/);
   assert.match(favoriteContextMenuTemplate, /data-item-id="\{\{itemId\}\}"/);
+  assert.match(favoriteBasicGroupTemplate, /addAction=addAction/);
+  assert.match(favoriteBasicGroupTemplate, /removeAction=removeAction/);
+  assert.match(favoriteBasicGroupTemplate, /favoriteType=type/);
+  assert.match(favoriteBasicGroupTemplate, /favoriteId=id/);
 
   assert.match(numberAdjustDialogTemplate, /dialogIdPrefix/);
   assert.match(numberAdjustDialogTemplate, /dialogItemId/);

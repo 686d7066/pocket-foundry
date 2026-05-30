@@ -1,5 +1,6 @@
 import type { FoundryUserLike } from "../../../services/permissions.ts";
 import { getCollectionContents, getNumber, getObject, getString } from "../../../core/utils.ts";
+import { hasDnd5eFavoriteReference } from "../favorites-storage.ts";
 import {
   buildSignedAdjustmentOptions,
   canUpdateOwnedDocument,
@@ -12,7 +13,6 @@ import {
   getEntityUuid,
   getRemainingUses,
   getUsesLabel,
-  hasFavoriteReference,
   normalizeSearchQuery,
   titleCase,
   uniqueStrings
@@ -241,7 +241,7 @@ export function getSpellDescription(item: Dnd5eSpellItem): string {
 export function isFavorite(actor: Dnd5eSpellsActor, item: Dnd5eSpellItem): boolean {
   const id = getItemId(item);
   const uuid = getItemUuid(item);
-  return hasFavoriteReference(getObject(actor.system)?.favorites, [id, uuid], ["id", "item", "uuid"]);
+  return hasDnd5eFavoriteReference(actor, [id, uuid], ["id", "item", "uuid"]);
 }
 
 export function buildAdjustment(current: number, max: number, label: string): Dnd5eSpellAdjustmentViewModel {

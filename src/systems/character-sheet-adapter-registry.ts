@@ -38,8 +38,7 @@ const unsupportedTemplatePaths: CharacterSheetPaneTemplatePaths = {
   features: "",
   spells: "",
   effects: "",
-  biography: "",
-  favorites: ""
+  biography: ""
 };
 
 const unsupportedVisualMetadata: CharacterSheetVisualMetadata = {

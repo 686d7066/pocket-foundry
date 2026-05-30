@@ -56,10 +56,10 @@ async function assertAdapterContract(label: string, adapter: CharacterSheetAdapt
   assert.ok(paneTemplatePaths.spells !== undefined, `${label}: getPaneTemplatePaths().spells is required.`);
   assert.ok(paneTemplatePaths.effects !== undefined, `${label}: getPaneTemplatePaths().effects is required.`);
   assert.ok(paneTemplatePaths.biography !== undefined, `${label}: getPaneTemplatePaths().biography is required.`);
-  assert.ok(paneTemplatePaths.favorites !== undefined, `${label}: getPaneTemplatePaths().favorites is required.`);
 
   const templatePaths = adapter.getTemplatePaths();
   assert.ok(Array.isArray(templatePaths), `${label}: getTemplatePaths() must return an array.`);
+  assert.equal(templatePaths.includes(undefined as unknown as string), false, `${label}: getTemplatePaths() must not include undefined optional templates.`);
 
   const paneSpecs = adapter.getPaneSpecs({ actor: null, user: null });
   assert.ok(Array.isArray(paneSpecs), `${label}: getPaneSpecs() must return an array.`);
@@ -101,6 +101,16 @@ async function assertAdapterContract(label: string, adapter: CharacterSheetAdapt
   adapter.clearTransientState(characterRoute);
   const searchAdapters = adapter.getSearchAdapters({ user: null });
   assert.ok(Array.isArray(searchAdapters), `${label}: getSearchAdapters() must return an array.`);
+
+  const favoritesCapability = adapter.getFavoritesCapability?.() ?? null;
+  if (label.startsWith("dnd5e ")) {
+    assert.ok(favoritesCapability, `${label}: dnd5e must opt into the generic favorites capability.`);
+  }
+  if (favoritesCapability) {
+    assert.equal(favoritesCapability.context, "favorites", `${label}: favorites capability must use the generic favorites context.`);
+    assert.ok(Array.isArray(favoritesCapability.groupPartials), `${label}: favorites groupPartials must be an array.`);
+    assert.equal(typeof favoritesCapability.buildViewModel, "function", `${label}: favorites capability must expose a buildViewModel function.`);
+  }
 
   const paneContext = adapter.getPaneContext(normalizedPane as ActorSheetPaneId);
   assert.equal(typeof paneContext, "string", `${label}: getPaneContext() must return a string context key.`);

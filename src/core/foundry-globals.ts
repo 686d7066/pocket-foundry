@@ -11,7 +11,7 @@ export type FoundrySettingConfig<T> = {
   hint: string;
   scope: FoundrySettingScope;
   config: boolean;
-  type: BooleanConstructor;
+  type: BooleanConstructor | ObjectConstructor;
   default: T;
   onChange?: (value: T) => void | Promise<void>;
 };
@@ -38,6 +38,7 @@ export type FoundryActorCollection = Iterable<unknown> & {
  */
 export type FoundryGame = {
   settings: FoundrySettings;
+  logOut?: () => void;
   actors?: FoundryActorCollection;
   folders?: FoundryActorCollection;
   items?: FoundryActorCollection;

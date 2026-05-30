@@ -1,4 +1,11 @@
-import { getCollectionContents, getInitials, getNumber, getObject, getString } from "../../core/utils.ts";
+import { getInitials, getNumber, getObject, getString } from "../../core/utils.ts";
+import {
+  favoriteIdsMatch,
+  getFavoriteEntries as getStoredFavoriteEntries,
+  setFavoriteEntry,
+  type FavoriteEntry,
+  type FavoritesViewModel
+} from "../../services/favorites.ts";
 import { canUpdateDocument, canViewDocument, type FoundryUserLike, type PermissionCheckedDocument } from "../../services/permissions.ts";
 import { buildDnd5eDetailsViewModel, type Dnd5eDetailsSkillViewModel, type Dnd5eDetailsToolViewModel } from "./details-view-model.ts";
 import { buildDnd5eEffectsViewModel, type Dnd5eEffectRowViewModel } from "./effects-view-model.ts";
@@ -61,11 +68,7 @@ export type Dnd5ePreparedFavoriteData = {
   level?: string | number;
 };
 
-export type Dnd5eFavoriteEntry = {
-  id: string;
-  type: string;
-  sort: number;
-};
+export type Dnd5eFavoriteEntry = FavoriteEntry;
 
 export type Dnd5eFavoritesConfig = {
   abilities?: Record<string, { label?: string; abbreviation?: string } | string>;
@@ -125,24 +128,21 @@ export type Dnd5eFavoriteDeltaOption = {
   center: boolean;
 };
 
-export type Dnd5eFavoritesViewModel = {
-  unavailable: false;
-  actorUuid: string;
-  canUpdate: boolean;
-  sections: Dnd5eFavoriteSourceSectionViewModel[];
+export type Dnd5eFavoritesViewModel = Omit<FavoritesViewModel, "groups"> & {
+  groups: Dnd5eFavoriteSourceSectionViewModel[];
   rows: Dnd5eFavoriteRowViewModel[];
-  empty: boolean;
+  sections: Dnd5eFavoriteSourceSectionViewModel[];
 };
 
 export type Dnd5eFavoriteSourceSectionViewModel =
-  | { id: "skills"; label: "Skills"; kind: "skills"; skills: Dnd5eDetailsSkillViewModel[]; empty: boolean }
-  | { id: "tools"; label: "Tools"; kind: "tools"; tools: Dnd5eDetailsToolViewModel[]; empty: boolean }
-  | { id: "inventory"; label: "Inventory"; kind: "inventory"; items: Dnd5eInventoryItemViewModel[]; empty: boolean }
-  | { id: "spells"; label: "Spells"; kind: "spells"; spells: Dnd5eSpellRowViewModel[]; empty: boolean }
-  | { id: "spell-slots"; label: "Spell Slots"; kind: "spell-slots"; slotTracks: Dnd5eSpellSlotTrackViewModel[]; empty: boolean }
-  | { id: "features"; label: "Features"; kind: "features"; features: Dnd5eFeatureItemViewModel[]; empty: boolean }
-  | { id: "effects"; label: "Effects"; kind: "effects"; effects: Dnd5eEffectRowViewModel[]; empty: boolean }
-  | { id: "legacy-resources"; label: "Resources"; kind: "legacy-resources"; rows: Dnd5eFavoriteRowViewModel[]; empty: boolean };
+  | { id: "skills"; label: "Skills"; kind: "skills"; partial: typeof DND5E_FAVORITES_GROUP_PARTIAL; skills: Dnd5eDetailsSkillViewModel[]; empty: boolean }
+  | { id: "tools"; label: "Tools"; kind: "tools"; partial: typeof DND5E_FAVORITES_GROUP_PARTIAL; tools: Dnd5eDetailsToolViewModel[]; empty: boolean }
+  | { id: "inventory"; label: "Inventory"; kind: "inventory"; partial: typeof DND5E_FAVORITES_GROUP_PARTIAL; items: Dnd5eInventoryItemViewModel[]; empty: boolean }
+  | { id: "spells"; label: "Spells"; kind: "spells"; partial: typeof DND5E_FAVORITES_GROUP_PARTIAL; spells: Dnd5eSpellRowViewModel[]; empty: boolean }
+  | { id: "spell-slots"; label: "Spell Slots"; kind: "spell-slots"; partial: typeof DND5E_FAVORITES_GROUP_PARTIAL; slotTracks: Dnd5eSpellSlotTrackViewModel[]; empty: boolean }
+  | { id: "features"; label: "Features"; kind: "features"; partial: typeof DND5E_FAVORITES_GROUP_PARTIAL; features: Dnd5eFeatureItemViewModel[]; empty: boolean }
+  | { id: "effects"; label: "Effects"; kind: "effects"; partial: typeof DND5E_FAVORITES_GROUP_PARTIAL; effects: Dnd5eEffectRowViewModel[]; empty: boolean }
+  | { id: "legacy-resources"; label: "Resources"; kind: "legacy-resources"; partial: typeof DND5E_FAVORITES_GROUP_PARTIAL; rows: Dnd5eFavoriteRowViewModel[]; empty: boolean };
 
 export type UnavailableDnd5eFavoritesViewModel = {
   unavailable: true;
@@ -158,6 +158,7 @@ export type Dnd5eFavoritesControlResult = {
 };
 
 const SORT_DENSITY = 100000;
+export const DND5E_FAVORITES_GROUP_PARTIAL = "modules/pocket-foundry/systems/dnd5e/templates/partials/favorites-group.hbs";
 
 export async function buildDnd5eFavoritesViewModel(options: {
   actor: Dnd5eFavoritesActor | null | undefined;
@@ -178,16 +179,20 @@ export async function buildDnd5eFavoritesViewModel(options: {
   const canUpdate = canUpdateDocument(actor, options.user);
   const resources = buildLegacyResourceRows(actor, canUpdate);
   const favoriteRows = await buildPreparedFavoriteRows(actor, options.user, canUpdate, config, options.fromUuid ?? getFoundryUuidResolver());
-  const sections = await buildSourceSections(actor, options.user, resources);
+  const groups = await buildSourceSections(actor, options.user, resources);
   const rows = [...resources, ...favoriteRows];
 
   return {
     unavailable: false,
     actorUuid: actor.uuid ?? (actor.id ? `Actor.${actor.id}` : ""),
     canUpdate,
-    sections,
+    helpText: "Use long-press or right-click to add or remove favorites.",
+    emptyTitle: "No Favorites",
+    emptyBody: "Add favorites from supported skills, tools, inventory, spells, features, effects, and resources.",
+    groups,
+    sections: groups,
     rows,
-    empty: sections.every(section => section.empty)
+    empty: groups.every(group => group.empty)
   };
 }
 
@@ -216,14 +221,14 @@ async function buildSourceSections(actor: Dnd5eFavoritesActor, user: FoundryUser
   const effectRows = effects.unavailable ? [] : effects.sections.flatMap(section => section.effects).filter(effect => matchesAnyFavoriteId(effectIds, effect.id, effect.uuid, effect.favoriteId));
 
   const sections: Dnd5eFavoriteSourceSectionViewModel[] = [
-    { id: "skills", label: "Skills", kind: "skills", skills, empty: skills.length === 0 },
-    { id: "tools", label: "Tools", kind: "tools", tools, empty: tools.length === 0 },
-    { id: "inventory", label: "Inventory", kind: "inventory", items: inventoryItems, empty: inventoryItems.length === 0 },
-    { id: "spells", label: "Spells", kind: "spells", spells: spellRows, empty: spellRows.length === 0 },
-    { id: "spell-slots", label: "Spell Slots", kind: "spell-slots", slotTracks, empty: slotTracks.length === 0 },
-    { id: "features", label: "Features", kind: "features", features: featureRows, empty: featureRows.length === 0 },
-    { id: "effects", label: "Effects", kind: "effects", effects: effectRows, empty: effectRows.length === 0 },
-    { id: "legacy-resources", label: "Resources", kind: "legacy-resources", rows: resources, empty: resources.length === 0 }
+    { id: "skills", label: "Skills", kind: "skills", partial: DND5E_FAVORITES_GROUP_PARTIAL, skills, empty: skills.length === 0 },
+    { id: "tools", label: "Tools", kind: "tools", partial: DND5E_FAVORITES_GROUP_PARTIAL, tools, empty: tools.length === 0 },
+    { id: "inventory", label: "Inventory", kind: "inventory", partial: DND5E_FAVORITES_GROUP_PARTIAL, items: inventoryItems, empty: inventoryItems.length === 0 },
+    { id: "spells", label: "Spells", kind: "spells", partial: DND5E_FAVORITES_GROUP_PARTIAL, spells: spellRows, empty: spellRows.length === 0 },
+    { id: "spell-slots", label: "Spell Slots", kind: "spell-slots", partial: DND5E_FAVORITES_GROUP_PARTIAL, slotTracks, empty: slotTracks.length === 0 },
+    { id: "features", label: "Features", kind: "features", partial: DND5E_FAVORITES_GROUP_PARTIAL, features: featureRows, empty: featureRows.length === 0 },
+    { id: "effects", label: "Effects", kind: "effects", partial: DND5E_FAVORITES_GROUP_PARTIAL, effects: effectRows, empty: effectRows.length === 0 },
+    { id: "legacy-resources", label: "Resources", kind: "legacy-resources", partial: DND5E_FAVORITES_GROUP_PARTIAL, rows: resources, empty: resources.length === 0 }
   ];
   return sections.filter(section => !section.empty);
 }
@@ -234,10 +239,7 @@ function matchesAnyFavoriteId(favoriteIds: string[], ...rowIds: string[]): boole
 
 function idsMatch(favoriteId: string, rowId: string): boolean {
   if (!favoriteId || !rowId) return false;
-  if (favoriteId === rowId) return true;
-  const normalizedFavorite = favoriteId.replace(/^\./, "");
-  const normalizedRow = rowId.replace(/^\./, "");
-  return normalizedFavorite === normalizedRow || normalizedFavorite.endsWith(`.${normalizedRow}`) || normalizedRow.endsWith(`.${normalizedFavorite}`);
+  return favoriteIdsMatch(favoriteId, rowId);
 }
 
 export async function useFavorite(
@@ -333,13 +335,10 @@ export async function setContextFavorite(
 ): Promise<Dnd5eFavoritesControlResult> {
   if (!actor) return { ok: false, reason: "unavailable" };
   if (!canUpdateDocument(actor, user)) return { ok: false, reason: "forbidden" };
-  const system = getObject(actor.system);
-  const action = favorite ? system?.addFavorite : system?.removeFavorite;
-  if (typeof action !== "function") return { ok: false, reason: "unsupported" };
-
-  const payload = favorite ? { type, id: favoriteId } : favoriteId;
-  await (action as (target: unknown) => Promise<unknown>).call(system, payload);
-  return { ok: true };
+  return (await setFavoriteEntry(actor, type, favoriteId, favorite, {
+    fallbackEntries: getObject(actor.system)?.favorites,
+    legacyToggle: (nextFavorite, target) => toggleLegacyFavorite(actor, nextFavorite, target)
+  })) ? { ok: true } : { ok: false, reason: "unsupported" };
 }
 
 function buildLegacyResourceRows(actor: Dnd5eFavoritesActor, canUpdate: boolean): Dnd5eFavoriteRowViewModel[] {
@@ -592,26 +591,14 @@ function buildAdjustment(id: string, title: string, value: number, max: number):
 }
 
 function getFavoriteEntries(actor: Dnd5eFavoritesActor): Dnd5eFavoriteEntry[] {
-  return getCollectionContents(getObject(actor.system)?.favorites)
-    .map((entry, index) => normalizeFavoriteEntry(entry, index))
-    .filter((entry): entry is Dnd5eFavoriteEntry => entry !== null)
-    .sort((left, right) => left.sort - right.sort);
+  return getStoredFavoriteEntries(actor, { fallbackEntries: getObject(actor.system)?.favorites });
 }
 
-function normalizeFavoriteEntry(entry: unknown, index: number): Dnd5eFavoriteEntry | null {
-  if (typeof entry === "string") return { id: entry, type: inferFavoriteType(entry), sort: index * SORT_DENSITY };
-  const object = getObject(entry);
-  const id = getString(object?.id);
-  const type = getString(object?.type) || inferFavoriteType(id);
-  if (!id || !type) return null;
-  return { id, type, sort: getNumber(object?.sort) ?? index * SORT_DENSITY };
-}
-
-function inferFavoriteType(id: string): string {
-  if (id.startsWith("resources.")) return "resource";
-  if (id.includes("ActiveEffect.")) return "effect";
-  if (id.includes("Activity.")) return "activity";
-  return id.includes(".") ? "item" : "";
+async function toggleLegacyFavorite(actor: Dnd5eFavoritesActor, favorite: boolean, target: unknown): Promise<unknown> {
+  const system = getObject(actor.system);
+  const action = favorite ? system?.addFavorite : system?.removeFavorite;
+  if (typeof action !== "function") return false;
+  return (action as (favoriteTarget: unknown) => Promise<unknown>).call(system, target);
 }
 
 function canViewFavoriteTarget(actor: Dnd5eFavoritesActor, target: Dnd5eFavoriteDocument, user: FoundryUserLike): boolean {

@@ -1,6 +1,8 @@
 import { getInitials } from "../core/utils.ts";
 import { cloneRoute, RouteView, type MobileRoute } from "../router/routes.ts";
 import { createDocumentLookupService, type DocumentLookupEnvironment, type DocumentLookupService } from "./document-lookup.ts";
+import { RECENT_ROUTES_SETTING } from "../core/settings.ts";
+import { createFoundrySystemUserSettingStorage, type FoundryScopedSettingStorage } from "./foundry-settings-storage.ts";
 import { createLocalStorageKey, readLocalStorage, writeLocalStorage, type LocalStorageCodec, type LocalStorageKey } from "./local-storage.ts";
 
 const MAX_RECENT_ROUTES = 20;
@@ -29,29 +31,33 @@ export type RecentsViewModel = {
 };
 
 export type MobileRecentsService = {
-  recordRoute: (route: MobileRoute, openedAt?: number) => void;
-  clearRoutes: () => void;
+  recordRoute: (route: MobileRoute, openedAt?: number) => Promise<void>;
+  clearRoutes: () => Promise<void>;
   listRows: () => Promise<RecentRouteRowViewModel[]>;
   getRouteById: (id: string) => Promise<MobileRoute | null>;
 };
 
+export type RecentRouteRecordStorage = FoundryScopedSettingStorage<RecentRouteRecord[]>;
+
 export const recentRouteRecordsCodec: LocalStorageCodec<RecentRouteRecord[]> = {
   parse: value => {
     try {
-      const parsed = JSON.parse(value) as unknown;
-      if (!Array.isArray(parsed)) return undefined;
-
-      return parsed
-        .map(parseRecentRouteRecord)
-        .filter((record): record is RecentRouteRecord => Boolean(record))
-        .slice(0, MAX_RECENT_ROUTES);
+      return parseRecentRouteRecords(JSON.parse(value) as unknown);
     } catch {
       return undefined;
     }
   },
-  serialize: value => JSON.stringify(value.slice(0, MAX_RECENT_ROUTES))
+  serialize: value => JSON.stringify(normalizeRecentRouteRecords(value))
 };
 
+export const recentRouteRecordsSettingCodec = {
+  parse: parseRecentRouteRecords,
+  sanitize: normalizeRecentRouteRecords
+};
+
+/**
+ * Creates a localStorage key for legacy tests and browser-local fallbacks.
+ */
 export function createRecentRoutesStorageKey(scope: Array<string | undefined> = []): LocalStorageKey<RecentRouteRecord[]> {
   return createLocalStorageKey({
     namespace: "recentRoutes",
@@ -60,18 +66,34 @@ export function createRecentRoutesStorageKey(scope: Array<string | undefined> = 
   });
 }
 
+/**
+ * Creates Foundry world-setting backed recent route storage for the current system and user.
+ */
+export function createFoundryRecentRouteRecordStorage(): RecentRouteRecordStorage {
+  return createFoundrySystemUserSettingStorage({
+    settingKey: RECENT_ROUTES_SETTING,
+    codec: recentRouteRecordsSettingCodec,
+    defaultValue: () => []
+  });
+}
+
+/**
+ * Creates a recents service backed by either Foundry settings or a local fallback key.
+ */
 export function createMobileRecentsService(options: {
-  storageKey: LocalStorageKey<RecentRouteRecord[]>;
+  storage?: RecentRouteRecordStorage;
+  storageKey?: LocalStorageKey<RecentRouteRecord[]>;
   lookupEnvironment?: DocumentLookupEnvironment;
   now?: () => number;
 }): MobileRecentsService {
   const now = options.now ?? Date.now;
+  const storage = options.storage ?? createLocalRecentRouteRecordStorage(options.storageKey);
 
   return {
-    recordRoute: (route, openedAt = now()) => {
+    recordRoute: async (route, openedAt = now()) => {
       if (!isRecentableRoute(route)) return;
 
-      const records = dedupeRecentRouteRecords(readRecords(options.storageKey));
+      const records = dedupeRecentRouteRecords(storage.read());
       const identity = getRecentRouteIdentity(route);
       const nextRecords = [
         {
@@ -81,19 +103,19 @@ export function createMobileRecentsService(options: {
         ...records.filter(record => getRecentRouteIdentity(record.route) !== identity)
       ].slice(0, MAX_RECENT_ROUTES);
 
-      writeLocalStorage(options.storageKey, nextRecords);
+      await storage.write(nextRecords);
     },
-    clearRoutes: () => {
-      writeLocalStorage(options.storageKey, []);
+    clearRoutes: async () => {
+      await storage.write([]);
     },
     listRows: async () => {
-      const records = dedupeRecentRouteRecords(readRecords(options.storageKey));
+      const records = dedupeRecentRouteRecords(storage.read());
       const lookup = createLookupService(options.lookupEnvironment);
       const rows = await Promise.all(records.map(record => buildRecentRouteRow(record, lookup)));
       return rows.filter((row): row is RecentRouteRowViewModel => Boolean(row));
     },
     getRouteById: async id => {
-      const records = dedupeRecentRouteRecords(readRecords(options.storageKey));
+      const records = dedupeRecentRouteRecords(storage.read());
       const record = records.find(candidate => getRecentRouteId(candidate.route) === id);
       if (!record) return null;
 
@@ -116,8 +138,14 @@ export function getRecentRouteId(route: MobileRoute): string {
   return encodeURIComponent(JSON.stringify(getRecentRouteIdentitySnapshot(route)));
 }
 
-function readRecords(storageKey: LocalStorageKey<RecentRouteRecord[]>): RecentRouteRecord[] {
-  return readLocalStorage(storageKey) ?? [];
+function createLocalRecentRouteRecordStorage(storageKey: LocalStorageKey<RecentRouteRecord[]> | undefined): RecentRouteRecordStorage {
+  return {
+    read: () => storageKey ? readLocalStorage(storageKey) ?? [] : [],
+    write: async value => {
+      if (storageKey) writeLocalStorage(storageKey, value);
+      return normalizeRecentRouteRecords(value);
+    }
+  };
 }
 
 function dedupeRecentRouteRecords(records: RecentRouteRecord[]): RecentRouteRecord[] {
@@ -389,6 +417,18 @@ function parseRecentRouteRecord(value: unknown): RecentRouteRecord | null {
     route: cloneRoute(candidate.route),
     lastOpened
   };
+}
+
+function parseRecentRouteRecords(value: unknown): RecentRouteRecord[] | undefined {
+  if (!Array.isArray(value)) return undefined;
+  return normalizeRecentRouteRecords(value);
+}
+
+function normalizeRecentRouteRecords(value: unknown[]): RecentRouteRecord[] {
+  return value
+    .map(parseRecentRouteRecord)
+    .filter((record): record is RecentRouteRecord => Boolean(record))
+    .slice(0, MAX_RECENT_ROUTES);
 }
 
 function isMobileRoute(value: unknown): value is MobileRoute {

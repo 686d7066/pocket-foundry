@@ -124,9 +124,7 @@
                 {{/if}}
               {{else}}
                 {{#if favorites}}
-                  {{#if (lookup paneTemplatePaths "favorites")}}
-                    {{> (lookup paneTemplatePaths "favorites") favorites}}
-                  {{/if}}
+                  {{> "modules/pocket-foundry/templates/favorites.hbs" favorites}}
                 {{else}}
                   <section class="content actor-pane-content" data-region="actor-pane-content" data-swipe-region="character-pane">
                     <div class="section actor-pane-placeholder" data-pane="{{activePane}}">

@@ -4,7 +4,6 @@ import { enrichHtml } from "../../services/rich-text-enrichment.ts";
 import {
   canUpdateOwnedDocument,
   canViewOwnedDocument,
-  hasFavoriteReference,
   isExpandableDetailEntityLinkPillLinkable,
   isGmUser,
   mapLabeledValueList,
@@ -14,6 +13,7 @@ import {
   toTitleCaseWords,
   uniqueStrings
 } from "./view-model-helpers.ts";
+import { canToggleDnd5eFavorites, hasDnd5eFavoriteReference, setDnd5eFavoriteEntry } from "./favorites-storage.ts";
 
 export type Dnd5eEffectsActor = PermissionCheckedDocument & {
   uuid?: string;
@@ -277,13 +277,8 @@ export async function setEffectFavorite(
   if (!actor || !effect) return { ok: false, reason: "unavailable" };
   if (!canUpdateEffect(actor, effect, user)) return { ok: false, reason: "forbidden" };
 
-  const system = getObject(actor.system);
-  const action = favorite ? system?.addFavorite : system?.removeFavorite;
-  if (typeof action !== "function") return { ok: false, reason: "unsupported" };
-
   const favoriteId = getEffectFavoriteId(actor, effect);
-  await (action as (target: unknown) => Promise<unknown>).call(system, favorite ? { type: "effect", id: favoriteId } : favoriteId);
-  return { ok: true };
+  return (await setDnd5eFavoriteEntry(actor, "effect", favoriteId, favorite)) ? { ok: true } : { ok: false, reason: "unsupported" };
 }
 
 export async function endEffectConcentration(
@@ -411,7 +406,7 @@ async function buildEffectRow(
     ],
     actions: {
       canToggle: canUpdate && toggleable && typeof effect.update === "function",
-      canToggleFavorite: canUpdate && (typeof getObject(actor.system)?.addFavorite === "function" || typeof getObject(actor.system)?.removeFavorite === "function"),
+      canToggleFavorite: canUpdate && canToggleDnd5eFavorites(actor),
       canEndConcentration: canUpdateActor && concentrating && typeof actor.endConcentration === "function",
       canDelete: canUpdate && effect.isTemporary === true && typeof effect.delete === "function"
     }
@@ -584,12 +579,17 @@ function getEffectChanges(effect: Dnd5eActiveEffect, config: Dnd5eEffectsConfig)
   return (effect.changes ?? [])
     .map(change => {
       const key = getString(change.key);
+      if (isHiddenEffectChange(key)) return null;
       const value = formatEffectChangeValue(key, change.value, config);
       const label = formatEffectChangeLabel(key);
       if (!label && !value) return null;
       return { label: label || "Change", value };
     })
     .filter((change): change is { label: string; value: string } => Boolean(change));
+}
+
+function isHiddenEffectChange(key: string): boolean {
+  return key.startsWith("flags.dnd5e.");
 }
 
 function formatEffectChangeValue(key: string, rawValue: unknown, config: Dnd5eEffectsConfig): string {
@@ -629,7 +629,7 @@ function getDurationLabel(effect: Dnd5eActiveEffect): string {
 
 function isFavorite(actor: Dnd5eEffectsActor, effect: Dnd5eActiveEffect): boolean {
   const favoriteId = getEffectFavoriteId(actor, effect);
-  return hasFavoriteReference(getObject(actor.system)?.favorites, [favoriteId, effect.uuid], ["id", "uuid"]);
+  return hasDnd5eFavoriteReference(actor, [favoriteId, effect.uuid], ["id", "uuid"]);
 }
 
 function getEffectFavoriteId(actor: Dnd5eEffectsActor, effect: Dnd5eActiveEffect): string {

@@ -5,7 +5,10 @@ import { handleReadyMobileLifecycle } from "../src/core/mobile-startup.ts";
 import {
   COLOR_BLIND_MODE_SETTING,
   CHARACTER_SHEET_BANNER_ENABLED_SETTING,
+  FAVORITES_SETTING,
+  CHARACTER_PICKER_FAVORITES_SETTING,
   MOBILE_VIEW_ENABLED_SETTING,
+  RECENT_ROUTES_SETTING,
   getCharacterSheetBannerEnabled,
   getMobileViewEnabled,
   registerMobileViewSetting
@@ -19,7 +22,7 @@ afterEach(() => {
 });
 
 test("mobile view setting is user scoped and opt-in by default", () => {
-  const registrations: Array<{ namespace: string; key: string; config: { scope: string; default: boolean } }> = [];
+  const registrations: Array<{ namespace: string; key: string; config: { scope: string; config: boolean; default: unknown; type: unknown } }> = [];
   const shell = {
     isMounted: () => false,
     mount: async () => undefined,
@@ -30,7 +33,7 @@ test("mobile view setting is user scoped and opt-in by default", () => {
 
   (globalThis as typeof globalThis & { game?: unknown }).game = {
     settings: {
-      register: (namespace: string, key: string, config: { scope: string; default: boolean }) => registrations.push({ namespace, key, config }),
+      register: (namespace: string, key: string, config: { scope: string; config: boolean; default: unknown; type: unknown }) => registrations.push({ namespace, key, config }),
       get: () => false,
       set: async () => undefined
     }
@@ -38,7 +41,7 @@ test("mobile view setting is user scoped and opt-in by default", () => {
 
   registerMobileViewSetting(shell);
 
-  assert.equal(registrations.length, 3);
+  assert.equal(registrations.length, 6);
   assert.equal(registrations[0]?.namespace, "pocket-foundry");
   assert.equal(registrations[0]?.key, MOBILE_VIEW_ENABLED_SETTING);
   assert.equal(registrations[0]?.config.scope, "user");
@@ -51,6 +54,24 @@ test("mobile view setting is user scoped and opt-in by default", () => {
   assert.equal(registrations[2]?.key, COLOR_BLIND_MODE_SETTING);
   assert.equal(registrations[2]?.config.scope, "user");
   assert.equal(registrations[2]?.config.default, false);
+  assert.equal(registrations[3]?.namespace, "pocket-foundry");
+  assert.equal(registrations[3]?.key, CHARACTER_PICKER_FAVORITES_SETTING);
+  assert.equal(registrations[3]?.config.scope, "user");
+  assert.equal(registrations[3]?.config.config, false);
+  assert.equal(registrations[3]?.config.type, Object);
+  assert.deepEqual(registrations[3]?.config.default, {});
+  assert.equal(registrations[4]?.namespace, "pocket-foundry");
+  assert.equal(registrations[4]?.key, FAVORITES_SETTING);
+  assert.equal(registrations[4]?.config.scope, "user");
+  assert.equal(registrations[4]?.config.config, false);
+  assert.equal(registrations[4]?.config.type, Object);
+  assert.deepEqual(registrations[4]?.config.default, {});
+  assert.equal(registrations[5]?.namespace, "pocket-foundry");
+  assert.equal(registrations[5]?.key, RECENT_ROUTES_SETTING);
+  assert.equal(registrations[5]?.config.scope, "user");
+  assert.equal(registrations[5]?.config.config, false);
+  assert.equal(registrations[5]?.config.type, Object);
+  assert.deepEqual(registrations[5]?.config.default, {});
 });
 
 test("mobile view is disabled when Foundry settings are not available", () => {
@@ -130,6 +151,22 @@ test("settings templates expose a clear Recents action", () => {
   assert.match(settingsTemplate, /data-action="clear-recents"/);
   assert.match(shellTemplate + settingsTemplate, /Clear Recent Views/);
   assert.match(css, /\.pocket-foundry-root \.setting-action/);
+});
+
+test("settings templates expose Foundry logout action", () => {
+  const shellTemplate = readFileSync(new URL("../src/templates/shell.hbs", import.meta.url), "utf8");
+  const settingsTemplate = readFileSync(new URL("../src/templates/settings.hbs", import.meta.url), "utf8");
+  const actionsSource = readFileSync(new URL("../src/core/mobile-shell/actions-shell.ts", import.meta.url), "utf8");
+  const foundryGlobalsSource = readFileSync(new URL("../src/core/foundry-globals.ts", import.meta.url), "utf8");
+  const css = readFileSync(new URL("../src/styles/pocket-foundry.css", import.meta.url), "utf8");
+
+  assert.match(shellTemplate, /data-action="logout"/);
+  assert.match(settingsTemplate, /data-action="logout"/);
+  assert.match(shellTemplate + settingsTemplate, /data-app="logout"/);
+  assert.match(shellTemplate + settingsTemplate, /Log Out/);
+  assert.match(actionsSource, /game\?\.logOut\?\.\(\)/);
+  assert.match(foundryGlobalsSource, /logOut\?: \(\) => void/);
+  assert.match(css, /\.pocket-foundry-root \.setting-action\.danger-action/);
 });
 
 test("settings templates expose the character sheet banner toggle", () => {

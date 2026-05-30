@@ -1,0 +1,22 @@
+<div class="favorites-list">
+  {{#each rows}}
+    <article class="favorite-row favorite-context-row" data-favorite-id="{{id}}" data-favorite-type="{{type}}">
+      <span class="item-icon" aria-hidden="true">{{#if icon}}<img src="{{icon}}" alt="">{{else}}{{iconText}}{{/if}}</span>
+      <div class="row-title sheet-row-title">
+        <strong>{{title}}</strong>
+        <span>{{subtitle}}</span>
+      </div>
+      {{> "modules/pocket-foundry/templates/partials/favorite-context-menu.hbs"
+        canToggleFavorite=canToggleFavorite
+        favorite=favorite
+        ariaLabel=title
+        addAction=addAction
+        removeAction=removeAction
+        addLabel=addLabel
+        removeLabel=removeLabel
+        favoriteType=type
+        favoriteId=id
+      }}
+    </article>
+  {{/each}}
+</div>

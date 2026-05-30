@@ -48,6 +48,7 @@ import {
 import {
     adjustFavoriteValue,
     buildDnd5eFavoritesViewModel,
+    DND5E_FAVORITES_GROUP_PARTIAL,
     removeFavorite,
     setContextFavorite,
     useFavorite,
@@ -113,14 +114,14 @@ export const DND5E_PANE_TEMPLATE_PATHS: CharacterSheetPaneTemplatePaths = {
   features: "modules/pocket-foundry/systems/dnd5e/templates/features.hbs",
   spells: "modules/pocket-foundry/systems/dnd5e/templates/spells.hbs",
   effects: "modules/pocket-foundry/systems/dnd5e/templates/effects.hbs",
-  biography: "modules/pocket-foundry/systems/dnd5e/templates/biography.hbs",
-  favorites: "modules/pocket-foundry/systems/dnd5e/templates/favorites.hbs"
+  biography: "modules/pocket-foundry/systems/dnd5e/templates/biography.hbs"
 };
 export const DND5E_PANE_PARTIAL_PATHS = [
   "modules/pocket-foundry/systems/dnd5e/templates/partials/details-skill-row.hbs",
   "modules/pocket-foundry/systems/dnd5e/templates/partials/details-tool-row.hbs",
   "modules/pocket-foundry/systems/dnd5e/templates/partials/effect-row.hbs",
   "modules/pocket-foundry/systems/dnd5e/templates/partials/feature-row.hbs",
+  DND5E_FAVORITES_GROUP_PARTIAL,
   "modules/pocket-foundry/systems/dnd5e/templates/partials/inventory-list-row.hbs",
   "modules/pocket-foundry/systems/dnd5e/templates/partials/spell-row.hbs"
 ] as const;

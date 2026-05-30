@@ -61,6 +61,9 @@ test("effects view model maps dnd5e categories, conditions, and sources", async 
   assert.equal(mageArmor?.actions.canToggle, true);
   assert.equal(mageArmor?.actions.canDelete, true);
 
+  const jack = model.sections.find(section => section.id === "inactive")?.effects.find(effect => effect.id === "jack");
+  assert.deepEqual(jack?.changes, []);
+
   const passive = model.sections.find(section => section.id === "passive")?.effects[0];
   assert.equal(passive?.actions.canDelete, false);
   assert.equal(passive?.changes.find(change => change.label === "Damage Resistance")?.value, "Radiant");
@@ -248,6 +251,7 @@ test("effects template and styles preserve required regions with minimal effect 
   assert.match(rowTemplate, /bodyClass="pf-expandable-detail-body"/);
   assert.match(rowTemplate, /class="meta-row pf-detail-meta"/);
   assert.match(rowTemplate, /class="pf-detail-facts"/);
+  assert.match(css, /grid-template-columns: repeat\(auto-fit, minmax\(min\(100%, 160px\), 1fr\)\)/);
   assert.match(rowTemplate, /class="effect-detail-actions[^"]*pf-detail-actions"/);
   assert.match(rowTemplate, /partials\/pill\.hbs/);
   assert.match(rowTemplate, /action="details-open-reference"/);
@@ -365,6 +369,7 @@ function createEffectsActor(overrides: Partial<TestEffectsActor> = {}): TestEffe
       name: "Jack of All Trades",
       disabled: true,
       isTemporary: true,
+      changes: [{ key: "flags.dnd5e.jackOfAllTrades", value: true }],
       getSource: async () => ({ uuid: "Actor.arlen.Item.jack", name: "Jack of All Trades" })
     }),
     createEffect(actor, {

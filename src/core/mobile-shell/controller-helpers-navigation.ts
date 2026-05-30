@@ -8,15 +8,15 @@ import {
     type MobileJournalService
 } from "../../services/journal.ts";
 import {
-    createCharacterPickerFavoritesStorageKey,
-    readCharacterPickerFavorites,
-    setCharacterPickerFavorite
+    createFoundryCharacterPickerFavoritesStorage,
+    readCharacterPickerFavoritesFromStorage,
+    setCharacterPickerFavoriteInStorage
 } from "../../services/character-picker-favorites.ts";
 import { buildCombatViewModel } from "../../services/combat.ts";
 import { createLocalStorageKey, nonEmptyStringLocalStorageCodec, readLocalStorage, writeLocalStorage, type LocalStorageKey } from "../../services/local-storage.ts";
 import {
     createMobileRecentsService,
-    createRecentRoutesStorageKey
+    createFoundryRecentRouteRecordStorage
 } from "../../services/recents.ts";
 import {
     ALL_SEARCH_RESULT_TYPES,
@@ -468,12 +468,18 @@ export async function updateCharacterPickerFolderExpansion(
   await renderShell(element, router, searchState);
 }
 
-export function setCharacterPickerRouteFavorite(actorUuid: string, favorite: boolean): string[] {
-  return setCharacterPickerFavorite(getCharacterPickerFavoritesStorageKey(), actorUuid, favorite);
+/**
+ * Persists a character picker favorite for the current Foundry system and user.
+ */
+export async function setCharacterPickerRouteFavorite(actorUuid: string, favorite: boolean): Promise<string[]> {
+  return setCharacterPickerFavoriteInStorage(createFoundryCharacterPickerFavoritesStorage(), actorUuid, favorite);
 }
 
+/**
+ * Reads character picker favorites for the current Foundry system and user.
+ */
 export function getCharacterPickerRouteFavorites(): string[] {
-  return readCharacterPickerFavorites(getCharacterPickerFavoritesStorageKey());
+  return readCharacterPickerFavoritesFromStorage(createFoundryCharacterPickerFavoritesStorage());
 }
 
 /**
@@ -799,11 +805,9 @@ export function getSelectedCharacterStorageKey(): LocalStorageKey<string> {
   });
 }
 
-export function getCharacterPickerFavoritesStorageKey(): LocalStorageKey<string[]> {
-  const runtime = getFoundryRuntime();
-  return createCharacterPickerFavoritesStorageKey([runtime.game?.world?.id, runtime.game?.user?.id]);
-}
-
+/**
+ * Creates the Foundry settings backed recents service when UUID lookup is available.
+ */
 export function createFoundryRecentsService(): ReturnType<typeof createMobileRecentsService> | null {
   const runtime = getFoundryRuntime();
   const fromUuid = runtime.foundry?.utils?.fromUuid;
@@ -811,7 +815,7 @@ export function createFoundryRecentsService(): ReturnType<typeof createMobileRec
   if (!user?.id || !fromUuid) return null;
 
   return createMobileRecentsService({
-    storageKey: createRecentRoutesStorageKey([runtime.game?.world?.id, user?.id]),
+    storage: createFoundryRecentRouteRecordStorage(),
     lookupEnvironment: {
       user,
       fromUuid: async uuid => (await fromUuid(uuid)) as FoundryDocumentLike | null | undefined

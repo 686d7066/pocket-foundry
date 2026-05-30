@@ -1,0 +1,147 @@
+{{#if (eq kind "skills")}}
+  <div class="detail-table skills-table favorites-source-table">
+    <div class="sheet-list-head dnd5e-table-head dnd5e-detail-schema dnd5e-detail-schema--skill" aria-hidden="true">
+      <span>Ability</span><span>Skill</span><span>Total</span><span>Passive</span>
+    </div>
+    {{#each skills}}
+      {{> "modules/pocket-foundry/systems/dnd5e/templates/partials/details-skill-row.hbs" this}}
+    {{/each}}
+  </div>
+{{/if}}
+
+{{#if (eq kind "tools")}}
+  <div class="detail-table tool-table favorites-source-table">
+    <div class="sheet-list-head dnd5e-table-head dnd5e-detail-schema dnd5e-detail-schema--tool" aria-hidden="true">
+      <span>Ability</span><span>Tool</span><span>Total</span>
+    </div>
+    {{#each tools}}
+      {{> "modules/pocket-foundry/systems/dnd5e/templates/partials/details-tool-row.hbs" this}}
+    {{/each}}
+  </div>
+{{/if}}
+
+{{#if (eq kind "inventory")}}
+  <div class="sheet-table sheet-list inventory-list favorites-source-list">
+    <div class="sheet-list-head inventory-list-head inventory-list-head-favorites dnd5e-table-head pf-list-schema pf-list-schema--icon-title-3meta-actions" aria-hidden="true">
+      <span>Name</span>
+      <span class="inventory-list-head-cell inventory-list-head-cell-roll">Roll</span>
+      <span class="inventory-list-head-cell inventory-list-head-cell-formula">Formula</span>
+      <span class="inventory-list-head-cell inventory-list-head-cell-charges">Charges</span>
+      <span></span>
+    </div>
+    {{#each items}}
+      {{> "modules/pocket-foundry/systems/dnd5e/templates/partials/inventory-list-row.hbs" this}}
+    {{/each}}
+  </div>
+{{/if}}
+
+{{#if (eq kind "spells")}}
+  <div class="sheet-table sheet-list spells-table favorites-source-list">
+    <div class="sheet-list-head spells-list-head dnd5e-table-head pf-list-schema pf-list-schema--icon-title-4meta-actions" aria-hidden="true">
+      <span>Name</span>
+      <span>Time</span>
+      <span>Range</span>
+      <span>Target</span>
+      <span>Roll</span>
+      <span></span>
+    </div>
+    {{#each spells}}
+      {{> "modules/pocket-foundry/systems/dnd5e/templates/partials/spell-row.hbs" this}}
+    {{/each}}
+  </div>
+{{/if}}
+
+{{#if (eq kind "spell-slots")}}
+  <div class="favorites-slot-tracks">
+    {{#each slotTracks}}
+      <div class="slot-tracks spell-section-slots" aria-label="{{label}} slot controls" data-region="slot-tracks" data-favorite-context>
+        <strong>{{label}}</strong>
+        {{#each pips}}
+          <button
+            class="spell-slot-pip {{#if filled}}filled{{/if}} {{#if temporary}}temporary{{/if}}"
+            type="button"
+            data-action="spells-toggle-slot-pip"
+            data-slot="{{../id}}"
+            data-pip="{{n}}"
+            aria-label="{{label}}"
+            aria-pressed="{{#if filled}}true{{else}}false{{/if}}"
+            {{#unless ../canUpdate}}disabled{{/unless}}
+            data-swipe-ignore
+          >
+            <i class="fa-solid fa-shield" aria-hidden="true"></i>
+          </button>
+        {{/each}}
+        {{#if canToggleFavorite}}
+          {{> "modules/pocket-foundry/templates/partials/favorite-context-menu.hbs"
+            canToggleFavorite=canToggleFavorite
+            favorite=favorite
+            ariaLabel=label
+            addAction="context-add-favorite"
+            removeAction="context-remove-favorite"
+            addLabel="Add to Favorites"
+            removeLabel="Remove from Favorites"
+            favoriteType="slots"
+            favoriteId=id
+          }}
+        {{/if}}
+      </div>
+    {{/each}}
+  </div>
+{{/if}}
+
+{{#if (eq kind "features")}}
+  <div class="sheet-table sheet-list features-list favorites-source-list">
+    <div class="sheet-list-head features-list-head dnd5e-table-head pf-list-schema pf-list-schema--icon-title-2meta-actions" aria-hidden="true">
+      <span>Name</span>
+      <span>Uses</span>
+      <span>Recovery</span>
+      <span></span>
+    </div>
+    {{#each features}}
+      {{> "modules/pocket-foundry/systems/dnd5e/templates/partials/feature-row.hbs" this}}
+    {{/each}}
+  </div>
+{{/if}}
+
+{{#if (eq kind "effects")}}
+  <div class="sheet-table sheet-list effects-list favorites-source-list">
+    <div class="sheet-list-head effects-list-head dnd5e-table-head pf-list-schema pf-list-schema--icon-title-source-actions" aria-hidden="true">
+      <span>Name</span>
+      <span>Source</span>
+      <span></span>
+    </div>
+    {{#each effects}}
+      {{> "modules/pocket-foundry/systems/dnd5e/templates/partials/effect-row.hbs" this}}
+    {{/each}}
+  </div>
+{{/if}}
+
+{{#if (eq kind "legacy-resources")}}
+  <div class="favorites-list">
+    {{#each rows}}
+      <article class="favorite-row favorite-context-row {{#if suppressed}}suppressed{{/if}}" data-favorite-id="{{id}}" data-favorite-type="{{type}}" {{#if key}}data-key="{{key}}"{{/if}}>
+        <span class="item-icon" aria-hidden="true">{{#if icon}}<img src="{{icon}}" alt="">{{else}}{{iconText}}{{/if}}</span>
+        <details class="favorite-detail-drawer">
+          <summary class="row-title sheet-row-title" data-swipe-ignore>
+            <strong>{{title}}</strong>
+            <span>{{subtitle}}</span>
+          </summary>
+        </details>
+        <span class="favorite-primary {{primary.kind}} {{#unless primary.active}}disabled{{/unless}}">
+          {{primary.value}}{{#if primary.max}}<i>/{{primary.max}}</i>{{/if}}
+        </span>
+        <span class="favorite-secondary">{{secondary}}</span>
+        {{#if canRemoveFavorite}}
+          {{> "modules/pocket-foundry/templates/partials/favorite-context-menu.hbs"
+            canToggleFavorite=canRemoveFavorite
+            favorite=true
+            ariaLabel=title
+            removeAction="favorites-remove-context"
+            removeLabel=removeContextLabel
+            favoriteId=id
+          }}
+        {{/if}}
+      </article>
+    {{/each}}
+  </div>
+{{/if}}
