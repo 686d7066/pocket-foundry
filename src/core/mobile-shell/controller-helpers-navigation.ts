@@ -1,7 +1,8 @@
 import { type MobileRouter } from "../../router/mobile-router.ts";
 import type { RoutePermissionResolver } from "../../router/route-permissions.ts";
 import { RouteView, ShellDestination, type ActorSheetPaneId, type CharacterRoute, type MobileRoute } from "../../router/routes.ts";
-import { createDocumentLookupService, type FoundryDocumentLike, type MobileDocumentType } from "../../services/document-lookup.ts";
+import { getMobileDocumentType, type FoundryDocumentLike, type MobileDocumentType } from "../../services/document-lookup.ts";
+import { hasDocumentPermission, type FoundryPermissionLevelName } from "../../services/permissions.ts";
 import { type ItemDetailViewModel } from "../../services/item-detail.ts";
 import {
     type JournalPageMutationResult,
@@ -227,7 +228,7 @@ export function isShellDestination(route: string | undefined): route is ShellDes
  */
 export function createFoundryRoutePermissionResolver(): RoutePermissionResolver {
   return {
-    canViewActor: actorUuid => canViewDocumentByUuid(actorUuid, "character"),
+    canViewActor: actorUuid => canViewDocumentByUuid(actorUuid, "character", "LIMITED"),
     canViewDocument: (documentUuid, expectedType) => canViewDocumentByUuid(documentUuid, expectedType),
     canViewJournalEntry: entryUuid => canViewDocumentByUuid(entryUuid, "journal-entry"),
     canViewJournalPage: (_entryUuid, pageUuid) => canViewDocumentByUuid(pageUuid, "journal-page")
@@ -237,7 +238,13 @@ export function createFoundryRoutePermissionResolver(): RoutePermissionResolver 
 /**
  * Checks view permission for a UUID using Foundry's synchronous UUID lookup.
  */
-export function canViewDocumentByUuid(uuid: string, expectedType?: MobileDocumentType): boolean {
+export function canViewDocumentByUuid(
+  uuid: string,
+  expectedType?: MobileDocumentType,
+  minimumPermission: FoundryPermissionLevelName = "OBSERVER"
+): boolean {
+  if (!uuid.trim()) return false;
+
   const runtime = getFoundryRuntime();
   const fromUuidSync = runtime.foundry?.utils?.fromUuidSync;
   const user = runtime.game?.user;
@@ -245,14 +252,17 @@ export function canViewDocumentByUuid(uuid: string, expectedType?: MobileDocumen
   // visible there so pure router behavior can be tested without a live world.
   if (!fromUuidSync || !user) return true;
 
-  const lookup = createDocumentLookupService({
-    user,
-    fromUuid: async () => null,
-    fromUuidSync: lookupUuid => fromUuidSync(lookupUuid) as FoundryDocumentLike | null | undefined
-  }).lookupByUuidSync(uuid);
+  try {
+    const document = fromUuidSync(uuid) as FoundryDocumentLike | null | undefined;
+    if (!document) return false;
 
-  if (!lookup.available) return false;
-  return expectedType ? lookup.documentType === expectedType : true;
+    const documentType = getMobileDocumentType(document);
+    if (expectedType && documentType !== expectedType) return false;
+    if (document.parent && !hasDocumentPermission(document.parent, user, minimumPermission)) return false;
+    return hasDocumentPermission(document, user, minimumPermission);
+  } catch {
+    return false;
+  }
 }
 
 /**

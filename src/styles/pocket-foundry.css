@@ -123,6 +123,12 @@
   .pocket-foundry-root.mf-app,
   .pocket-foundry-root .mf-app { @apply mx-auto min-h-screen max-w-[920px] bg-mf-surface pb-[calc(var(--pf-bottom-nav-height)+env(safe-area-inset-bottom))] shadow-mf-shell; }
   .pocket-foundry-root .actor-sheet-shell { @apply relative min-h-screen bg-mf-surface; isolation: isolate; }
+  .pocket-foundry-root .limited-character-view { @apply place-items-center p-4; min-height: calc(100vh - var(--pf-header-height) - var(--pf-bottom-nav-height)); }
+  .pocket-foundry-root .limited-character-identity { @apply grid justify-items-center gap-3 text-center; }
+  .pocket-foundry-root .limited-character-identity img,
+  .pocket-foundry-root .limited-character-identity .portrait { @apply h-36 w-36 rounded-lg; }
+  .pocket-foundry-root .limited-character-identity img { @apply object-cover; }
+  .pocket-foundry-root .limited-character-identity h2 { @apply m-0 text-[1.15rem] font-extrabold text-mf-text; }
   .pocket-foundry-root .actor-sheet-shell.character-banner-enabled::before {
     content: "";
     position: absolute;
@@ -213,7 +219,7 @@
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
   }
-  .pocket-foundry-root .actor-sheet-shell.character-banner-enabled .actor-top-chrome { @apply bg-mf-surface/70 backdrop-blur-sm; }
+  .pocket-foundry-root .actor-sheet-shell.character-banner-enabled .actor-top-chrome { @apply bg-mf-surface/70; }
   .pocket-foundry-root .rail button,
   .pocket-foundry-root .rail a,
   .pocket-foundry-root .rail span { @apply shrink-0 min-w-[82px] rounded-lg border border-mf-line bg-mf-surface px-2.5 py-2 text-center text-[.82rem] font-bold text-mf-muted; }
@@ -377,11 +383,11 @@
   .pocket-foundry-root .character-picker-help-text { @apply mx-2 mt-1.5 mb-0 rounded-md border border-mf-line bg-mf-panel px-2 py-1.5 text-[.74rem] font-semibold leading-snug text-mf-muted; }
   .pocket-foundry-root .character-folder-tree { @apply grid gap-1 p-1; }
   .pocket-foundry-root .character-folder-node { @apply overflow-hidden rounded-md border border-mf-row-line bg-mf-surface; }
-  .pocket-foundry-root .character-folder-toggle { @apply grid w-full min-h-9 grid-cols-[20px_minmax(0,1fr)_auto] items-center gap-1.5 border-0 border-b border-mf-row-line bg-transparent px-2 py-1.5 text-left; }
+  .pocket-foundry-root .character-folder-toggle { @apply grid w-full min-h-9 grid-cols-[20px_minmax(0,1fr)_auto] items-center gap-1.5 border-0 border-b border-mf-row-line bg-transparent px-2 py-1.5 text-left; position: relative; z-index: 0; }
   .pocket-foundry-root .character-folder-toggle i { @apply text-[.82rem] text-mf-muted; }
   .pocket-foundry-root .character-folder-toggle strong { @apply truncate text-[.78rem] uppercase font-extrabold text-mf-muted; }
   .pocket-foundry-root .character-folder-toggle span { @apply min-w-5 rounded-full border border-mf-line bg-mf-subtle px-1 text-center text-[.66rem] font-extrabold text-mf-muted; }
-  .pocket-foundry-root .character-folder-children { @apply grid gap-1; }
+  .pocket-foundry-root .character-folder-children { @apply grid gap-1; position: relative; z-index: 1; }
   .pocket-foundry-root .character-folder-node[data-depth="1"] { @apply ml-3; }
   .pocket-foundry-root .character-folder-node[data-depth="2"] { @apply ml-6; }
   .pocket-foundry-root .character-folder-node[data-depth="3"] { @apply ml-9; }
@@ -392,6 +398,7 @@
   .pocket-foundry-root .character-picker-list .character-picker-row + .character-picker-row { @apply mt-0; }
   .pocket-foundry-root .character-picker-list .character-picker-row:last-child { @apply border-b-0; }
   .pocket-foundry-root .character-picker-row.character-picker-row-header { @apply min-h-[62px] grid-cols-[48px_minmax(0,1fr)_max-content] gap-2 px-2 py-1.5; }
+  .pocket-foundry-root .character-picker-row.character-picker-row-limited { @apply grid-cols-[48px_minmax(0,1fr)]; }
   .pocket-foundry-root .character-picker-portrait { @apply h-12 w-12 text-[.92rem]; }
   .pocket-foundry-root .character-picker-title-block { @apply min-w-0; }
   .pocket-foundry-root .character-picker-title-block strong { @apply block truncate text-[1.05rem] leading-tight font-extrabold text-mf-text; }

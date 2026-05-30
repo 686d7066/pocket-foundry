@@ -88,6 +88,45 @@ test("character picker includes limited characters like the Foundry actor direct
   assert.deepEqual(model.characters.map(character => character.name), ["Limited Character"]);
 });
 
+test("character picker renders limited characters as identity-only rows", () => {
+  const limitedCharacter = {
+    ...createActor({
+      uuid: "Actor.limited",
+      name: "Limited Character",
+      updateable: false,
+      userLevel: 1,
+      system: {
+        details: { species: "Human", level: 3 },
+        attributes: {
+          hp: { value: 24, max: 24 },
+          ac: { value: 13 },
+          init: { total: 2 }
+        }
+      },
+      items: [{ name: "Warlock", type: "class", system: { levels: 3 } }]
+    }),
+    testUserPermission: (_user: unknown, level: unknown) => level === "LIMITED",
+    getUserLevel: () => 1
+  } satisfies CharacterPickerActor;
+
+  const model = buildCharacterPickerViewModel({
+    actors: [limitedCharacter],
+    user
+  });
+
+  const character = model.characters[0];
+  assert.equal(character?.name, "Limited Character");
+  assert.equal(character?.limited, true);
+  assert.equal(character?.ownershipLabel, "Limited");
+  assert.equal(character?.subtitle, "");
+  assert.equal(character?.summary, "");
+  assert.equal(character?.showHeaderStats, false);
+  assert.equal(character?.acValue, "");
+  assert.equal(character?.hpValue, "");
+  assert.deepEqual(character?.chips, []);
+  assert.doesNotMatch(JSON.stringify(model), /Human|Warlock|24\/24|"13"|\+2/);
+});
+
 test("character picker prioritizes owned player characters before observed characters", () => {
   const observed = createActor({ uuid: "Actor.observed", name: "Aster Vale", updateable: false, userLevel: 2 });
   const owned = createActor({ uuid: "Actor.owned", name: "Borin Flint", updateable: true, userLevel: 3 });
@@ -161,6 +200,9 @@ test("character picker template preserves regions and Character terminology", ()
   assert.match(template, /class="portrait character-picker-portrait"/);
   assert.match(template, /class="title-block character-picker-title-block"/);
   assert.match(template, /class="header-stats character-picker-header-stats"/);
+  assert.match(template, /character-picker-row-limited/);
+  assert.match(template, /\{\{#if subtitle\}\}<span>\{\{subtitle\}\}<\/span>\{\{\/if\}\}/);
+  assert.match(template, /\{\{#if showHeaderStats\}\}[\s\S]*class="header-stats character-picker-header-stats"/);
   assert.match(template, /class="character-folder-toggle"/);
   assert.match(template, /data-action="character-picker-toggle-folder"/);
   assert.match(template, /class="character-picker-block-heading character-picker-block-heading-help"/);
@@ -196,6 +238,9 @@ test("character picker rows use anchor semantics and two-line grid rows", () => 
   assert.match(css, /\.pocket-foundry-root a \{ @apply text-inherit no-underline; \}/);
   assert.match(css, /\.pocket-foundry-root \.row \{ @apply grid min-h-\[62px\]/);
   assert.match(css, /\.pocket-foundry-root \.character-folder-node/);
+  assert.match(css, /\.pocket-foundry-root \.character-folder-toggle \{[\s\S]*position: relative; z-index: 0;/);
+  assert.match(css, /\.pocket-foundry-root \.character-folder-children \{[\s\S]*position: relative; z-index: 1;/);
+  assert.match(css, /\.pocket-foundry-root \.character-picker-row\.character-picker-row-limited/);
   assert.match(css, /\.pocket-foundry-root \.character-picker-title-block strong \{ @apply block truncate text-\[1\.05rem\]/);
   assert.match(css, /\.pocket-foundry-root \.character-picker-header-stats \.header-stat b \{ @apply text-\[\.64rem\]; \}/);
   assert.match(css, /\.pocket-foundry-root \.character-picker-help-toggle/);

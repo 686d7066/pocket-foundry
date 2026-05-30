@@ -1,6 +1,7 @@
 import {
   canUpdateDocument,
   canViewDocument,
+  canViewLimitedDocument,
   getDocumentUserLevel,
   FOUNDRY_PERMISSION_LEVELS,
   type FoundryUserLike,
@@ -51,9 +52,11 @@ export type CharacterPickerRow = {
   typeLabel: "Character";
   iconText: string;
   image: string | null;
+  limited: boolean;
   subtitle: string;
   summary: string;
-  ownershipLabel: "Owner" | "Observer";
+  ownershipLabel: "Owner" | "Observer" | "Limited";
+  showHeaderStats: boolean;
   acValue: string;
   hpValue: string;
   chips: CharacterPickerChip[];
@@ -153,21 +156,19 @@ export function buildCharacterPickerViewModel(environment: CharacterPickerEnviro
 }
 
 function canListCharacter(actor: CharacterPickerActor, user: FoundryUserLike): boolean {
-  if (canViewDocument(actor, user)) return true;
-  if (typeof actor.testUserPermission === "function" && actor.testUserPermission(user, "LIMITED") === true) return true;
-  const level = getDocumentUserLevel(actor, user);
-  return level !== null && level >= FOUNDRY_PERMISSION_LEVELS.LIMITED;
+  return canViewLimitedDocument(actor, user);
 }
 
 function buildCharacterPickerRow(actor: CharacterPickerActor, user: FoundryUserLike, favoriteActorUuids: Set<string>): CharacterPickerRow {
   const name = actor.name?.trim() || "Unnamed Character";
-  const summary = getCharacterSummary(actor);
-  const classSummary = getClassSummary(actor);
-  const ownershipLabel = isOwner(actor, user) ? "Owner" : "Observer";
+  const canViewFullSheet = canViewDocument(actor, user);
+  const summary = canViewFullSheet ? getCharacterSummary(actor) : "";
+  const classSummary = canViewFullSheet ? getClassSummary(actor) : "";
+  const ownershipLabel = canViewFullSheet ? (isOwner(actor, user) ? "Owner" : "Observer") : "Limited";
   const folderInfo = getCharacterFolderInfo(actor);
   const actorUuid = actor.uuid ?? (actor.id ? `Actor.${actor.id}` : "");
-  const headerStats = getCharacterHeaderStats(actor);
-  const subtitle = classSummary || summary || "Character";
+  const headerStats = canViewFullSheet ? getCharacterHeaderStats(actor) : { ac: "", hp: "" };
+  const subtitle = canViewFullSheet ? (classSummary || summary || "Character") : "";
 
   return {
     uuid: actorUuid,
@@ -175,19 +176,21 @@ function buildCharacterPickerRow(actor: CharacterPickerActor, user: FoundryUserL
     typeLabel: "Character",
     iconText: getInitials(name),
     image: actor.img || null,
+    limited: !canViewFullSheet,
     subtitle,
-    summary,
+    summary: canViewFullSheet ? summary : "",
     ownershipLabel,
+    showHeaderStats: canViewFullSheet,
     acValue: headerStats.ac,
     hpValue: headerStats.hp,
-    chips: getCharacterChips(actor),
+    chips: canViewFullSheet ? getCharacterChips(actor) : [],
     favorite: favoriteActorUuids.has(actorUuid),
     canToggleFavorite: true,
     folderLabel: folderInfo.label,
     folderPathLabel: folderInfo.pathLabel,
     folderDepth: folderInfo.depth,
     sortName: name.toLocaleLowerCase(),
-    ownerPriority: ownershipLabel === "Owner" ? 0 : 1,
+    ownerPriority: ownershipLabel === "Owner" ? 0 : ownershipLabel === "Observer" ? 1 : 2,
     folderSortPath: folderInfo.sortPath,
     folderSortLabel: folderInfo.pathLabel.toLocaleLowerCase(),
     folderGroupKey: folderInfo.key,

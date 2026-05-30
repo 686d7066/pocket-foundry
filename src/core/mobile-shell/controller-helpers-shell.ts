@@ -150,7 +150,7 @@ export async function buildShellContentViewModel(
         user: runtime.game?.user ?? null,
         activePane
       });
-      const paneModel = navigationModel.unavailable
+      const paneModel = navigationModel.unavailable || navigationModel.limited
         ? { pane: normalizedPane, context: characterSheetAdapter.getPaneContext(normalizedPane), data: undefined }
         : await characterSheetAdapter.buildPaneViewModel({
             pane: normalizedPane,
@@ -166,7 +166,7 @@ export async function buildShellContentViewModel(
         canGoBack
       };
 
-      if (!navigationModel.unavailable) {
+      if (!navigationModel.unavailable && !navigationModel.limited) {
         const paneSpecs = characterSheetAdapter.getPaneSpecs({ actor, user: runtime.game?.user ?? null });
         const headerPaneContext = characterSheetAdapter.getHeaderPaneContext?.() ?? null;
         const headerPane = headerPaneContext

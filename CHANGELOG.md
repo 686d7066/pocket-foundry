@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [14.9.1] - Characters in folders with additional subfolders cant be selected
+
+- Fixed characters being not openable when further subfolders exist.
+- Fixed permission bug related to the LIMITED permission.
+
 ## [14.9.0] - Persist user favorites and recents server side
 
 - Favorites, Recents and Favorite Characters are now saved in Foundry instead of local storage.

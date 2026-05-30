@@ -1,7 +1,7 @@
 <div class="character-picker-view" data-region="character-picker-view">
   {{#*inline "characterPickerRows"}}
     {{#each rows}}
-      <a class="row character-picker-row character-picker-row-header favorite-context-row" role="link" tabindex="0" data-action="open-character" data-uuid="{{uuid}}" data-favorite-context data-favorite-id="{{uuid}}" data-favorite-type="character">
+      <a class="row character-picker-row character-picker-row-header favorite-context-row{{#if limited}} character-picker-row-limited{{/if}}" role="link" tabindex="0" data-action="open-character" data-uuid="{{uuid}}" data-favorite-context data-favorite-id="{{uuid}}" data-favorite-type="character">
         <span class="portrait character-picker-portrait" aria-hidden="true">
           {{#if image}}
             <img src="{{image}}" alt="">
@@ -11,12 +11,14 @@
         </span>
         <span class="title-block character-picker-title-block">
           <strong>{{name}}</strong>
-          <span>{{subtitle}}</span>
+          {{#if subtitle}}<span>{{subtitle}}</span>{{/if}}
         </span>
-        <span class="header-stats character-picker-header-stats" aria-hidden="true">
-          <span class="header-stat header-stat-ac"><b>AC</b><strong>{{acValue}}</strong></span>
-          <span class="header-stat header-stat-hp"><b>HP</b><strong>{{hpValue}}</strong></span>
-        </span>
+        {{#if showHeaderStats}}
+          <span class="header-stats character-picker-header-stats" aria-hidden="true">
+            <span class="header-stat header-stat-ac"><b>AC</b><strong>{{acValue}}</strong></span>
+            <span class="header-stat header-stat-hp"><b>HP</b><strong>{{hpValue}}</strong></span>
+          </span>
+        {{/if}}
         {{> "modules/pocket-foundry/templates/partials/favorite-context-menu.hbs"
           canToggleFavorite=canToggleFavorite
           favorite=favorite
