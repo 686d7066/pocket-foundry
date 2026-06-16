@@ -1,15 +1,16 @@
-import type { PermissionCheckedDocument } from "../../../services/permissions.ts";
+import type { foundry } from "fvtt-types";
+import type { FoundryDataShape } from "../../../core/foundry-globals.ts";
+import type { FoundryDocumentMutationApi, PermissionCheckedDocument } from "../../../services/permissions.ts";
 import type { RichTextReference } from "../../../services/rich-text-links.ts";
 
 /**
  * Minimal dnd5e actor shape required to build the Details pane view model.
  */
-export type Dnd5eDetailsActor = PermissionCheckedDocument & {
-  uuid?: string;
-  id?: string;
-  name?: string;
-  type?: string;
-  img?: string | null;
+export type Dnd5eDetailsActor = PermissionCheckedDocument
+  & FoundryDocumentMutationApi
+  & FoundryDataShape<foundry.documents.types.ActorData>
+  & {
+  img?: foundry.documents.types.ActorData["img"] | null;
   isOwner?: boolean;
   system?: Record<string, unknown>;
   items?: unknown;
@@ -17,15 +18,12 @@ export type Dnd5eDetailsActor = PermissionCheckedDocument & {
   getRollData?: (options?: { deterministic?: boolean }) => Record<string, unknown>;
   initiateRest?: (config: Dnd5eDetailsRestConfig) => Promise<unknown>;
   rollHitDie?: (config?: { denomination?: string }, dialog?: { configure?: boolean }, message?: { create?: boolean }) => Promise<unknown>;
-  update?: (data: Record<string, unknown>) => Promise<unknown>;
 };
 
 /**
  * Minimal class item shape used for dnd5e character summaries.
  */
-export type Dnd5eDetailsClassLike = {
-  name?: string;
-  type?: string;
+export type Dnd5eDetailsClassLike = FoundryDataShape<foundry.documents.types.ItemData> & {
   system?: Record<string, unknown>;
 };
 

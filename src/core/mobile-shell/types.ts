@@ -121,7 +121,7 @@ export type JournalPageRowViewModel = JournalPageSummaryViewModel & {
   typeLabel: string;
 };
 
-export type JournalEntryTemplateModel = (JournalEntryViewModel & {
+export type JournalEntryTemplateModel = (Omit<JournalEntryViewModel, "visiblePages"> & {
   hasPages: boolean;
   visiblePages: JournalPageRowViewModel[];
 }) | UnavailableJournalViewModel;

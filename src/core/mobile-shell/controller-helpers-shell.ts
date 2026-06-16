@@ -1,3 +1,4 @@
+import type { foundry } from "fvtt-types";
 import { type MobileRouter } from "../../router/mobile-router.ts";
 import { createShellRoute, getShellDestination, RouteView, ShellDestination, type CharacterRoute, type MobileRoute } from "../../router/routes.ts";
 import {
@@ -30,6 +31,11 @@ import { buildSearchViewModel, prepareSearchForRender } from "./controller-helpe
 import type { JournalEntryTemplateModel, JournalPageRowViewModel, JournalPageTemplateModel, JournalShellViewModel, SearchUiState, ShellContentType, ShellViewModel } from "./types.ts";
 
 const SHELL_TEMPLATE = `modules/${MODULE_ID}/templates/shell.hbs`;
+
+type JournalEntryPageClass = typeof foundry.documents.JournalEntryPage & {
+  createDialog?: (data?: Record<string, unknown>, createOptions?: Record<string, unknown>, dialogOptions?: Record<string, unknown>) => Promise<JournalPageDocumentLike | null | undefined>;
+  implementation?: JournalEntryPageClass;
+};
 
 
 export async function renderShell(rootElement: HTMLElement, router: MobileRouter, searchState?: SearchUiState): Promise<void> {
@@ -359,18 +365,11 @@ export function createFoundryJournalService(): MobileJournalService {
     },
     enrichHtml: typeof textEditor?.enrichHTML === "function" ? textEditor.enrichHTML.bind(textEditor) : undefined,
     canCreatePage: user => {
-      const pageClass = (globalThis as { JournalEntryPage?: { canUserCreate?: (user: unknown) => boolean } }).JournalEntryPage;
-      return pageClass?.canUserCreate?.(user) !== false;
+      const pageClass = runtime.JournalEntryPage;
+      return pageClass?.canUserCreate?.(user as Parameters<typeof foundry.documents.JournalEntryPage.canUserCreate>[0]) !== false;
     },
     createPageDialog: entry => {
-      const pageClass = (globalThis as {
-        JournalEntryPage?: {
-          implementation?: {
-            createDialog?: (data?: Record<string, unknown>, createOptions?: Record<string, unknown>, dialogOptions?: Record<string, unknown>) => Promise<JournalPageDocumentLike | null | undefined>;
-          };
-          createDialog?: (data?: Record<string, unknown>, createOptions?: Record<string, unknown>, dialogOptions?: Record<string, unknown>) => Promise<JournalPageDocumentLike | null | undefined>;
-        };
-      }).JournalEntryPage;
+      const pageClass = runtime.JournalEntryPage as JournalEntryPageClass | undefined;
       if (!pageClass) return Promise.resolve(null);
       const owner = pageClass.implementation ?? pageClass;
       const createDialog = owner.createDialog;
@@ -378,16 +377,9 @@ export function createFoundryJournalService(): MobileJournalService {
       return createDialog.call(owner, {}, { parent: entry }, {});
     },
     createPageData: async (entry, data) => {
-      const pageClass = (globalThis as {
-        JournalEntryPage?: {
-          implementation?: {
-            create?: (data?: Record<string, unknown>, createOptions?: Record<string, unknown>) => Promise<JournalPageDocumentLike | JournalPageDocumentLike[] | null | undefined>;
-          };
-          create?: (data?: Record<string, unknown>, createOptions?: Record<string, unknown>) => Promise<JournalPageDocumentLike | JournalPageDocumentLike[] | null | undefined>;
-        };
-      }).JournalEntryPage;
+      const pageClass = runtime.JournalEntryPage as JournalEntryPageClass | undefined;
       const owner = pageClass?.implementation ?? pageClass;
-      const create = owner?.create;
+      const create = owner?.create as ((data?: Record<string, unknown>, createOptions?: Record<string, unknown>) => Promise<JournalPageDocumentLike | JournalPageDocumentLike[] | null | undefined>) | undefined;
       if (typeof create === "function") {
         const created = await create.call(owner, data, { parent: entry });
         return Array.isArray(created) ? created[0] : created;

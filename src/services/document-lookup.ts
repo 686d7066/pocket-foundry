@@ -1,7 +1,10 @@
+import type { foundry } from "fvtt-types";
+import type { FoundryDataShape } from "../core/foundry-globals.ts";
 import {
   canViewDocument,
   canViewJournalPage,
   getNormalizedDocumentPermissions,
+  type FoundryDocumentMutationApi,
   type FoundryUserLike,
   type NormalizedDocumentPermissions,
   type PermissionCheckedDocument
@@ -21,14 +24,14 @@ export type UnavailableDocumentReason = "invalid-uuid" | "missing" | "hidden" | 
 /**
  * Minimal Foundry document shape normalized by the lookup service.
  */
-export type FoundryDocumentLike = PermissionCheckedDocument & {
-  uuid?: string;
-  _id?: string;
-  id?: string;
-  name?: string;
-  type?: string;
-  img?: string | null;
-  documentName?: string;
+export type FoundryDocumentLike = PermissionCheckedDocument
+  & FoundryDocumentMutationApi
+  & FoundryDataShape<foundry.documents.types.ActorData>
+  & FoundryDataShape<foundry.documents.types.ItemData>
+  & FoundryDataShape<foundry.documents.types.JournalEntryData>
+  & {
+  _id?: Exclude<foundry.documents.types.ItemData["_id"], null>;
+  img?: foundry.documents.types.ActorData["img"] | foundry.documents.types.ItemData["img"] | null;
   parent?: FoundryDocumentLike | null;
 };
 
@@ -39,8 +42,8 @@ export type FoundryDocumentLike = PermissionCheckedDocument & {
  * documents, so both states are accepted at this boundary.
  */
 export type FoundryUuidResolver = {
-  fromUuid: (uuid: string) => Promise<FoundryDocumentLike | null | undefined>;
-  fromUuidSync?: (uuid: string) => FoundryDocumentLike | null | undefined;
+  fromUuid: (uuid: Parameters<typeof foundry.utils.fromUuid>[0]) => Promise<FoundryDocumentLike | null | undefined>;
+  fromUuidSync?: (uuid: Parameters<typeof foundry.utils.fromUuidSync>[0]) => FoundryDocumentLike | null | undefined;
 };
 
 /**

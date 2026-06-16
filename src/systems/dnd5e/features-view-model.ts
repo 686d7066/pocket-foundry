@@ -1,6 +1,7 @@
+import type { foundry } from "fvtt-types";
 import { getCollectionContents, getInitials, getNumber, getObject, getString } from "../../core/utils.ts";
-import { getFoundryRuntime } from "../../core/foundry-globals.ts";
-import { canUpdateDocument, canViewDocument, type FoundryUserLike, type PermissionCheckedDocument } from "../../services/permissions.ts";
+import { getFoundryRuntime, type FoundryDataShape } from "../../core/foundry-globals.ts";
+import { canUpdateDocument, canViewDocument, type FoundryDocumentMutationApi, type FoundryUserLike, type PermissionCheckedDocument } from "../../services/permissions.ts";
 import { enrichSectionRows } from "../../services/rich-text-enrichment.ts";
 import {
   buildSignedAdjustmentOptions,
@@ -21,29 +22,25 @@ import {
 } from "./view-model-helpers.ts";
 import { canToggleDnd5eFavorites, hasDnd5eFavoriteReference, setDnd5eFavoriteEntry } from "./favorites-storage.ts";
 
-export type Dnd5eFeaturesActor = PermissionCheckedDocument & {
-  uuid?: string;
-  id?: string;
-  type?: string;
-  name?: string;
+export type Dnd5eFeaturesActor = PermissionCheckedDocument
+  & FoundryDocumentMutationApi
+  & FoundryDataShape<foundry.documents.types.ActorData>
+  & {
   system?: Record<string, unknown>;
   items?: unknown;
   classes?: Record<string, Dnd5eFeaturesItem>;
-  updateEmbeddedDocuments?: (embeddedName: "Item", updates: Array<Record<string, unknown>>) => Promise<unknown>;
   endConcentration?: (item: Dnd5eFeaturesItem) => Promise<unknown>;
 };
 
-export type Dnd5eFeaturesItem = PermissionCheckedDocument & {
-  id?: string;
-  _id?: string;
-  uuid?: string;
-  name?: string;
-  type?: string;
-  img?: string | null;
+export type Dnd5eFeaturesItem = PermissionCheckedDocument
+  & FoundryDocumentMutationApi
+  & FoundryDataShape<foundry.documents.types.ItemData>
+  & {
+  _id?: Exclude<foundry.documents.types.ItemData["_id"], null>;
+  img?: foundry.documents.types.ItemData["img"] | null;
   identifier?: string;
   class?: Dnd5eFeaturesItem;
   parent?: Dnd5eFeaturesActor | null;
-  flags?: Record<string, unknown>;
   system?: Record<string, unknown>;
   labels?: Record<string, unknown>;
   hasRecharge?: boolean;
@@ -52,8 +49,6 @@ export type Dnd5eFeaturesItem = PermissionCheckedDocument & {
   isOnCooldown?: boolean;
   isOwner?: boolean;
   use?: (eventOrOptions?: unknown, options?: unknown) => Promise<unknown>;
-  update?: (data: Record<string, unknown>) => Promise<unknown>;
-  getFlag?: (scope: string, key: string) => unknown;
   getChatData?: (options?: { secrets?: boolean }) => Promise<unknown>;
 };
 

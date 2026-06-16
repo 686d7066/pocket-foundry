@@ -1,3 +1,5 @@
+import type { foundry } from "fvtt-types";
+import { getFoundryRuntime, type FoundryDataShape } from "../core/foundry-globals.ts";
 import { getCollectionContents, getObject, getNumber, getString } from "../core/utils.ts";
 import { RouteView, type MobileRoute } from "../router/routes.ts";
 import {
@@ -6,52 +8,38 @@ import {
   canViewDocument,
   canViewJournalPage,
   getDocumentUserLevel,
+  type FoundryDocumentMutationApi,
   type FoundryUserLike,
   type PermissionCheckedDocument
 } from "./permissions.ts";
 
 export type JournalPageType = "text" | "image" | "pdf" | "video" | "unsupported";
 
-export type JournalEntryDocumentLike = PermissionCheckedDocument & {
-  uuid?: string;
-  id?: string;
-  _id?: string;
-  name?: string;
-  img?: string | null;
-  documentName?: string;
-  sort?: number;
+export type JournalEntryDocumentLike = PermissionCheckedDocument
+  & FoundryDocumentMutationApi
+  & FoundryDataShape<foundry.documents.types.JournalEntryData>
+  & {
+  img?: foundry.documents.types.ActorData["img"] | null;
   isOwner?: boolean;
-  pages?: Iterable<JournalPageDocumentLike> | { contents?: JournalPageDocumentLike[] };
-  createEmbeddedDocuments?: (embeddedName: string, data?: Array<Record<string, unknown>>, options?: Record<string, unknown>) => Promise<JournalPageDocumentLike[]>;
+  pages?: unknown;
+  createEmbeddedDocuments?: (...args: Parameters<foundry.documents.JournalEntry["createEmbeddedDocuments"]>) => Promise<JournalPageDocumentLike[]>;
   sheet?: {
     render?: (options?: unknown, legacyOptions?: Record<string, unknown>) => unknown;
   };
 };
 
-export type JournalPageDocumentLike = PermissionCheckedDocument & {
-  uuid?: string;
-  id?: string;
-  _id?: string;
-  name?: string;
-  documentName?: string;
+export type JournalPageDocumentLike = PermissionCheckedDocument
+  & FoundryDocumentMutationApi
+  & FoundryDataShape<foundry.documents.types.JournalEntryPageData>
+  & {
   parent?: JournalEntryDocumentLike | null;
-  type?: string;
-  sort?: number;
-  category?: string | null;
-  title?: { show?: boolean; level?: number } | string | null;
   text?: {
     content?: string;
     format?: number;
     markdown?: string;
   };
-  src?: string | null;
-  image?: unknown;
-  video?: unknown;
-  system?: unknown;
-  img?: string | null;
+  img?: foundry.documents.types.ItemData["img"] | null;
   isOwner?: boolean;
-  update?: (data: Record<string, unknown>, options?: Record<string, unknown>) => Promise<unknown>;
-  delete?: (options?: Record<string, unknown>) => Promise<unknown>;
   sheet?: {
     render?: (options?: unknown, legacyOptions?: Record<string, unknown>) => unknown;
   };
@@ -584,7 +572,7 @@ function isJournalPageDraftType(type: string): type is JournalPageDraftType {
 }
 
 function getJournalHtmlFormat(): number {
-  const formats = (globalThis as { CONST?: { JOURNAL_ENTRY_PAGE_FORMATS?: { HTML?: number } } }).CONST?.JOURNAL_ENTRY_PAGE_FORMATS;
+  const formats = getFoundryRuntime().CONST?.JOURNAL_ENTRY_PAGE_FORMATS;
   return getNumber(formats?.HTML) ?? 1;
 }
 

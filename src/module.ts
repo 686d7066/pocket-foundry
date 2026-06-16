@@ -1,3 +1,4 @@
+import { getFoundryRuntime } from "./core/foundry-globals.ts";
 import { createMobileShellController } from "./core/mobile-shell/controller.ts";
 import { handleReadyMobileLifecycle } from "./core/mobile-startup.ts";
 import { registerMobileViewSetting } from "./core/settings.ts";
@@ -73,31 +74,18 @@ declare global {
   }
 }
 
-type FoundryTemplateLoader = (paths: readonly string[]) => Promise<unknown>;
-
-/**
- * Minimal Foundry hook API used for module lifecycle registration.
- */
-type FoundryHooks = {
-  once(hook: "init" | "ready", callback: () => void | Promise<void>): void;
-};
-
-const foundryRuntime = globalThis as typeof globalThis & {
-  Hooks?: FoundryHooks;
-  loadTemplates?: FoundryTemplateLoader;
-};
-
 const mobileShell = createMobileShellController();
 
 /**
  * Loads all Pocket Foundry Handlebars templates and partials through Foundry.
  */
 export async function loadPocketFoundryTemplates(): Promise<void> {
-  if (!foundryRuntime.loadTemplates) {
+  const runtime = getFoundryRuntime();
+  if (!runtime.loadTemplates) {
     throw new Error(`${MODULE_ID} cannot load templates before Foundry's template loader is available.`);
   }
 
-  await foundryRuntime.loadTemplates(resolveTemplatePaths());
+  await runtime.loadTemplates(resolveTemplatePaths());
 }
 
 function ensureAdapterStylesLoaded(): void {
@@ -131,12 +119,12 @@ window.pocketFoundry = {
 };
 
 // Register settings during Foundry init, before ready-time UI work.
-foundryRuntime.Hooks?.once("init", async () => {
+getFoundryRuntime().Hooks?.once("init", async () => {
   registerMobileViewSetting(mobileShell);
 });
 
 // Load templates and perform ready-time startup after Foundry documents and user state exist.
-foundryRuntime.Hooks?.once("ready", async () => {
+getFoundryRuntime().Hooks?.once("ready", async () => {
   ensureAdapterStylesLoaded();
   await loadPocketFoundryTemplates();
   await handleReadyMobileLifecycle(mobileShell);

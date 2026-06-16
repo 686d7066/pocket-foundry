@@ -1,3 +1,4 @@
+import type { foundry } from "fvtt-types";
 import {
     getPocketFoundryRouteFromHash,
     isPocketFoundryHistoryState,
@@ -401,10 +402,7 @@ export async function uploadJournalPageMediaFile(file: File): Promise<string> {
   }
 }
 
-type FoundryFilePickerUploadApi = {
-  createDirectory?: (source: string, target: string, options?: Record<string, unknown>) => Promise<unknown>;
-  upload: (source: string, path: string, file: File, body?: Record<string, unknown>, options?: Record<string, unknown>) => Promise<unknown>;
-};
+type FoundryFilePickerUploadApi = Pick<typeof foundry.applications.apps.FilePicker, "createDirectory" | "upload">;
 
 export function getFoundryFilePicker(): FoundryFilePickerUploadApi | null {
   const runtime = getFoundryRuntime() as ReturnType<typeof getFoundryRuntime> & {

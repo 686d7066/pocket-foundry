@@ -1,6 +1,7 @@
-import { getFoundryRuntime } from "../core/foundry-globals.ts";
+import type { foundry } from "fvtt-types";
+import { getFoundryRuntime, type FoundryDataShape } from "../core/foundry-globals.ts";
 import { getCollectionContents, getInitials, getNumber, getObject, getString } from "../core/utils.ts";
-import { canViewDocument, type FoundryUserLike, type PermissionCheckedDocument } from "./permissions.ts";
+import { canViewDocument, type FoundryDocumentMutationApi, type FoundryUserLike, type PermissionCheckedDocument } from "./permissions.ts";
 
 const ENCOUNTER_VISIBILITY_MODULE_ID = "inverted-encounter-visibility";
 const ENCOUNTER_VISIBILITY_FLAG_KEY = "isVisible";
@@ -43,44 +44,33 @@ export type CombatViewModel = {
   actions: CombatActionsViewModel;
 };
 
-type CombatCollectionLike = Iterable<CombatDocumentLike> & { contents?: CombatDocumentLike[] };
-
-type CombatDocumentLike = PermissionCheckedDocument & {
-  id?: string;
+type CombatDocumentLike = PermissionCheckedDocument
+  & FoundryDocumentMutationApi
+  & FoundryDataShape<foundry.documents.types.CombatData>
+  & Partial<foundry.documents.Combat>
+  & {
   name?: string;
-  visible?: boolean;
-  started?: boolean;
-  round?: number | null;
-  turn?: number | null;
   turns?: CombatantDocumentLike[];
   combatants?: Iterable<CombatantDocumentLike> & { contents?: CombatantDocumentLike[]; size?: number };
   combatant?: CombatantDocumentLike | null;
   nextCombatant?: CombatantDocumentLike | null;
-  nextTurn?: () => Promise<unknown>;
-  getFlag?: (scope: string, key: string) => unknown;
 };
 
-type CombatantDocumentLike = PermissionCheckedDocument & {
-  id?: string;
-  name?: string;
-  img?: string | null;
-  initiative?: number | null;
-  hidden?: boolean;
-  defeated?: boolean;
-  isDefeated?: boolean;
+type CombatantDocumentLike = PermissionCheckedDocument
+  & FoundryDocumentMutationApi
+  & FoundryDataShape<foundry.documents.types.CombatantData>
+  & Partial<foundry.documents.Combatant>
+  & {
   disposition?: number | null;
   actor?: PermissionCheckedDocument | null;
   token?: { actor?: PermissionCheckedDocument | null } | null;
-  players?: Array<{ id?: string }>;
   isOwner?: boolean;
 };
 
 type FoundryGameCombatLike = {
   combat?: CombatDocumentLike | null;
-  combats?: CombatCollectionLike;
-  modules?: {
-    get?: (id: string) => { active?: boolean } | null | undefined;
-  };
+  combats?: foundry.documents.collections.CombatEncounters | (Iterable<CombatDocumentLike> & { contents?: CombatDocumentLike[] });
+  modules?: Partial<foundry.Game["modules"]>;
   user?: FoundryUserLike & { id?: string; isGM?: boolean };
 };
 

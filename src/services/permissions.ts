@@ -1,12 +1,27 @@
-/**
- * Foundry document modification actions relevant to mobile permission checks.
- */
-export type FoundryPermissionAction = "create" | "update" | "delete";
+import type { foundry } from "fvtt-types";
 
 /**
  * Foundry permission level names used by document permission APIs.
  */
-export type FoundryPermissionLevelName = "NONE" | "LIMITED" | "OBSERVER" | "OWNER";
+export type FoundryPermissionLevelName = Exclude<keyof typeof foundry.CONST.DOCUMENT_OWNERSHIP_LEVELS, "INHERIT">;
+type FoundryPermissionUser = Parameters<foundry.abstract.Document["testUserPermission"]>[0];
+
+export type FoundryDocumentIdentity = {
+  documentName?: string;
+  id?: Exclude<foundry.abstract.Document["id"], null>;
+  uuid?: Exclude<foundry.abstract.Document["uuid"], null>;
+};
+
+export type FoundryDocumentMutationApi = {
+  delete?: (operation?: Parameters<foundry.abstract.Document["delete"]>[0]) => Promise<unknown>;
+  getFlag?: (...args: Parameters<foundry.abstract.Document["getFlag"]>) => unknown;
+  update?: (data: Record<string, unknown>, operation?: Parameters<foundry.abstract.Document["update"]>[1]) => Promise<unknown>;
+  updateEmbeddedDocuments?: (
+    embeddedName: "Item",
+    updates: Array<Record<string, unknown>>,
+    operation?: Parameters<foundry.abstract.Document["updateEmbeddedDocuments"]>[2]
+  ) => Promise<unknown>;
+};
 
 /**
  * Numeric Foundry permission levels used when only getUserLevel is available.
@@ -16,23 +31,22 @@ export const FOUNDRY_PERMISSION_LEVELS = {
   LIMITED: 1,
   OBSERVER: 2,
   OWNER: 3
-} as const satisfies Record<FoundryPermissionLevelName, number>;
+} as const satisfies Record<FoundryPermissionLevelName, foundry.CONST.DocumentOwnershipNumber>;
 const FOUNDRY_PERMISSION_LEVEL_NAMES = ["NONE", "LIMITED", "OBSERVER", "OWNER"] as const satisfies readonly FoundryPermissionLevelName[];
 
 /**
  * User object passed through to Foundry permission methods.
  */
-export type FoundryUserLike = unknown;
+export type FoundryUserLike = FoundryPermissionUser | Record<string, unknown> | null | undefined;
 
 /**
  * Minimal Foundry document shape needed for permission checks.
  */
-export type PermissionCheckedDocument = {
-  uuid?: string;
+export type PermissionCheckedDocument = FoundryDocumentIdentity & {
   parent?: PermissionCheckedDocument | null;
-  testUserPermission?: (user: FoundryUserLike, level: FoundryPermissionLevelName) => boolean;
-  canUserModify?: (user: FoundryUserLike, action: FoundryPermissionAction) => boolean;
-  getUserLevel?: (user: FoundryUserLike) => number;
+  testUserPermission?: (user: FoundryUserLike, level: foundry.CONST.DocumentOwnershipLevel) => boolean;
+  canUserModify?: (user: FoundryUserLike, action: Parameters<foundry.abstract.Document["canUserModify"]>[1], data?: object) => boolean;
+  getUserLevel?: (user?: FoundryUserLike) => number;
 };
 
 /**
@@ -58,7 +72,7 @@ export function hasDocumentPermission(
     const minimumLevel = FOUNDRY_PERMISSION_LEVELS[level];
     return FOUNDRY_PERMISSION_LEVEL_NAMES
       .filter(candidate => FOUNDRY_PERMISSION_LEVELS[candidate] >= minimumLevel)
-      .some(candidate => document.testUserPermission?.(user, candidate) === true);
+      .some(candidate => document.testUserPermission?.(user as FoundryPermissionUser, candidate) === true);
   }
 
   const userLevel = getDocumentUserLevel(document, user);
@@ -87,7 +101,7 @@ export function canUpdateDocument(document: PermissionCheckedDocument | null | u
   if (!document) return false;
 
   if (typeof document.canUserModify === "function") {
-    return document.canUserModify(user, "update") === true;
+    return document.canUserModify(user as FoundryPermissionUser, "update") === true;
   }
 
   const level = getDocumentUserLevel(document, user);
@@ -108,7 +122,7 @@ export function canViewJournalPage(page: PermissionCheckedDocument | null | unde
  */
 export function getDocumentUserLevel(document: PermissionCheckedDocument | null | undefined, user: FoundryUserLike): number | null {
   if (!document || typeof document.getUserLevel !== "function") return null;
-  const level = document.getUserLevel(user);
+  const level = document.getUserLevel(user as FoundryPermissionUser);
   return Number.isFinite(level) ? level : null;
 }
 

@@ -1,12 +1,13 @@
+import type { foundry } from "fvtt-types";
+import { getFoundryRuntime, type FoundryDataShape } from "../../core/foundry-globals.ts";
 import { getObject, getString } from "../../core/utils.ts";
-import { canUpdateDocument, canViewDocument, type FoundryUserLike, type PermissionCheckedDocument } from "../../services/permissions.ts";
+import { canUpdateDocument, canViewDocument, type FoundryDocumentMutationApi, type FoundryUserLike, type PermissionCheckedDocument } from "../../services/permissions.ts";
 import { demoteRollActionLinks } from "../../services/rich-text-enrichment.ts";
 
-export type Dnd5eBiographyActor = PermissionCheckedDocument & {
-  uuid?: string;
-  id?: string;
-  type?: string;
-  name?: string;
+export type Dnd5eBiographyActor = PermissionCheckedDocument
+  & FoundryDocumentMutationApi
+  & FoundryDataShape<foundry.documents.types.ActorData>
+  & {
   isOwner?: boolean;
   system?: {
     details?: Record<string, unknown> & {
@@ -159,13 +160,13 @@ async function enrichBiography(actor: Dnd5eBiographyActor, biographyValue: strin
   const enriched = await enrich(biographyValue, {
     secrets: actor.isOwner === true,
     relativeTo: actor,
-    rollData: actor.getRollData?.() ?? {}
+    rollData: getObject(actor.getRollData?.()) ?? {}
   });
   return demoteRollActionLinks(enriched);
 }
 
 function getFoundryTextEnricher(): BiographyEnricher | undefined {
-  const textEditor = (globalThis as { TextEditor?: { enrichHTML?: BiographyEnricher } }).TextEditor;
+  const textEditor = getFoundryRuntime().TextEditor;
   return typeof textEditor?.enrichHTML === "function" ? textEditor.enrichHTML.bind(textEditor) : undefined;
 }
 
@@ -180,7 +181,7 @@ function getSchemaLabel(actor: Dnd5eBiographyActor, field: string): string {
 
 function localizeLabel(label: string): string {
   if (!label) return "";
-  const i18n = (globalThis as { game?: { i18n?: { localize?: (key: string) => string } } }).game?.i18n;
+  const i18n = getFoundryRuntime().game?.i18n;
   return typeof i18n?.localize === "function" ? i18n.localize(label) : label.replace(/^DND5E\./, "");
 }
 

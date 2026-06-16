@@ -95,7 +95,7 @@ export type { Dnd5eCharacterPane };
 export type ActorSheetNavigationActor = CharacterSheetNavigationActor;
 export type ActorSheetPaneItem = CharacterSheetPaneItem & { id: Dnd5eCharacterPane; label: Dnd5eCharacterPane };
 export type ActorSheetHeaderStat = CharacterSheetHeaderStat;
-export type ActorSheetNavigationViewModel = CharacterSheetNavigationViewModel & {
+export type ActorSheetNavigationViewModel = Omit<CharacterSheetNavigationViewModel, "activePane" | "activePaneLabel" | "panes"> & {
   activePane: Dnd5eCharacterPane;
   activePaneLabel: Dnd5eCharacterPane;
   panes: ActorSheetPaneItem[];
@@ -192,7 +192,7 @@ export function buildActorSheetNavigationViewModel(options: {
       classSummary: "",
       activePane,
       activePaneLabel: activePane,
-      panes: [],
+      panes: [] as ActorSheetPaneItem[],
       headerStats: []
     };
   }

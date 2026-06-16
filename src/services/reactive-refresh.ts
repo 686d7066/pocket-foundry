@@ -1,11 +1,14 @@
+import type { foundry } from "fvtt-types";
 import { RouteView, type MobileRoute } from "../router/routes.ts";
 import { getObject, getString } from "../core/utils.ts";
 
+type FoundryHookName = Parameters<typeof foundry.helpers.Hooks.on>[0];
 type FoundryHookCallback = (...args: unknown[]) => void;
+type FoundryHookId = ReturnType<typeof foundry.helpers.Hooks.on>;
 
 export type ReactiveRefreshHooks = {
-  on?: (hook: string, callback: FoundryHookCallback) => number | void;
-  off?: (hook: string, callbackOrId: FoundryHookCallback | number) => void;
+  on?: (hook: FoundryHookName, callback: FoundryHookCallback) => FoundryHookId | void;
+  off?: (hook: FoundryHookName, callbackOrId: FoundryHookCallback | FoundryHookId) => void;
 };
 
 export type RefreshInvalidationKind =

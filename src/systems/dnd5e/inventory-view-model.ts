@@ -1,6 +1,7 @@
+import type { foundry } from "fvtt-types";
 import { getCollectionContents, getInitials, getNumber, getObject, getString } from "../../core/utils.ts";
-import { getFoundryRuntime } from "../../core/foundry-globals.ts";
-import { canUpdateDocument, canViewDocument, type FoundryUserLike, type PermissionCheckedDocument } from "../../services/permissions.ts";
+import { getFoundryRuntime, type FoundryDataShape } from "../../core/foundry-globals.ts";
+import { canUpdateDocument, canViewDocument, type FoundryDocumentMutationApi, type FoundryUserLike, type PermissionCheckedDocument } from "../../services/permissions.ts";
 import { enrichSectionRows } from "../../services/rich-text-enrichment.ts";
 import { SECTION_CONFIG, SECTION_ORDER, type InventoryFactField, type InventorySectionId } from "./inventory-config.ts";
 import {
@@ -22,29 +23,25 @@ import {
 } from "./view-model-helpers.ts";
 import { canToggleDnd5eFavorites, hasDnd5eFavoriteReference, setDnd5eFavoriteEntry } from "./favorites-storage.ts";
 
-export type Dnd5eInventoryActor = PermissionCheckedDocument & {
-  uuid?: string;
-  id?: string;
-  type?: string;
+export type Dnd5eInventoryActor = PermissionCheckedDocument
+  & FoundryDocumentMutationApi
+  & FoundryDataShape<foundry.documents.types.ActorData>
+  & {
   system?: Record<string, unknown>;
   items?: unknown;
-  update?: (data: Record<string, unknown>) => Promise<unknown>;
-  updateEmbeddedDocuments?: (embeddedName: "Item", updates: Array<Record<string, unknown>>) => Promise<unknown>;
 };
 
-export type Dnd5eInventoryItem = PermissionCheckedDocument & {
-  id?: string;
-  _id?: string;
-  uuid?: string;
-  name?: string;
-  type?: string;
-  img?: string | null;
+export type Dnd5eInventoryItem = PermissionCheckedDocument
+  & FoundryDocumentMutationApi
+  & FoundryDataShape<foundry.documents.types.ItemData>
+  & {
+  _id?: Exclude<foundry.documents.types.ItemData["_id"], null>;
+  img?: foundry.documents.types.ItemData["img"] | null;
   system?: Record<string, unknown>;
   labels?: Record<string, unknown>;
   hasAttack?: boolean;
   hasRecharge?: boolean;
   parent?: Dnd5eInventoryActor | null;
-  update?: (data: Record<string, unknown>) => Promise<unknown>;
 };
 
 export type Dnd5eInventoryStatus = {

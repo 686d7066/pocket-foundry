@@ -144,12 +144,7 @@ function showInAppMobileViewPrompt(message: string): Promise<boolean> {
 }
 
 function getPromptStorageKey(): LocalStorageKey<boolean> {
-  const runtime = globalThis as typeof globalThis & {
-    game?: {
-      user?: { id?: string };
-      world?: { id?: string };
-    };
-  };
+  const runtime = getFoundryRuntime();
   const worldId = runtime.game?.world?.id ?? "unknown-world";
   const userId = runtime.game?.user?.id ?? "unknown-user";
 
@@ -159,4 +154,3 @@ function getPromptStorageKey(): LocalStorageKey<boolean> {
     codec: booleanLocalStorageCodec
   });
 }
-
