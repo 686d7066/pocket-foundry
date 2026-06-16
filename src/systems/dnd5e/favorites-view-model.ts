@@ -1,3 +1,5 @@
+import type { foundry } from "fvtt-types";
+import { getFoundryRuntime, type FoundryDataShape } from "../../core/foundry-globals.ts";
 import { getInitials, getNumber, getObject, getString } from "../../core/utils.ts";
 import {
   favoriteIdsMatch,
@@ -6,7 +8,7 @@ import {
   type FavoriteEntry,
   type FavoritesViewModel
 } from "../../services/favorites.ts";
-import { canUpdateDocument, canViewDocument, type FoundryUserLike, type PermissionCheckedDocument } from "../../services/permissions.ts";
+import { canUpdateDocument, canViewDocument, type FoundryDocumentMutationApi, type FoundryUserLike, type PermissionCheckedDocument } from "../../services/permissions.ts";
 import { buildDnd5eDetailsViewModel, type Dnd5eDetailsSkillViewModel, type Dnd5eDetailsToolViewModel } from "./details-view-model.ts";
 import { buildDnd5eEffectsViewModel, type Dnd5eEffectRowViewModel } from "./effects-view-model.ts";
 import { buildDnd5eFeaturesViewModel, type Dnd5eFeatureItemViewModel } from "./features-view-model.ts";
@@ -14,27 +16,25 @@ import { buildDnd5eInventoryViewModel, type Dnd5eInventoryItemViewModel } from "
 import { buildDnd5eSpellsViewModel, type Dnd5eSpellRowViewModel, type Dnd5eSpellSlotTrackViewModel } from "./spells-view-model.ts";
 import { canViewOwnedDocument, clampNumber, formatNumber, getConfigLabel } from "./view-model-helpers.ts";
 
-export type Dnd5eFavoritesActor = PermissionCheckedDocument & {
-  uuid?: string;
-  id?: string;
-  type?: string;
-  name?: string;
+export type Dnd5eFavoritesActor = PermissionCheckedDocument
+  & FoundryDocumentMutationApi
+  & FoundryDataShape<foundry.documents.types.ActorData>
+  & {
   _source?: { system?: Record<string, unknown> };
   system?: Record<string, unknown>;
   items?: unknown;
   effects?: unknown;
-  update?: (data: Record<string, unknown>) => Promise<unknown>;
   rollSkill?: (options: { event?: unknown; skill: string }) => Promise<unknown>;
   rollToolCheck?: (options: { event?: unknown; tool: string }) => Promise<unknown>;
 };
 
-export type Dnd5eFavoriteDocument = PermissionCheckedDocument & {
-  id?: string;
-  _id?: string;
-  uuid?: string;
-  name?: string;
-  type?: string;
-  img?: string | null;
+export type Dnd5eFavoriteDocument = PermissionCheckedDocument
+  & FoundryDocumentMutationApi
+  & FoundryDataShape<foundry.documents.types.ActiveEffectData>
+  & FoundryDataShape<foundry.documents.types.ItemData>
+  & {
+  _id?: Exclude<foundry.documents.types.ItemData["_id"], null>;
+  img?: foundry.documents.types.ActiveEffectData["img"] | foundry.documents.types.ItemData["img"] | null;
   parent?: Dnd5eFavoritesActor | Dnd5eFavoriteDocument | null;
   item?: Dnd5eFavoriteDocument;
   target?: Dnd5eFavoritesActor | Dnd5eFavoriteDocument | null;
@@ -42,9 +42,7 @@ export type Dnd5eFavoriteDocument = PermissionCheckedDocument & {
     getFavoriteData?: () => Promise<Dnd5ePreparedFavoriteData | null | undefined> | Dnd5ePreparedFavoriteData | null | undefined;
   };
   dependentOrigin?: { active?: boolean };
-  disabled?: boolean;
   canUse?: boolean;
-  update?: (data: Record<string, unknown>) => Promise<unknown>;
   use?: (data?: unknown, options?: unknown) => Promise<unknown>;
   getFavoriteData?: () => Promise<Dnd5ePreparedFavoriteData | null | undefined> | Dnd5ePreparedFavoriteData | null | undefined;
   getRelativeUUID?: (document: Dnd5eFavoritesActor) => string;
@@ -619,13 +617,15 @@ function normalizeConfig(config: Dnd5eFavoritesConfig | undefined = getDnd5eConf
 }
 
 function getDnd5eConfig(): Dnd5eFavoritesConfig {
-  const runtime = globalThis as { CONFIG?: { DND5E?: Dnd5eFavoritesConfig } };
-  return runtime.CONFIG?.DND5E ?? {};
+  return (getFoundryRuntime().CONFIG?.DND5E as Dnd5eFavoritesConfig | undefined) ?? {};
 }
 
 function getFoundryUuidResolver(): FavoriteResolver {
-  const runtime = globalThis as { fromUuid?: FavoriteResolver; foundry?: { utils?: { fromUuid?: FavoriteResolver } } };
-  return runtime.fromUuid ?? runtime.foundry?.utils?.fromUuid ?? (async () => null);
+  const runtime = getFoundryRuntime();
+  const fromUuid = runtime.fromUuid ?? runtime.foundry?.utils?.fromUuid;
+  if (typeof fromUuid !== "function") return async () => null;
+
+  return async (uuid, options) => fromUuid(uuid, options as Record<string, unknown>) as Promise<Dnd5eFavoriteDocument | null | undefined>;
 }
 
 function getAbilityLabel(config: Dnd5eFavoritesConfig, ability: string): string {

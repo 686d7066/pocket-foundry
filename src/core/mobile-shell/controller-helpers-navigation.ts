@@ -367,7 +367,7 @@ export async function runJournalControl(
 }
 
 export function notifyJournalMutationUnavailable(reason?: JournalPageMutationResult["reason"]): void {
-  const notifications = (globalThis as { ui?: { notifications?: { warn?: (message: string) => void } } }).ui?.notifications;
+  const notifications = getFoundryRuntime().ui?.notifications;
   const message = reason === "forbidden"
     ? "You do not have permission to modify this journal page."
     : reason === "invalid"

@@ -1,17 +1,39 @@
+import type { foundry } from "fvtt-types";
+
 /**
- * Supported Foundry setting scopes used by this module.
+ * Optional field surface keyed from a Foundry data type while allowing this
+ * module's lightweight document fixtures to provide their own value shapes.
  */
-export type FoundrySettingScope = "client" | "user" | "world";
+export type FoundryDataShape<T extends object> = Partial<Record<keyof T, unknown>> & {
+  _id?: string | null;
+  category?: string | null;
+  description?: string;
+  disabled?: boolean;
+  documentName?: string;
+  flags?: Record<string, unknown>;
+  id?: string | null;
+  img?: string | null;
+  image?: Record<string, unknown>;
+  initiative?: number | null;
+  name?: string;
+  round?: number | null;
+  sort?: number;
+  src?: string | null;
+  system?: unknown;
+  title?: Record<string, unknown>;
+  turn?: number | null;
+  type?: string;
+  uuid?: string;
+  video?: Record<string, unknown>;
+};
 
 /**
  * Minimal game.settings.register configuration used by Pocket Foundry settings.
  */
-export type FoundrySettingConfig<T> = {
-  name: string;
-  hint: string;
-  scope: FoundrySettingScope;
-  config: boolean;
-  type: BooleanConstructor | ObjectConstructor;
+export type FoundrySettingConfig<T> = Omit<foundry.types.SettingConfig, "key" | "namespace" | "type" | "default" | "onChange"> & {
+  key?: string;
+  namespace?: string;
+  type: BooleanConstructor | ObjectConstructor | foundry.types.SettingConfig["type"];
   default: T;
   onChange?: (value: T) => void | Promise<void>;
 };
@@ -21,31 +43,31 @@ export type FoundrySettingConfig<T> = {
  */
 export type FoundrySettings = {
   register<T>(namespace: string, key: string, config: FoundrySettingConfig<T>): void;
-  get(namespace: string, key: string): unknown;
-  set(namespace: string, key: string, value: unknown): Promise<unknown>;
+  get: foundry.helpers.ClientSettings["get"];
+  set: foundry.helpers.ClientSettings["set"];
 };
 
-/**
- * Minimal Foundry actor collection shape used by character picker fixtures and runtime wiring.
- */
-export type FoundryActorCollection = Iterable<unknown> & {
-  contents?: unknown[];
-  filter?: (condition: (actor: unknown, index: number) => unknown) => unknown[];
+export type FoundryDocumentCollection = foundry.utils.Collection<string, unknown> | readonly unknown[] | {
+  contents?: readonly unknown[];
+  filter?: (condition: (document: unknown, index: number) => unknown) => unknown[];
 };
 
 /**
  * Minimal Foundry game object shape consumed by this module.
  */
-export type FoundryGame = {
+export type FoundryGame = Partial<foundry.Game> & {
   settings: FoundrySettings;
   logOut?: () => void;
-  actors?: FoundryActorCollection;
-  folders?: FoundryActorCollection;
-  items?: FoundryActorCollection;
-  journal?: FoundryActorCollection;
-  packs?: Iterable<unknown> & { contents?: unknown[] };
+  actors?: FoundryDocumentCollection;
+  folders?: FoundryDocumentCollection;
+  items?: FoundryDocumentCollection;
+  journal?: FoundryDocumentCollection;
+  packs?: FoundryDocumentCollection;
   user?: {
     id?: string;
+    can?: (permission: string) => boolean;
+    hasPermission?: (permission: string) => boolean;
+    isGM?: boolean;
   };
   system?: {
     id?: string;
@@ -56,41 +78,31 @@ export type FoundryGame = {
 };
 
 /**
- * Foundry Handlebars rendering function.
- */
-export type FoundryRenderTemplate = (path: string, data: object) => Promise<string>;
-
-/**
- * Minimal text enrichment API used by mobile-native read-only detail views.
- */
-export type FoundryTextEditor = {
-  enrichHTML?: (content: string, options?: Record<string, unknown>) => Promise<string> | string;
-};
-
-/**
  * Narrowed global runtime shape for Foundry APIs used by Pocket Foundry.
  */
-export type FoundryRuntime = typeof globalThis & {
+export type FoundryRuntime = Omit<typeof globalThis, "ActiveEffect" | "CONFIG" | "FilePicker" | "Hooks" | "JournalEntryPage" | "TextEditor" | "foundry" | "game" | "loadTemplates" | "renderTemplate" | "ui"> & {
+  ActiveEffect?: typeof foundry.documents.ActiveEffect;
+  CONFIG?: typeof globalThis.CONFIG & Record<string, unknown> & {
+    specialStatusEffects?: unknown;
+  };
+  FilePicker?: unknown;
+  Hooks?: Pick<typeof foundry.helpers.Hooks, "once">;
+  JournalEntryPage?: typeof foundry.documents.JournalEntryPage;
   game?: FoundryGame;
   foundry?: {
-    utils?: {
-      fromUuid?: (uuid: string) => Promise<unknown>;
-      fromUuidSync?: (uuid: string) => unknown;
-      parseUuid?: (uuid: string, options?: { relative?: unknown }) => {
-        type?: string;
-        documentType?: string;
-        primaryType?: string;
-        uuid: string;
-      } | null;
-    };
+    applications?: typeof foundry.applications;
+    utils?: Partial<Pick<typeof foundry.utils, "fromUuid" | "fromUuidSync" | "parseUuid">>;
   };
-  TextEditor?: FoundryTextEditor;
-  renderTemplate?: FoundryRenderTemplate;
+  fromUuid?: (uuid: string, options?: Record<string, unknown>) => Promise<unknown>;
+  loadTemplates?: typeof foundry.applications.handlebars.loadTemplates;
+  TextEditor?: Pick<typeof foundry.applications.ux.TextEditor, "enrichHTML">;
+  renderTemplate?: typeof foundry.applications.handlebars.renderTemplate;
+  ui?: typeof foundry.ui;
 };
 
 /**
  * Returns globalThis narrowed to the Foundry APIs this module uses.
  */
 export function getFoundryRuntime(): FoundryRuntime {
-  return globalThis as FoundryRuntime;
+  return globalThis as unknown as FoundryRuntime;
 }

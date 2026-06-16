@@ -1,27 +1,24 @@
-import type { PermissionCheckedDocument } from "../../../services/permissions.ts";
+import type { foundry } from "fvtt-types";
+import type { FoundryDataShape } from "../../../core/foundry-globals.ts";
+import type { FoundryDocumentMutationApi, PermissionCheckedDocument } from "../../../services/permissions.ts";
 
-export type Dnd5eSpellsActor = PermissionCheckedDocument & {
-  uuid?: string;
-  id?: string;
-  type?: string;
-  name?: string;
+export type Dnd5eSpellsActor = PermissionCheckedDocument
+  & FoundryDocumentMutationApi
+  & FoundryDataShape<foundry.documents.types.ActorData>
+  & {
   system?: Record<string, unknown>;
   items?: unknown;
   itemTypes?: { spell?: Dnd5eSpellItem[] };
   spellcastingClasses?: Record<string, Dnd5eSpellcastingClass>;
-  update?: (data: Record<string, unknown>) => Promise<unknown>;
-  updateEmbeddedDocuments?: (embeddedName: "Item", updates: Array<Record<string, unknown>>) => Promise<unknown>;
 };
 
-export type Dnd5eSpellItem = PermissionCheckedDocument & {
-  id?: string;
-  _id?: string;
-  uuid?: string;
-  name?: string;
-  type?: string;
-  img?: string | null;
+export type Dnd5eSpellItem = PermissionCheckedDocument
+  & FoundryDocumentMutationApi
+  & FoundryDataShape<foundry.documents.types.ItemData>
+  & {
+  _id?: Exclude<foundry.documents.types.ItemData["_id"], null>;
+  img?: foundry.documents.types.ItemData["img"] | null;
   parent?: Dnd5eSpellsActor | null;
-  flags?: Record<string, unknown>;
   system?: Record<string, unknown>;
   labels?: Record<string, unknown>;
   hasAttack?: boolean;
@@ -29,9 +26,7 @@ export type Dnd5eSpellItem = PermissionCheckedDocument & {
   hasLimitedUses?: boolean;
   isOnCooldown?: boolean;
   isOwner?: boolean;
-  update?: (data: Record<string, unknown>) => Promise<unknown>;
   use?: (eventOrOptions?: unknown, options?: unknown) => Promise<unknown>;
-  getFlag?: (scope: string, key: string) => unknown;
 };
 
 export type Dnd5eSpellActivity = {

@@ -1,5 +1,7 @@
+import type { foundry } from "fvtt-types";
+import { getFoundryRuntime, type FoundryDataShape } from "../../core/foundry-globals.ts";
 import { getCollectionContents, getInitials, getObject, getString } from "../../core/utils.ts";
-import { canUpdateDocument, canViewDocument, type FoundryUserLike, type PermissionCheckedDocument } from "../../services/permissions.ts";
+import { canUpdateDocument, canViewDocument, type FoundryDocumentMutationApi, type FoundryUserLike, type PermissionCheckedDocument } from "../../services/permissions.ts";
 import { enrichHtml } from "../../services/rich-text-enrichment.ts";
 import {
   canUpdateOwnedDocument,
@@ -15,43 +17,35 @@ import {
 } from "./view-model-helpers.ts";
 import { canToggleDnd5eFavorites, hasDnd5eFavoriteReference, setDnd5eFavoriteEntry } from "./favorites-storage.ts";
 
-export type Dnd5eEffectsActor = PermissionCheckedDocument & {
-  uuid?: string;
-  id?: string;
-  type?: string;
-  name?: string;
+export type Dnd5eEffectsActor = PermissionCheckedDocument
+  & FoundryDocumentMutationApi
+  & FoundryDataShape<foundry.documents.types.ActorData>
+  & {
   system?: Record<string, unknown>;
   effects?: unknown;
-  statuses?: Set<string>;
   allApplicableEffects?: () => Iterable<Dnd5eActiveEffect>;
   endConcentration?: (effect: Dnd5eActiveEffect) => Promise<unknown>;
 };
 
-export type Dnd5eActiveEffect = PermissionCheckedDocument & {
-  id?: string;
-  _id?: string;
-  uuid?: string;
-  name?: string;
-  img?: string | null;
-  type?: string;
+export type Dnd5eActiveEffect = PermissionCheckedDocument
+  & FoundryDocumentMutationApi
+  & FoundryDataShape<foundry.documents.types.ActiveEffectData>
+  & {
+  _id?: Exclude<foundry.documents.types.ActiveEffectData["_id"], null>;
+  img?: foundry.documents.types.ActiveEffectData["img"] | null;
   parent?: PermissionCheckedDocument & { id?: string; uuid?: string; name?: string; system?: Record<string, unknown> };
   target?: PermissionCheckedDocument & { id?: string; uuid?: string; name?: string };
-  disabled?: boolean;
   duration?: { remaining?: number | null; label?: string };
   changes?: Array<{ key?: string; mode?: unknown; value?: unknown }>;
-  description?: string;
   statuses?: Set<string>;
+  dependentOrigin?: { active?: boolean };
+  isOwner?: boolean;
   isTemporary?: boolean;
   isSuppressed?: boolean;
   isAppliedEnchantment?: boolean;
-  dependentOrigin?: { active?: boolean };
-  isOwner?: boolean;
-  update?: (data: Record<string, unknown>) => Promise<unknown>;
-  delete?: () => Promise<unknown>;
   updateDuration?: () => void;
   getSource?: () => Promise<unknown>;
   getRelativeUUID?: (document: Dnd5eEffectsActor) => string;
-  getFlag?: (scope: string, key: string) => unknown;
 };
 
 export type Dnd5eConditionConfig = Record<string, {
@@ -417,11 +411,7 @@ async function enrichEffectDescription(effect: Dnd5eActiveEffect, user: FoundryU
   const rawDescription = getString(effect.description) || getString(effect.getFlag?.("dnd5e", "description"));
   if (!rawDescription) return "";
 
-  const textEditor = (globalThis as {
-    TextEditor?: {
-      enrichHTML?: (content: string, options?: Record<string, unknown>) => Promise<string> | string;
-    };
-  }).TextEditor;
+  const textEditor = getFoundryRuntime().TextEditor;
   if (typeof textEditor?.enrichHTML !== "function") return rawDescription;
 
   return enrichHtml(rawDescription, {
@@ -645,8 +635,9 @@ function getConditionEffectId(conditionId: string): string {
 }
 
 function normalizeConfig(config?: Dnd5eEffectsConfig): Dnd5eEffectsConfig {
-  const globalConfig = getObject((globalThis as { CONFIG?: { DND5E?: Dnd5eEffectsConfig; specialStatusEffects?: Dnd5eEffectsConfig["specialStatusEffects"] } }).CONFIG?.DND5E);
-  const specialStatusEffects = (globalThis as { CONFIG?: { specialStatusEffects?: Dnd5eEffectsConfig["specialStatusEffects"] } }).CONFIG?.specialStatusEffects;
+  const runtimeConfig = getFoundryRuntime().CONFIG;
+  const globalConfig = getObject(runtimeConfig?.DND5E);
+  const specialStatusEffects = runtimeConfig?.specialStatusEffects as Dnd5eEffectsConfig["specialStatusEffects"] | undefined;
   return {
     ...(globalConfig as Dnd5eEffectsConfig | undefined),
     specialStatusEffects,
@@ -658,5 +649,8 @@ function getActiveEffectImplementation(): {
   fromStatusEffect?: (id: string) => Promise<unknown>;
   create?: (data: unknown, options: { parent: Dnd5eEffectsActor; keepId: boolean }) => Promise<unknown>;
 } | null {
-  return (globalThis as { ActiveEffect?: { implementation?: { fromStatusEffect?: (id: string) => Promise<unknown>; create?: (data: unknown, options: { parent: Dnd5eEffectsActor; keepId: boolean }) => Promise<unknown> } } }).ActiveEffect?.implementation ?? null;
+  return (getFoundryRuntime().ActiveEffect?.implementation as unknown as {
+    fromStatusEffect?: (id: string) => Promise<unknown>;
+    create?: (data: unknown, options: { parent: Dnd5eEffectsActor; keepId: boolean }) => Promise<unknown>;
+  } | undefined) ?? null;
 }

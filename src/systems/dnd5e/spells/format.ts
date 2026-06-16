@@ -1,4 +1,5 @@
 import type { FoundryUserLike } from "../../../services/permissions.ts";
+import { getFoundryRuntime } from "../../../core/foundry-globals.ts";
 import { getCollectionContents, getNumber, getObject, getString } from "../../../core/utils.ts";
 import { hasDnd5eFavoriteReference } from "../favorites-storage.ts";
 import {
@@ -68,7 +69,7 @@ export function findOwnedSpell(actor: Dnd5eSpellsActor | null | undefined, user:
 }
 
 export function normalizeConfig(config: Dnd5eSpellsConfig | undefined): Dnd5eSpellsConfig {
-  const globalConfig = getObject((globalThis as { CONFIG?: { DND5E?: Dnd5eSpellsConfig } }).CONFIG?.DND5E);
+  const globalConfig = getObject(getFoundryRuntime().CONFIG?.DND5E);
   const dnd5eConfig = config ?? (globalConfig as Dnd5eSpellsConfig | undefined) ?? {};
   return {
     ...dnd5eConfig,

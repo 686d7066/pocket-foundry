@@ -64,7 +64,7 @@ export function createMobileShellController(): MobileShellController {
       unbindBrowserBack = bindBrowserBack(router, () => rootElement, searchState);
       bindEvents(rootElement);
       reactiveRefresh = createReactiveRefreshController({
-        hooks: (globalThis as { Hooks?: ReactiveRefreshHooks }).Hooks,
+        hooks: getFoundryRuntime().Hooks as ReactiveRefreshHooks | undefined,
         getRoute: () => router.getCurrentRoute(),
         preserveTransientState: () => {
           if (rootElement) rememberCurrentRouteScroll(rootElement, router, { writeHistory: false });

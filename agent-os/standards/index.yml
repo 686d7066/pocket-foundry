@@ -1,0 +1,65 @@
+root:
+  project:
+    file: root/project.md
+    description: Repository purpose, source/build boundaries, and Agent OS usage.
+  guardrails:
+    file: root/guardrails.md
+    description: Repository-wide file modification, collaboration, and review rules.
+  research:
+    file: root/research.md
+    description: FoundryVTT and dependency research rules.
+
+technology:
+  typescript:
+    file: technology/typescript.md
+    description: TypeScript source, strict typing, imports, and JSDoc standards.
+  foundryvtt:
+    file: technology/foundryvtt.md
+    description: FoundryVTT v14 API, document, permission, and system integration standards.
+  handlebars:
+    file: technology/handlebars.md
+    description: Handlebars template standards for generic and system-owned UI.
+  css-tailwind:
+    file: technology/css-tailwind.md
+    description: CSS and Tailwind CLI styling standards.
+  vitest:
+    file: technology/vitest.md
+    description: Test coverage, execution, and failure-handling standards.
+  npm-build:
+    file: technology/npm-build.md
+    description: npm, tsx, esbuild, and generated build output standards.
+
+architecture:
+  system-boundary:
+    file: architecture/system-boundary.md
+    description: System-agnostic core boundary and adapter-only system integration.
+  core:
+    file: architecture/core.md
+    description: Rules for system-agnostic addon infrastructure under src/core.
+  router:
+    file: architecture/router.md
+    description: Rules for generic mobile route state and browser history.
+  services:
+    file: architecture/services.md
+    description: Rules for reusable, system-agnostic Foundry services.
+  system-adapters:
+    file: architecture/system-adapters.md
+    description: Rules for src/systems adapter contracts and concrete system folders.
+
+systems:
+  dnd5e:
+    file: systems/dnd5e.md
+    description: Rules for the dnd5e adapter implementation.
+
+ui:
+  templates:
+    file: ui/templates.md
+    description: Rules for generic Handlebars templates and shared partials.
+  design:
+    file: ui/design.md
+    description: Compact mobile UI, accessibility, and responsive layout expectations.
+
+repository:
+  references:
+    file: repository/references.md
+    description: Rules for the read-only references directory.

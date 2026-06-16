@@ -1,20 +1,21 @@
+import type { foundry } from "fvtt-types";
+import type { FoundryDataShape } from "../core/foundry-globals.ts";
 import type { ActorSheetPaneId, CharacterRoute, MobileRoute, OwnedDocumentRoute } from "../router/routes.ts";
-import type { FoundryUserLike, PermissionCheckedDocument } from "../services/permissions.ts";
+import type { FoundryDocumentMutationApi, FoundryUserLike, PermissionCheckedDocument } from "../services/permissions.ts";
 import type { CompendiumSearchCustomization, SearchAdapter } from "../services/search.ts";
 import type { FavoritesModel } from "../services/favorites.ts";
 
 /**
  * Minimal actor shape required to build character sheet navigation chrome.
  */
-export type CharacterSheetNavigationActor = PermissionCheckedDocument & {
-  uuid?: string;
-  id?: string;
-  name?: string;
-  type?: string;
-  img?: string | null;
-  system?: Record<string, unknown>;
-  items?: unknown;
-};
+export type CharacterSheetNavigationActor = PermissionCheckedDocument
+  & FoundryDocumentMutationApi
+  & FoundryDataShape<foundry.documents.types.ActorData>
+  & {
+    img?: foundry.documents.types.ActorData["img"] | null;
+    system?: Record<string, unknown>;
+    items?: unknown;
+  };
 
 /**
  * Metadata for one pane shown in the character sheet rail.

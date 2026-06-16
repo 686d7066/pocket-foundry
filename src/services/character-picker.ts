@@ -1,3 +1,5 @@
+import type { foundry } from "fvtt-types";
+import type { FoundryDataShape } from "../core/foundry-globals.ts";
 import {
   canUpdateDocument,
   canViewDocument,
@@ -5,6 +7,7 @@ import {
   getDocumentUserLevel,
   FOUNDRY_PERMISSION_LEVELS,
   type FoundryUserLike,
+  type FoundryDocumentMutationApi,
   type PermissionCheckedDocument
 } from "./permissions.ts";
 import { getCollectionContents, getInitials, getNumber, getObject, getString } from "../core/utils.ts";
@@ -12,12 +15,11 @@ import { getCollectionContents, getInitials, getNumber, getObject, getString } f
 /**
  * Minimal actor shape needed by the character picker view model.
  */
-export type CharacterPickerActor = PermissionCheckedDocument & {
-  uuid?: string;
-  id?: string;
-  name?: string;
-  type?: string;
-  img?: string | null;
+export type CharacterPickerActor = PermissionCheckedDocument
+  & FoundryDocumentMutationApi
+  & FoundryDataShape<foundry.documents.types.ActorData>
+  & {
+  img?: foundry.documents.types.ActorData["img"] | null;
   folder?: CharacterPickerFolder | null;
   folderId?: string | null;
   system?: Record<string, unknown>;
@@ -27,9 +29,7 @@ export type CharacterPickerActor = PermissionCheckedDocument & {
 /**
  * Minimal owned item shape used to derive class summaries.
  */
-export type CharacterPickerItem = {
-  name?: string;
-  type?: string;
+export type CharacterPickerItem = FoundryDataShape<foundry.documents.types.ItemData> & {
   system?: Record<string, unknown>;
 };
 

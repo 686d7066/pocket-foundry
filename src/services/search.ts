@@ -1,9 +1,12 @@
+import type { foundry } from "fvtt-types";
+import type { FoundryDataShape } from "../core/foundry-globals.ts";
 import { SEARCH_MIN_QUERY_LENGTH } from "../core/search-policy.ts";
 import { getCollectionContents, getObject, getString } from "../core/utils.ts";
 import { RouteView, type ActorSheetPaneId, type MobileRoute } from "../router/routes.ts";
 import {
   canViewDocument,
   canViewJournalPage,
+  type FoundryDocumentMutationApi,
   type FoundryUserLike,
   type PermissionCheckedDocument
 } from "./permissions.ts";
@@ -111,13 +114,13 @@ export type SearchableCollection<TDocument extends SearchableDocumentLike = Sear
 /**
  * Minimal Foundry document shape used by built-in fixture/live adapters.
  */
-export type SearchableDocumentLike = PermissionCheckedDocument & {
-  uuid?: string;
-  id?: string;
-  name?: string;
-  type?: string;
-  img?: string | null;
-  documentName?: string;
+export type SearchableDocumentLike = PermissionCheckedDocument
+  & FoundryDocumentMutationApi
+  & FoundryDataShape<foundry.documents.types.ActorData>
+  & FoundryDataShape<foundry.documents.types.ItemData>
+  & FoundryDataShape<foundry.documents.types.JournalEntryData>
+  & {
+  img?: foundry.documents.types.ActorData["img"] | foundry.documents.types.ItemData["img"] | null;
   parent?: SearchableDocumentLike | null;
   items?: SearchableCollection<SearchableDocumentLike> | SearchableDocumentLike[];
   pages?: SearchableCollection<SearchableJournalPageLike> | SearchableJournalPageLike[];
@@ -137,15 +140,14 @@ export type SearchableJournalPageLike = SearchableDocumentLike & {
 /**
  * Minimal compendium index entry shape used for pack search results.
  */
-export type SearchableCompendiumIndexEntry = {
-  _id?: string;
-  id?: string;
-  uuid?: string;
-  name?: string;
-  type?: string;
-  img?: string | null;
-  documentName?: string;
-};
+export type SearchableCompendiumIndexEntry = FoundryDataShape<foundry.documents.types.ActorData>
+  & FoundryDataShape<foundry.documents.types.ItemData>
+  & FoundryDataShape<foundry.documents.types.JournalEntryData>
+  & FoundryDataShape<foundry.abstract.Document>
+  & {
+    _id?: Exclude<foundry.documents.types.ItemData["_id"], null>;
+    img?: foundry.documents.types.ActorData["img"] | foundry.documents.types.ItemData["img"] | null;
+  };
 
 /**
  * Minimal Foundry compendium pack shape needed for indexed search.

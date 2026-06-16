@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## [14.10.0] - Using generated Foundry VTT types for type safety
+
+- Module now uses generated Foundry VTT types.
+
 ## [14.9.1] - Characters in folders with additional subfolders cant be selected
 
 - Fixed characters being not openable when further subfolders exist.

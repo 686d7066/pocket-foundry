@@ -347,7 +347,7 @@ export async function resolveDocumentLinkRoute(uuid: string, previousRoute: Mobi
 }
 
 export function notifyDocumentLinkUnavailable(): void {
-  const notifications = (globalThis as { ui?: { notifications?: { warn?: (message: string) => void } } }).ui?.notifications;
+  const notifications = getFoundryRuntime().ui?.notifications;
   notifications?.warn?.("This document is no longer available or you do not have permission to view it.");
 }
 

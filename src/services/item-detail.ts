@@ -1,18 +1,17 @@
-import { getFoundryRuntime } from "../core/foundry-globals.ts";
+import type { foundry } from "fvtt-types";
+import { getFoundryRuntime, type FoundryDataShape } from "../core/foundry-globals.ts";
 import { getObject, getString } from "../core/utils.ts";
 import { enrichHtml } from "./rich-text-enrichment.ts";
-import { canViewDocument, type FoundryUserLike, type PermissionCheckedDocument } from "./permissions.ts";
+import { canViewDocument, type FoundryDocumentMutationApi, type FoundryUserLike, type PermissionCheckedDocument } from "./permissions.ts";
 
 /**
  * Minimal resolved item document shape used by mobile search detail routes.
  */
-export type ItemDetailDocumentLike = PermissionCheckedDocument & {
-  uuid?: string;
-  id?: string;
-  name?: string;
-  documentName?: string;
-  type?: string;
-  img?: string | null;
+export type ItemDetailDocumentLike = PermissionCheckedDocument
+  & FoundryDocumentMutationApi
+  & FoundryDataShape<foundry.documents.types.ItemData>
+  & {
+  img?: foundry.documents.types.ItemData["img"] | null;
   pack?: string | null;
   parent?: PermissionCheckedDocument | null;
   system?: unknown;
@@ -47,8 +46,8 @@ export type ItemDetailViewModel = ItemDetailAvailableViewModel | ItemDetailUnava
 
 export type ItemDetailEnvironment = {
   user: FoundryUserLike | null | undefined;
-  fromUuid: ((uuid: string) => Promise<unknown>) | undefined;
-  enrichHTML?: (content: string, options?: Record<string, unknown>) => Promise<string> | string;
+  fromUuid: ((uuid: Parameters<typeof foundry.utils.fromUuid>[0]) => Promise<unknown>) | undefined;
+  enrichHTML?: typeof foundry.applications.ux.TextEditor.enrichHTML;
 };
 
 /**
@@ -122,7 +121,7 @@ function getItemDocumentType(document: ItemDetailDocumentLike): string {
   return getString(document.documentName) || inferDocumentNameFromUuid(document.uuid);
 }
 
-function inferDocumentNameFromUuid(uuid: string | undefined): string {
+function inferDocumentNameFromUuid(uuid: string | null | undefined): string {
   if (!uuid) return "";
   if (uuid.startsWith("Item.") || uuid.includes(".Item.")) return "Item";
   return "";

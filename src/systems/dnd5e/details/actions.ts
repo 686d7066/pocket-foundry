@@ -408,8 +408,7 @@ function getRestTypeLabel(type: Dnd5eDetailsRestType, fallback: string): string 
   const label = getRuntimeRestType(type)?.label;
   if (typeof label !== "string" || !label.trim()) return fallback;
 
-  const game = (globalThis as { game?: { i18n?: { localize?: (key: string) => string } } }).game;
-  return game?.i18n?.localize?.(label) ?? fallback;
+  return getFoundryRuntime().game?.i18n?.localize?.(label) ?? fallback;
 }
 
 function getRestTypeIcon(type: Dnd5eDetailsRestType, fallback: string): string {
@@ -418,18 +417,18 @@ function getRestTypeIcon(type: Dnd5eDetailsRestType, fallback: string): string {
 }
 
 function getRuntimeRestType(type: Dnd5eDetailsRestType): { label?: unknown; icon?: unknown } | null {
-  const restTypes = (globalThis as { CONFIG?: { DND5E?: { restTypes?: Record<string, unknown> } } }).CONFIG?.DND5E?.restTypes;
+  const restTypes = getObject(getObject(getFoundryRuntime().CONFIG?.DND5E)?.restTypes);
   return getObject(restTypes?.[type]);
 }
 
 function getRuntimeUserIsGM(user: FoundryUserLike): boolean {
-  const runtimeUser = (globalThis as { game?: { user?: unknown } }).game?.user;
+  const runtimeUser = getFoundryRuntime().game?.user;
   const candidate = getObject(runtimeUser) ?? getObject(user);
   return Boolean(candidate?.isGM);
 }
 
 function getDnd5eAllowRestsSetting(): boolean {
-  const settings = (globalThis as { game?: { settings?: { get?: (namespace: string, key: string) => unknown } } }).game?.settings;
+  const settings = getFoundryRuntime().game?.settings;
   if (typeof settings?.get !== "function") return false;
   return settings.get("dnd5e", "allowRests") === true;
 }
@@ -819,7 +818,7 @@ function addGroup(
 }
 
 function getRuntimeDnd5eConfig(): Dnd5eDetailsConfig {
-  const config = getObject(getObject((globalThis as { CONFIG?: unknown }).CONFIG)?.DND5E) ?? {};
+  const config = getObject(getFoundryRuntime().CONFIG?.DND5E) ?? {};
   return {
     abilities: getObject(config.abilities) as Dnd5eLabelDictionary | undefined,
     skills: getObject(config.skills) as Dnd5eLabelDictionary | undefined,
@@ -898,7 +897,7 @@ function getConfiguredToolBaseItemName(toolConfig: Dnd5eLabelDictionary[string] 
 
   const packId = `${parts[1]}.${parts[2]}`;
   const documentId = parts[4];
-  const game = getObject((globalThis as { game?: unknown }).game);
+  const game = getObject(getFoundryRuntime().game);
   const packs = getObject(game?.packs);
   const pack = getObject(getCollectionEntry(packs, packId));
   const index = getCollectionContents(pack?.index);
@@ -1014,10 +1013,8 @@ async function getSkillDetailText(
 async function getReferenceExcerpt(reference: string): Promise<{ text: string; references: RichTextReference[] }> {
   if (!reference) return { text: "", references: [] };
 
-  const fromUuid = (globalThis as {
-    fromUuid?: (uuid: string) => Promise<unknown>;
-    foundry?: { utils?: { fromUuid?: (uuid: string) => Promise<unknown> } };
-  }).fromUuid ?? (globalThis as { foundry?: { utils?: { fromUuid?: (uuid: string) => Promise<unknown> } } }).foundry?.utils?.fromUuid;
+  const runtime = getFoundryRuntime();
+  const fromUuid = runtime.fromUuid ?? runtime.foundry?.utils?.fromUuid;
   if (typeof fromUuid !== "function") return { text: "", references: [] };
 
   let document: Record<string, unknown> | null = null;
