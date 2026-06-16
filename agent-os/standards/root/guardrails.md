@@ -5,7 +5,7 @@ Repository-wide file, collaboration, and review rules.
 ## Pattern/Rule
 
 - Never modify files inside `node_modules/`, `references/`, or any `References/` folder.
-- Do not edit `CHANGELOG.md` without explicit user approval.
+- AI Agents may never edit `CHANGELOG.md` without explicit user approval.
 - Apply the technology-specific standard for every language, framework, or toolchain touched by a change.
 
 ## Collaboration Rules

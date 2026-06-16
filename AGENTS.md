@@ -11,4 +11,4 @@ Before changing files, read the matching standard listed in that index for the p
 Non-negotiable repository guardrails:
 
 - Never modify files inside `node_modules/`, `references/`, or any `References/` folder.
-- Do not edit `CHANGELOG.md` without explicit user approval.
+- AI Agents may never edit `CHANGELOG.md` without explicit user approval.
