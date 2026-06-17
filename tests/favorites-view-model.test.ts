@@ -266,7 +266,8 @@ test("favorites template, styles, and shell wiring preserve required regions", (
   assert.match(actorSheetNavigationSource, /case "Favorites":/);
   assert.match(actorSheetNavigationSource, /favorites-remove-context/);
   assert.match(actorSheetNavigationSource, /getFavoriteContextGestureLabel/);
-  assert.match(actorShellTemplate, /templates\/favorites\.hbs/);
+  assert.match(actorShellTemplate, /activePaneContent/);
+  assert.match(actorSheetNavigationSource, /Favorites: "modules\/pocket-foundry\/templates\/favorites\.hbs"/);
   assert.match(eventsSource, /contextmenu/);
   assert.match(eventsSource, /favoriteLongPressTimer/);
   assert.match(eventsSource, /openFavoriteContextMenu/);

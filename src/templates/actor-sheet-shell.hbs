@@ -17,29 +17,9 @@
           {{#if classSummary}}<p>{{classSummary}}</p>{{/if}}
         </div>
         {{#unless limited}}
-          <div class="header-stats {{#if headerDetails}}header-stats-priority{{/if}}" aria-label="Priority character state">
-            {{#if headerDetails}}
-              <span class="header-stat header-stat-ac" data-stat="ac"><b>AC</b><strong>{{headerDetails.header.ac}}</strong></span>
-              {{#if headerDetails.header.hp.canUpdateValue}}
-                <button class="header-stat header-stat-hp hp-trigger" type="button" data-action="details-open-dialog" data-dialog="hp" data-swipe-ignore><b>HP</b><strong>{{headerDetails.header.hp.value}}</strong><em>/{{headerDetails.header.hp.effectiveMax}}</em></button>
-              {{else}}
-                <span class="header-stat header-stat-hp" data-stat="hp"><b>HP</b><strong>{{headerDetails.header.hp.value}}</strong><em>/{{headerDetails.header.hp.effectiveMax}}</em></span>
-              {{/if}}
-              {{#if headerDetails.header.hp.canUpdateTemp}}
-                <button class="header-stat header-stat-temp temp-trigger" type="button" data-action="details-open-dialog" data-dialog="temp" data-swipe-ignore><b>Temp</b><strong>{{headerDetails.header.hp.temp}}</strong></button>
-              {{else}}
-                <span class="header-stat header-stat-temp" data-stat="temp"><b>Temp</b><strong>{{headerDetails.header.hp.temp}}</strong></span>
-              {{/if}}
-              <button
-                class="header-inspiration-button header-stat-hi inspiration-toggle {{#if headerDetails.header.inspiration.active}}active{{/if}}"
-                type="button"
-                data-action="details-toggle-inspiration"
-                aria-label="Heroic Inspiration"
-                aria-pressed="{{#if headerDetails.header.inspiration.active}}true{{else}}false{{/if}}"
-                {{#unless headerDetails.header.inspiration.canToggle}}disabled{{/unless}}
-              >
-                <i class="{{#if headerDetails.header.inspiration.active}}fa-solid{{else}}fa-regular{{/if}} fa-star" aria-hidden="true"></i>
-              </button>
+          <div class="header-stats {{headerContent.headerClass}}" aria-label="Priority character state">
+            {{#if headerContent}}
+              {{> (lookup headerContent "templatePath") headerContent.data}}
             {{else}}
               {{#each headerStats}}
                 <span class="header-stat" data-stat="{{id}}">
@@ -58,34 +38,8 @@
       {{/unless}}
     </div>
 
-    {{#if headerDetails}}
-      {{> "modules/pocket-foundry/templates/partials/number-adjust-dialog.hbs"
-        dialogId="hp-spinner"
-        dialogAriaLabel="Adjust hit points"
-        closeAction="details-close-dialog"
-        title="Adjust HP"
-        description="Choose how much to add or subtract."
-        wheelAriaLabel="HP adjustment amount"
-        options=headerDetails.deltaOptions
-        selectAction="details-select-delta"
-        centerZeroLabel=true
-        confirmActionPrefix="details-confirm"
-        confirmActionMiddle="hp"
-      }}
-
-      {{> "modules/pocket-foundry/templates/partials/number-adjust-dialog.hbs"
-        dialogId="temp-spinner"
-        dialogAriaLabel="Adjust temporary hit points"
-        closeAction="details-close-dialog"
-        title="Adjust Temp HP"
-        description="Choose how much to add or subtract."
-        wheelAriaLabel="Temporary HP amount"
-        options=headerDetails.deltaOptions
-        selectAction="details-select-delta"
-        centerZeroLabel=true
-        confirmActionPrefix="details-confirm"
-        confirmActionMiddle="temp-hp"
-      }}
+    {{#if headerContent.dialogsTemplatePath}}
+      {{> (lookup headerContent "dialogsTemplatePath") headerContent.data}}
     {{/if}}
 
     {{#if portraitImage}}
@@ -109,53 +63,17 @@
         </div>
       </section>
     {{else}}
-      {{#if details}}
-        {{#if (lookup paneTemplatePaths "details")}}
-          {{> (lookup paneTemplatePaths "details") details}}
-        {{/if}}
+      {{#if activePaneContent}}
+        {{> (lookup activePaneContent "templatePath") activePaneContent.data}}
       {{else}}
-        {{#if inventory}}
-          {{#if (lookup paneTemplatePaths "inventory")}}
-            {{> (lookup paneTemplatePaths "inventory") inventory}}
-          {{/if}}
-        {{else}}
-          {{#if features}}
-            {{#if (lookup paneTemplatePaths "features")}}
-              {{> (lookup paneTemplatePaths "features") features}}
-            {{/if}}
-          {{else}}
-            {{#if spells}}
-              {{#if (lookup paneTemplatePaths "spells")}}
-                {{> (lookup paneTemplatePaths "spells") spells}}
-              {{/if}}
-            {{else}}
-              {{#if effects}}
-                {{#if (lookup paneTemplatePaths "effects")}}
-                  {{> (lookup paneTemplatePaths "effects") effects}}
-                {{/if}}
-              {{else}}
-                {{#if biography}}
-                  {{#if (lookup paneTemplatePaths "biography")}}
-                    {{> (lookup paneTemplatePaths "biography") biography}}
-                  {{/if}}
-                {{else}}
-                  {{#if favorites}}
-                    {{> "modules/pocket-foundry/templates/favorites.hbs" favorites}}
-                  {{else}}
-                    <section class="content actor-pane-content" data-region="actor-pane-content" data-swipe-region="character-pane">
-                      <div class="section actor-pane-placeholder" data-pane="{{activePane}}">
-                        <div class="section-heading">
-                          <h2>{{activePaneLabel}}</h2>
-                        </div>
-                        {{> "modules/pocket-foundry/templates/partials/empty-state.hbs" title="Pane Content Pending" body="This character pane is wired for navigation. Pane data binding is implemented in its dedicated step."}}
-                      </div>
-                    </section>
-                  {{/if}}
-                {{/if}}
-              {{/if}}
-            {{/if}}
-          {{/if}}
-        {{/if}}
+        <section class="content actor-pane-content" data-region="actor-pane-content" data-swipe-region="character-pane">
+          <div class="section actor-pane-placeholder" data-pane="{{activePane}}">
+            <div class="section-heading">
+              <h2>{{activePaneLabel}}</h2>
+            </div>
+            {{> "modules/pocket-foundry/templates/partials/empty-state.hbs" title="Pane Content Pending" body="This character pane is wired for navigation. Pane data binding is implemented in its dedicated step."}}
+          </div>
+        </section>
       {{/if}}
     {{/if}}
   </div>

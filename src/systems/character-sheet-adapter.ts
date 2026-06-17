@@ -70,18 +70,20 @@ export type CharacterSheetHeaderStat = {
 };
 
 /**
- * System-defined character sheet template partials consumed by the shell.
+ * Renderable content returned by a system adapter.
  */
-export type CharacterSheetTemplatePaths = {
-  details: string;
-  inventory: string;
-  features: string;
-  spells: string;
-  effects: string;
-  biography: string;
-  favorites?: string;
+export type CharacterSheetRenderableContent = {
+  templatePath: string;
+  data: unknown;
 };
-export type CharacterSheetPaneTemplatePaths = CharacterSheetTemplatePaths;
+
+/**
+ * Optional high-priority header chrome returned by a system adapter.
+ */
+export type CharacterSheetHeaderContent = CharacterSheetRenderableContent & {
+  headerClass?: string;
+  dialogsTemplatePath?: string;
+};
 
 /**
  * Optional adapter capability for systems that expose the generic Favorites pane.
@@ -157,6 +159,7 @@ export type CharacterSheetNavigationModel = CharacterSheetNavigationViewModel | 
 export type CharacterSheetPaneViewModel = {
   pane: ActorSheetPaneId;
   context: string;
+  templatePath: string;
   data: unknown;
 };
 
@@ -187,6 +190,30 @@ export type PaneSwipeGesture = {
   endY: number;
 };
 
+export type CharacterSheetActionHelpers = {
+  setDialogOpen(dialogId: string | undefined, open: boolean): void;
+  setNumberWheelValue(wheel: HTMLElement, value: number): void;
+  getCenteredNumberWheelOption(wheel: HTMLElement): HTMLElement | null;
+  setSelectedNumberDelta(target: HTMLElement): void;
+  runAction(action: string, options?: {
+    data?: Readonly<Record<string, string>>;
+    event?: Event;
+    closeDialogs?: boolean;
+    onSuccess?: (result: CharacterSheetActionResult) => Promise<void> | void;
+  }): Promise<void>;
+  clearTransientState(): void;
+  closeFavoriteContextMenu(): void;
+};
+
+export type CharacterSheetShellActionContext = {
+  element: HTMLElement;
+  target: HTMLElement;
+  event: Event;
+  action: string;
+  route: CharacterRoute;
+  helpers: CharacterSheetActionHelpers;
+};
+
 /**
  * System-owned actor sheet behavior consumed by the generic mobile shell.
  */
@@ -206,6 +233,13 @@ export type CharacterSheetAdapter = {
     user: FoundryUserLike;
     route: CharacterRoute | OwnedDocumentRoute | MobileRoute;
   }): CharacterSheetPaneViewModel | Promise<CharacterSheetPaneViewModel>;
+  buildHeaderViewModel?(options: {
+    actor: CharacterSheetNavigationActor | null | undefined;
+    user: FoundryUserLike;
+    route: CharacterRoute | OwnedDocumentRoute | MobileRoute;
+  }): CharacterSheetHeaderContent | Promise<CharacterSheetHeaderContent>;
+  handleShellAction?(options: CharacterSheetShellActionContext): boolean | Promise<boolean>;
+  shouldCloseDialogsAfterAction?(action: string): boolean;
   runPaneAction(options: CharacterSheetActionContext): Promise<CharacterSheetActionResult> | CharacterSheetActionResult;
   onPaneActionResult?(options: {
     actionContext: CharacterSheetActionContext;
@@ -223,7 +257,6 @@ export type CharacterSheetAdapter = {
     parentPane: ActorSheetPaneId | undefined;
     scrollTop?: number;
   }): OwnedDocumentRoute;
-  getPaneTemplatePaths(): CharacterSheetTemplatePaths;
   /**
    * Full set of system-owned templates and partials that must be preloaded in
    * `module.ts` before rendering system-specific actor panes.
@@ -234,7 +267,6 @@ export type CharacterSheetAdapter = {
    */
   getStylePaths: () => CharacterSheetStylePaths;
   getPaneContext(pane: ActorSheetPaneId): string;
-  getHeaderPaneContext?(): string | null;
   getPaneSearchDrawerPrefix(pane: ActorSheetPaneId): string | null;
   getSearchAdapters(options: { user: FoundryUserLike }): SearchAdapter[];
   getFavoritesCapability?(): CharacterSheetFavoritesCapability | null;

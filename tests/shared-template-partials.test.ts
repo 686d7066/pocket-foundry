@@ -37,7 +37,8 @@ test("shared partials are preloaded and used by core and dnd5e templates", () =>
   assert.match(shellTemplate, /partials\/settings-toggle-row\.hbs/);
   assert.match(settingsTemplate, /partials\/settings-toggle-row\.hbs/);
   assert.match(actorShellTemplate, /partials\/pane-unavailable\.hbs/);
-  assert.match(actorShellTemplate, /partials\/number-adjust-dialog\.hbs/);
+  const dnd5eHeaderDialogsTemplate = readFileSync(new URL("../src/systems/dnd5e/templates/partials/header-details-dialogs.hbs", import.meta.url), "utf8");
+  assert.match(dnd5eHeaderDialogsTemplate, /partials\/number-adjust-dialog\.hbs/);
   assert.match(journalTemplate, /partials\/content-list-row\.hbs/);
   assert.match(recentsTemplate, /partials\/content-list-row\.hbs/);
 

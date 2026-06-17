@@ -177,7 +177,7 @@ test("features template and styles preserve required regions without create or d
   assert.match(actorShellTemplate, /railClass="pane-rail"/);
   assert.match(template, /class="content sheet-dense features-pane"/);
   assert.match(template, /partials\/pane-search-toolbar\.hbs/);
-  assert.match(template, /toolbarClass="features-toolbar"/);
+  assert.match(template, /toolbarClass="pane-search-toolbar features-toolbar"/);
   assert.match(template, /placeholder="Search features"/);
   assert.match(template, /pane="Features"/);
   assert.match(template, /value=searchQuery/);
@@ -206,7 +206,7 @@ test("features template and styles preserve required regions without create or d
   assert.match(actorSheetNavigationSource, /getCharacterPaneSearchQuery/);
   assert.match(actorSheetNavigationSource, /features-confirm-uses-delta/);
   assert.match(css, /\.pocket-foundry-root \.features-status/);
-  assert.match(css, /\.pocket-foundry-root \.features-toolbar/);
+  assert.match(css, /\.pocket-foundry-root \.pane-search-toolbar/);
   assert.match(css, /\.pocket-foundry-root \.features-sections/);
   assert.match(css, /\.pocket-foundry-root \.sheet-group-heading/);
   assert.match(css, /\.pocket-foundry-root \.sheet-list\.sheet-table/);

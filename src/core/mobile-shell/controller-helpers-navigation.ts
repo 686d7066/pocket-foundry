@@ -502,14 +502,14 @@ export function setNumberDialogOpen(element: HTMLElement, dialogId: string | und
 
   const dialogElement = dialogId ? element.querySelector<HTMLElement>(`#${CSS.escape(dialogId)}`) : null;
   dialogElement?.classList.add("open");
-  dialogElement?.querySelectorAll<HTMLElement>(".spinner-wheel").forEach(wheel => ensureDetailsWheelOptions(wheel));
+  dialogElement?.querySelectorAll<HTMLElement>(".spinner-wheel").forEach(wheel => ensureNumberWheelOptions(wheel));
   dialogElement?.querySelector<HTMLElement>(".spinner-wheel .selected")?.scrollIntoView({ block: "center" });
 }
 
 /**
- * Stores the selected HP delta locally in the open dialog until OK confirms it.
+ * Stores the selected numeric delta locally in the open dialog until OK confirms it.
  */
-export function setDetailsSelectedDelta(target: HTMLElement): void {
+export function setNumberWheelSelectedDelta(target: HTMLElement): void {
   const wheel = target.closest<HTMLElement>(".spinner-wheel");
   const selectionScope = wheel?.dataset.wheelSelectScope === "wheel" ? "wheel" : "dialog";
   if (selectionScope === "wheel") {
@@ -527,56 +527,29 @@ export function setDetailsSelectedDelta(target: HTMLElement): void {
   if (confirm?.dataset.action?.endsWith("-delta")) confirm.dataset.delta = target.dataset.delta ?? "0";
 }
 
-export function getDetailsConfirmDelta(target: HTMLElement): number {
+export function getNumberDialogConfirmDelta(target: HTMLElement): number {
   const dialog = target.closest<HTMLElement>(".mock-dialog");
   const wheel = dialog?.querySelector<HTMLElement>(".spinner-wheel");
-  if (wheel) updateDetailsWheelSelection(wheel);
+  if (wheel) updateNumberWheelSelection(wheel);
 
   return Number(target.dataset.delta);
 }
 
-export function getDetailsRestActionData(target: HTMLElement): Record<string, string> {
-  const dialog = target.closest<HTMLElement>(".mock-dialog");
-  const type = target.dataset.restType === "long" ? "long" : "short";
-  const getChecked = (name: string): boolean | undefined => {
-    const input = dialog?.querySelector<HTMLInputElement>(`input[name="${CSS.escape(name)}"]`);
-    return input ? input.checked : undefined;
-  };
-
-  if (type === "short") {
-    return {
-      restType: "short",
-      type,
-      dialog: "false",
-      autoHD: getChecked("autoHD") === true ? "true" : "false"
-    };
-  }
-
-  return {
-    restType: "long",
-    type,
-    dialog: "false",
-    newDay: getChecked("newDay") === false ? "false" : "true",
-    recoverTemp: getChecked("recoverTemp") === false ? "false" : "true",
-    recoverTempMax: getChecked("recoverTempMax") === false ? "false" : "true"
-  };
-}
-
-export function updateDetailsWheelSelection(wheel: HTMLElement): void {
-  ensureDetailsWheelOptions(wheel);
-  const selected = getCenteredDetailsWheelOption(wheel) ?? wheel.querySelector<HTMLElement>(".selected");
+export function updateNumberWheelSelection(wheel: HTMLElement): void {
+  ensureNumberWheelOptions(wheel);
+  const selected = getCenteredNumberWheelOption(wheel) ?? wheel.querySelector<HTMLElement>(".selected");
   if (!selected) return;
 
-  setDetailsSelectedDelta(selected);
+  setNumberWheelSelectedDelta(selected);
 }
 
-export function ensureDetailsWheelOptions(wheel: HTMLElement): void {
+export function ensureNumberWheelOptions(wheel: HTMLElement): void {
   if (wheel.dataset.wheelDynamic !== "true") return;
   initializeDynamicWheelOptions(wheel);
   extendDynamicWheelOptions(wheel);
 }
 
-export function setDetailsWheelValue(wheel: HTMLElement, value: number): void {
+export function setNumberWheelValue(wheel: HTMLElement, value: number): void {
   const normalized = Number.isFinite(value) ? Math.trunc(value) : 0;
   if (wheel.dataset.wheelDynamic === "true") {
     wheel.dataset.wheelValue = String(normalized);
@@ -595,7 +568,7 @@ export function setDetailsWheelValue(wheel: HTMLElement, value: number): void {
   centered?.scrollIntoView({ block: "center" });
 }
 
-export function getCenteredDetailsWheelOption(wheel: HTMLElement): HTMLElement | null {
+export function getCenteredNumberWheelOption(wheel: HTMLElement): HTMLElement | null {
   if (typeof wheel.getBoundingClientRect !== "function") return null;
 
   const wheelRect = wheel.getBoundingClientRect();
@@ -625,7 +598,7 @@ export function getCenteredDetailsWheelOption(wheel: HTMLElement): HTMLElement |
  */
 export function restoreRouteScroll(element: HTMLElement, route: MobileRoute): void {
   const shellElement = getShellScrollElement(element);
-  restoreExpandedDetailsState(shellElement, route);
+  restoreExpandedDrawerState(shellElement, route);
   const scrollTop = route.scrollTop ?? 0;
   if (!globalThis.requestAnimationFrame) {
     shellElement.scrollTop = scrollTop;
@@ -683,7 +656,7 @@ function extendDynamicWheelOptions(wheel: HTMLElement): void {
   const options = wheel.querySelectorAll<HTMLButtonElement>("button[data-delta]");
   if (options.length === 0) return;
 
-  const centered = getCenteredDetailsWheelOption(wheel);
+  const centered = getCenteredNumberWheelOption(wheel);
   if (!centered) return;
 
   const centeredButton = centered as HTMLButtonElement;
@@ -710,7 +683,7 @@ function extendDynamicWheelOptions(wheel: HTMLElement): void {
   }
 
   const refreshedOptions = wheel.querySelectorAll<HTMLButtonElement>("button[data-delta]");
-  const refreshedCentered = getCenteredDetailsWheelOption(wheel);
+  const refreshedCentered = getCenteredNumberWheelOption(wheel);
   const refreshedIndex = refreshedCentered ? [...refreshedOptions].indexOf(refreshedCentered as HTMLButtonElement) : centeredIndex;
   if (refreshedIndex >= refreshedOptions.length - 1 - DYNAMIC_WHEEL_EDGE_THRESHOLD && (min === null || bottom > min)) {
     const nextBottom = min === null ? bottom - chunkSize * step : Math.max(bottom - chunkSize * step, min);
@@ -738,7 +711,7 @@ function buildWheelButtons(
   for (let value = top; value >= bottom; value -= step) {
     const button = globalThis.document.createElement("button");
     button.type = "button";
-    button.dataset.action = wheel.dataset.wheelAction ?? "details-select-delta";
+    button.dataset.action = wheel.dataset.wheelAction ?? "number-select-delta";
     button.dataset.delta = String(value);
     if (selectedDelta !== null && value === selectedDelta) button.classList.add("selected");
     button.textContent = formatWheelLabel(value, { showSign, centerZeroLabel });
@@ -928,7 +901,7 @@ export function getFirstName(name: string | undefined): string {
   return name?.trim().split(/\s+/)[0] ?? "";
 }
 
-function restoreExpandedDetailsState(element: HTMLElement, route: MobileRoute): void {
+function restoreExpandedDrawerState(element: HTMLElement, route: MobileRoute): void {
   if (!canQueryChildren(element)) return;
 
   const drawers = element.querySelectorAll<HTMLDetailsElement>("details");

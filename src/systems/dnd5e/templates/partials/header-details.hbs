@@ -1,0 +1,23 @@
+{{#unless unavailable}}
+  <span class="header-stat header-stat-ac" data-stat="ac"><b>AC</b><strong>{{header.ac}}</strong></span>
+  {{#if header.hp.canUpdateValue}}
+    <button class="header-stat header-stat-hp hp-trigger" type="button" data-action="details-open-dialog" data-dialog="hp" data-swipe-ignore><b>HP</b><strong>{{header.hp.value}}</strong><em>/{{header.hp.effectiveMax}}</em></button>
+  {{else}}
+    <span class="header-stat header-stat-hp" data-stat="hp"><b>HP</b><strong>{{header.hp.value}}</strong><em>/{{header.hp.effectiveMax}}</em></span>
+  {{/if}}
+  {{#if header.hp.canUpdateTemp}}
+    <button class="header-stat header-stat-temp temp-trigger" type="button" data-action="details-open-dialog" data-dialog="temp" data-swipe-ignore><b>Temp</b><strong>{{header.hp.temp}}</strong></button>
+  {{else}}
+    <span class="header-stat header-stat-temp" data-stat="temp"><b>Temp</b><strong>{{header.hp.temp}}</strong></span>
+  {{/if}}
+  <button
+    class="header-inspiration-button header-stat-hi inspiration-toggle {{#if header.inspiration.active}}active{{/if}}"
+    type="button"
+    data-action="details-toggle-inspiration"
+    aria-label="Heroic Inspiration"
+    aria-pressed="{{#if header.inspiration.active}}true{{else}}false{{/if}}"
+    {{#unless header.inspiration.canToggle}}disabled{{/unless}}
+  >
+    <i class="{{#if header.inspiration.active}}fa-solid{{else}}fa-regular{{/if}} fa-star" aria-hidden="true"></i>
+  </button>
+{{/unless}}

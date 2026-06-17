@@ -5,7 +5,7 @@ import { handleCombatClickAction } from "./actions-combat.ts";
 import { handleCharacterSheetClickAction } from "./actions-character-sheet.ts";
 import { handleJournalClickAction } from "./actions-journal.ts";
 import { handleShellClickAction } from "./actions-shell.ts";
-import { navigateCharacterPane, rememberCurrentRouteScroll, updateCharacterPickerSearch, updateDetailsWheelSelection, updatePaneSearch } from "./controller-helpers-navigation.ts";
+import { navigateCharacterPane, rememberCurrentRouteScroll, updateCharacterPickerSearch, updateNumberWheelSelection, updatePaneSearch } from "./controller-helpers-navigation.ts";
 import { handleEnrichedDocumentLinkClick, scheduleSearch } from "./controller-helpers-search.ts";
 import { openFavoriteContextMenu, updateJournalPageDraftFields } from "./controller-helpers-ui.ts";
 import type { SearchUiState } from "./types.ts";
@@ -71,7 +71,7 @@ export function bindMobileShellEvents(options: {
     "scroll",
     event => {
       const wheel = event.target instanceof Element ? event.target.closest<HTMLElement>(".spinner-wheel") : null;
-      if (wheel) updateDetailsWheelSelection(wheel);
+      if (wheel) updateNumberWheelSelection(wheel);
     },
     { capture: true, signal: abortController.signal, passive: true }
   );

@@ -237,7 +237,7 @@ test("effects template and styles preserve required regions with minimal effect 
   assert.match(shellTemplate, /bottom-nav/);
   assert.match(template, /class="content sheet-dense effects-pane"/);
   assert.match(template, /partials\/pane-search-toolbar\.hbs/);
-  assert.match(template, /toolbarClass="effects-toolbar"/);
+  assert.match(template, /toolbarClass="pane-search-toolbar effects-toolbar"/);
   assert.match(template, /placeholder="Search effects"/);
   assert.match(template, /pane="Effects"/);
   assert.match(template, /value=searchQuery/);
@@ -254,7 +254,7 @@ test("effects template and styles preserve required regions with minimal effect 
   assert.match(css, /grid-template-columns: repeat\(auto-fit, minmax\(min\(100%, 160px\), 1fr\)\)/);
   assert.match(rowTemplate, /class="effect-detail-actions[^"]*pf-detail-actions"/);
   assert.match(rowTemplate, /partials\/pill\.hbs/);
-  assert.match(rowTemplate, /action="details-open-reference"/);
+  assert.match(rowTemplate, /action="document-open-reference"/);
   assert.match(template, /class="condition-grid effects-condition-grid"/);
   assert.match(template, /class="condition effects-condition/);
   assert.match(rowTemplate, /class="sheet-list-value effects-list-value"/);
@@ -279,7 +279,7 @@ test("effects template and styles preserve required regions with minimal effect 
   assert.match(actionsSource, /pane-clear-search/);
   assert.match(characterPanesSource, /effects:search:/);
   assert.match(actorSheetNavigationSource, /effects-toggle-condition/);
-  assert.match(css, /\.pocket-foundry-root \.effects-toolbar/);
+  assert.match(css, /\.pocket-foundry-root \.pane-search-toolbar/);
   assert.match(css, /\.pocket-foundry-root \.effects-sections/);
   assert.match(css, /\.pocket-foundry-root \.effects-list-row/);
   assert.match(css, /\.pocket-foundry-root \.sheet-list-row/);

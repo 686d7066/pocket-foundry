@@ -66,6 +66,7 @@ test("negative integration: core-style routing works with a mock adapter and no 
   assert.deepEqual(paneModel, {
     pane: "OverviewX",
     context: "overviewX",
+    templatePath: "mock/overview",
     data: { renderedBy: "mock-adapter" }
   });
 
@@ -139,6 +140,7 @@ function createMockAdapter(options?: {
     buildPaneViewModel: ({ pane }) => ({
       pane,
       context: pane === "OverviewX" ? "overviewX" : "inventoryX",
+      templatePath: pane === "OverviewX" ? "mock/overview" : "mock/inventory",
       data: { renderedBy: "mock-adapter" }
     }),
     runPaneAction: context => options?.onRunAction?.(context) ?? { ok: true },
@@ -159,19 +161,10 @@ function createMockAdapter(options?: {
       parentPane: parentPane === "OverviewX" ? "OverviewX" : "InventoryX",
       ...(scrollTop === undefined ? {} : { scrollTop })
     }),
-    getPaneTemplatePaths: () => ({
-      details: "mock/details",
-      inventory: "mock/inventory",
-      features: "mock/features",
-      spells: "mock/spells",
-      effects: "mock/effects",
-      biography: "mock/biography",
-      favorites: "mock/favorites"
-    }),
-    getTemplatePaths: () => ["mock/details"],
+    getTemplatePaths: () => ["mock/overview", "mock/inventory", "mock/header"],
     getStylePaths: () => [],
     getPaneContext: pane => (pane === "OverviewX" ? "overviewX" : "inventoryX"),
-    getHeaderPaneContext: () => "overviewX",
+    buildHeaderViewModel: () => ({ templatePath: "mock/header", data: { renderedBy: "mock-adapter" } }),
     getPaneSearchDrawerPrefix: pane => (pane === "InventoryX" ? "inventory:" : "overview:"),
     getSearchAdapters: () => [],
     getVisualMetadata: () => ({ bannerImage: null }),

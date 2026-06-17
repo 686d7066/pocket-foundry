@@ -11,14 +11,17 @@ import {
   DND5E_PANE_TEMPLATE_PATHS,
   DND5E_STYLE_PATHS,
   DND5E_VISUAL_METADATA,
+  buildDnd5eHeaderViewModel,
   getDnd5ePaneContext,
   getDnd5ePaneSearchDrawerPrefix,
   getPaneFromSwipe,
+  handleDnd5eShellAction,
   isCharacterRoute,
   isInteractiveSwipeTarget,
   normalizeCharacterPane,
   rememberDnd5eShortRestRoll,
-  runCharacterSheetPaneAction
+  runCharacterSheetPaneAction,
+  shouldCloseDnd5eDialogsAfterAction
 } from "./actor-sheet-navigation.ts";
 import {
   DND5E_DEFAULT_OWNED_ITEM_PARENT_PANE,
@@ -37,6 +40,9 @@ export const dnd5eCharacterSheetAdapter: CharacterSheetAdapter = {
   buildNavigationViewModel: buildActorSheetNavigationViewModel,
   getPaneSpecs: _options => DND5E_PANE_SPECS,
   buildPaneViewModel: options => buildCharacterSheetPaneViewModel(options),
+  buildHeaderViewModel: options => buildDnd5eHeaderViewModel(options),
+  handleShellAction: options => handleDnd5eShellAction(options),
+  shouldCloseDialogsAfterAction: action => shouldCloseDnd5eDialogsAfterAction(action),
   runPaneAction: options => runCharacterSheetPaneAction(options),
   onPaneActionResult: ({ actionContext, result }) => {
     if (actionContext.route.view !== RouteView.Character || !result.ok || actionContext.action !== "details-roll-hit-die") return;
@@ -47,11 +53,9 @@ export const dnd5eCharacterSheetAdapter: CharacterSheetAdapter = {
   clearTransientState: clearDnd5eTransientState,
   createPaneRoute: createCharacterPaneRoute,
   createOwnedDocumentRoute,
-  getPaneTemplatePaths: () => DND5E_PANE_TEMPLATE_PATHS,
   getTemplatePaths: () => [...Object.values(DND5E_PANE_TEMPLATE_PATHS), ...DND5E_PANE_PARTIAL_PATHS],
   getStylePaths: () => [...DND5E_STYLE_PATHS],
   getPaneContext: pane => getDnd5ePaneContext(pane),
-  getHeaderPaneContext: () => getDnd5ePaneContext("Details"),
   getPaneSearchDrawerPrefix: pane => getDnd5ePaneSearchDrawerPrefix(normalizeCharacterPane(pane)),
   getSearchAdapters: (_options) => [],
   getFavoritesCapability: () => ({

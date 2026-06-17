@@ -278,7 +278,7 @@ test("spells template and styles preserve required regions without create or del
   assert.match(template, /class="spell-summary"/);
   assert.match(template, /class="spell-stats"/);
   assert.match(template, /partials\/pane-search-toolbar\.hbs/);
-  assert.match(template, /toolbarClass="spells-toolbar"/);
+  assert.match(template, /toolbarClass="pane-search-toolbar spells-toolbar"/);
   assert.match(template, /placeholder="Search spells"/);
   assert.match(template, /pane="Spells"/);
   assert.match(template, /canClear=canClearSearch/);

@@ -155,36 +155,9 @@
   .pocket-foundry-root .title-block h1 { @apply m-0 truncate border-0 font-sans text-[1.05rem] leading-tight font-extrabold text-mf-text; }
   .pocket-foundry-root .title-block p { @apply mt-1 mb-0 text-[.78rem] text-mf-muted; }
   .pocket-foundry-root .header-stats { @apply flex min-w-0 flex-nowrap items-center justify-end gap-1 overflow-visible; }
-  .pocket-foundry-root .header-stats.header-stats-priority { @apply grid grid-cols-[max-content_max-content] grid-rows-2 justify-end gap-x-1 gap-y-1; }
-  .pocket-foundry-root .header-stats.header-stats-priority { @apply mb-0.5; }
-  .pocket-foundry-root .header-stats.header-stats-priority .header-stat-ac { grid-column: 1; grid-row: 1; justify-self: stretch; }
-  .pocket-foundry-root .header-stats.header-stats-priority .header-stat-hp { grid-column: 2; grid-row: 1; justify-self: stretch; }
-  .pocket-foundry-root .header-stats.header-stats-priority .header-stat-temp { grid-column: 1; grid-row: 2; justify-self: stretch; }
-  .pocket-foundry-root .header-stats.header-stats-priority .header-stat-hi { grid-column: 2; grid-row: 2; justify-self: stretch; }
-  .pocket-foundry-root .header-stats.header-stats-priority .header-stat,
-  .pocket-foundry-root .header-stats.header-stats-priority .header-inspiration-button {
-    @apply inline-flex min-h-7 items-center justify-center gap-1 rounded-md border border-mf-line bg-mf-surface px-1.5 py-0.5 text-[.78rem] leading-tight font-extrabold text-mf-text;
-    width: 100%;
-  }
-  .pocket-foundry-root .header-stats.header-stats-priority .header-inspiration-button {
-    @apply h-auto;
-  }
-  .pocket-foundry-root .header-stats.header-stats-priority .header-inspiration-button i {
-    @apply text-[.9rem];
-  }
-  .pocket-foundry-root .header-stats.header-stats-priority .header-inspiration-button.active {
-    @apply border-mf-accent bg-mf-active;
-  }
-  .pocket-foundry-root .header-stats.header-stats-priority .header-inspiration-button.active i {
-    @apply text-mf-accent;
-  }
   .pocket-foundry-root .header-stat { @apply inline-flex min-h-7 shrink-0 items-center justify-center gap-1 whitespace-nowrap rounded-md border border-mf-line bg-mf-surface px-1.5 py-0.5 text-[.78rem] leading-tight font-extrabold; }
   .pocket-foundry-root .header-stat b { @apply text-[.68rem] uppercase text-mf-muted; }
   .pocket-foundry-root .header-stat strong { @apply text-[.95rem]; }
-  .pocket-foundry-root .header-inspiration-button { @apply grid h-8 w-8 shrink-0 place-items-center rounded-md border border-mf-line bg-mf-surface p-0 text-mf-muted; }
-  .pocket-foundry-root .header-inspiration-button i { @apply text-[.95rem]; }
-  .pocket-foundry-root .header-inspiration-button.active { @apply border-mf-warm bg-mf-warning-surface; }
-  .pocket-foundry-root .header-inspiration-button.active i { @apply text-mf-warm; }
   .pocket-foundry-root .header-up-button { @apply text-mf-accent; }
 
   .pocket-foundry-root .chip-row,
@@ -232,7 +205,6 @@
   .pocket-foundry-root .row,
   .pocket-foundry-root .sheet-panel,
   .pocket-foundry-root .stat-card,
-  .pocket-foundry-root .feature-card,
   .pocket-foundry-root .setting-row,
   .pocket-foundry-root .item-card { @apply rounded-lg border border-mf-line bg-mf-surface; }
   .pocket-foundry-root .section { @apply mb-3 p-2.5; }
@@ -267,7 +239,6 @@
   .pocket-foundry-root .actor-sheet-shell.character-banner-enabled .row,
   .pocket-foundry-root .actor-sheet-shell.character-banner-enabled .sheet-panel,
   .pocket-foundry-root .actor-sheet-shell.character-banner-enabled .stat-card,
-  .pocket-foundry-root .actor-sheet-shell.character-banner-enabled .feature-card,
   .pocket-foundry-root .actor-sheet-shell.character-banner-enabled .item-card,
   .pocket-foundry-root .actor-sheet-shell.character-banner-enabled .pf-view-section,
   .pocket-foundry-root .actor-sheet-shell.character-banner-enabled .content-group,
@@ -337,19 +308,9 @@
   .pocket-foundry-root .sheet-list-row .item-icon { @apply h-[30px] w-[30px] rounded text-[.66rem]; }
   .pocket-foundry-root .content-list-value,
   .pocket-foundry-root .sheet-list-value { @apply min-w-0 truncate text-center text-[.74rem] font-extrabold text-mf-text; }
-  .pocket-foundry-root .expandable-detail-drawer,
-  .pocket-foundry-root .inventory-detail-drawer,
-  .pocket-foundry-root .feature-detail-drawer,
-  .pocket-foundry-root .spell-detail-drawer,
-  .pocket-foundry-root .effect-detail-drawer { @apply block min-w-0; }
-  .pocket-foundry-root .expandable-detail-drawer summary,
-  .pocket-foundry-root .inventory-detail-drawer summary,
-  .pocket-foundry-root .feature-detail-drawer summary,
-  .pocket-foundry-root .spell-detail-drawer summary,
-  .pocket-foundry-root .effect-detail-drawer summary { @apply cursor-pointer list-none; }
-  .pocket-foundry-root .expandable-detail-drawer summary::-webkit-details-marker,
-  .pocket-foundry-root .biography-detail-drawer summary::-webkit-details-marker,
-  .pocket-foundry-root .favorite-detail-drawer summary::-webkit-details-marker { @apply hidden; }
+  .pocket-foundry-root .expandable-detail-drawer { @apply block min-w-0; }
+  .pocket-foundry-root .expandable-detail-drawer summary { @apply cursor-pointer list-none; }
+  .pocket-foundry-root .expandable-detail-drawer summary::-webkit-details-marker { @apply hidden; }
   .pocket-foundry-root .row { @apply grid min-h-[62px] grid-cols-[42px_minmax(0,1fr)_auto] items-center gap-2 p-2; }
   .pocket-foundry-root .row + .row { @apply mt-2; }
   .pocket-foundry-root .row.content-list-row,
@@ -408,56 +369,24 @@
   .pocket-foundry-root .character-picker-header-stats .header-stat b { @apply text-[.64rem]; }
   .pocket-foundry-root .character-picker-header-stats .header-stat strong { @apply text-[.88rem]; }
 
-  .pocket-foundry-root .pane-search-toolbar,
-  .pocket-foundry-root .inventory-toolbar,
-  .pocket-foundry-root .features-toolbar,
-  .pocket-foundry-root .spells-toolbar,
-  .pocket-foundry-root .effects-toolbar { @apply grid grid-cols-[minmax(0,1fr)] gap-1.5 rounded-md bg-transparent p-0; }
-  .pocket-foundry-root .pane-search-field,
-  .pocket-foundry-root .inventory-search,
-  .pocket-foundry-root .features-search,
-  .pocket-foundry-root .spells-search,
-  .pocket-foundry-root .effects-search { @apply grid min-h-9 grid-cols-[28px_minmax(0,1fr)] items-center rounded-md border border-mf-line bg-mf-surface px-1.5 text-mf-muted; }
-  .pocket-foundry-root .pane-search-field.has-clear,
-  .pocket-foundry-root .inventory-search.has-clear,
-  .pocket-foundry-root .features-search.has-clear,
-  .pocket-foundry-root .spells-search.has-clear,
-  .pocket-foundry-root .effects-search.has-clear { @apply grid-cols-[28px_minmax(0,1fr)_24px]; }
-  .pocket-foundry-root .pane-search-field input,
-  .pocket-foundry-root .inventory-search input,
-  .pocket-foundry-root .features-search input,
-  .pocket-foundry-root .spells-search input,
-  .pocket-foundry-root .effects-search input { @apply min-w-0 border-0 bg-transparent text-[.82rem] text-mf-text outline-none placeholder:text-mf-muted; }
+  .pocket-foundry-root .pane-search-toolbar { @apply grid grid-cols-[minmax(0,1fr)] gap-1.5 rounded-md bg-transparent p-0; }
+  .pocket-foundry-root .pane-search-field { @apply grid min-h-9 grid-cols-[28px_minmax(0,1fr)] items-center rounded-md border border-mf-line bg-mf-surface px-1.5 text-mf-muted; }
+  .pocket-foundry-root .pane-search-field.has-clear { @apply grid-cols-[28px_minmax(0,1fr)_24px]; }
+  .pocket-foundry-root .pane-search-field input { @apply min-w-0 border-0 bg-transparent text-[.82rem] text-mf-text outline-none placeholder:text-mf-muted; }
   .pocket-foundry-root .pane-search-field input[type="search"]::-webkit-search-cancel-button,
-  .pocket-foundry-root .inventory-search input[type="search"]::-webkit-search-cancel-button,
-  .pocket-foundry-root .features-search input[type="search"]::-webkit-search-cancel-button,
-  .pocket-foundry-root .spells-search input[type="search"]::-webkit-search-cancel-button,
-  .pocket-foundry-root .effects-search input[type="search"]::-webkit-search-cancel-button,
   .pocket-foundry-root .search-box[type="search"]::-webkit-search-cancel-button {
     -webkit-appearance: none;
     appearance: none;
     display: none;
   }
   .pocket-foundry-root .pane-search-field input[type="search"]::-ms-clear,
-  .pocket-foundry-root .inventory-search input[type="search"]::-ms-clear,
-  .pocket-foundry-root .features-search input[type="search"]::-ms-clear,
-  .pocket-foundry-root .spells-search input[type="search"]::-ms-clear,
-  .pocket-foundry-root .effects-search input[type="search"]::-ms-clear,
   .pocket-foundry-root .search-box[type="search"]::-ms-clear {
     display: none;
     width: 0;
     height: 0;
   }
-  .pocket-foundry-root .pane-search-field .pane-search-clear,
-  .pocket-foundry-root .inventory-search .pane-search-clear,
-  .pocket-foundry-root .features-search .pane-search-clear,
-  .pocket-foundry-root .spells-search .pane-search-clear,
-  .pocket-foundry-root .effects-search .pane-search-clear { @apply grid h-6 w-6 place-items-center rounded border-0 bg-transparent p-0 text-mf-muted; }
-  .pocket-foundry-root .pane-search-field .pane-search-clear i,
-  .pocket-foundry-root .inventory-search .pane-search-clear i,
-  .pocket-foundry-root .features-search .pane-search-clear i,
-  .pocket-foundry-root .spells-search .pane-search-clear i,
-  .pocket-foundry-root .effects-search .pane-search-clear i { @apply text-[.95rem]; }
+  .pocket-foundry-root .pane-search-field .pane-search-clear { @apply grid h-6 w-6 place-items-center rounded border-0 bg-transparent p-0 text-mf-muted; }
+  .pocket-foundry-root .pane-search-field .pane-search-clear i { @apply text-[.95rem]; }
   .pocket-foundry-root .reader { @apply mx-auto max-w-[68ch]; }
   .pocket-foundry-root .reader p { @apply mt-0 mb-3; }
   .pocket-foundry-root .journal-browser,
@@ -653,8 +582,6 @@
     .pocket-foundry-root .header-stat b { @apply text-[.58rem]; }
     .pocket-foundry-root .header-stat strong { @apply text-[.78rem]; }
     .pocket-foundry-root .header-stat em { @apply text-[.68rem]; }
-    .pocket-foundry-root .header-inspiration-button { @apply h-7 w-7; }
-    .pocket-foundry-root .header-inspiration-button i { @apply text-[.84rem]; }
     .pocket-foundry-root .combat-row { grid-template-columns: 30px minmax(0,1fr) 34px minmax(0,104px); }
     .pocket-foundry-root .combat-row-status .chip { @apply text-[.58rem]; }
     .pocket-foundry-root .combat-toolbar .chip { @apply px-2 text-[.72rem]; }

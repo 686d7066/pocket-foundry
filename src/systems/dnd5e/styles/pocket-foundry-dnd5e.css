@@ -30,6 +30,43 @@
 }
 
 @layer components {
+  .pocket-foundry-root .header-stats.header-stats-priority { @apply mb-0.5 grid grid-cols-[max-content_max-content] grid-rows-2 justify-end gap-x-1 gap-y-1; }
+  .pocket-foundry-root .header-stats.header-stats-priority .header-stat-ac { grid-column: 1; grid-row: 1; justify-self: stretch; }
+  .pocket-foundry-root .header-stats.header-stats-priority .header-stat-hp { grid-column: 2; grid-row: 1; justify-self: stretch; }
+  .pocket-foundry-root .header-stats.header-stats-priority .header-stat-temp { grid-column: 1; grid-row: 2; justify-self: stretch; }
+  .pocket-foundry-root .header-stats.header-stats-priority .header-stat-hi { grid-column: 2; grid-row: 2; justify-self: stretch; }
+  .pocket-foundry-root .header-stats.header-stats-priority .header-stat,
+  .pocket-foundry-root .header-stats.header-stats-priority .header-inspiration-button {
+    @apply inline-flex min-h-7 items-center justify-center gap-1 rounded-md border border-mf-line bg-mf-surface px-1.5 py-0.5 text-[.78rem] leading-tight font-extrabold text-mf-text;
+    width: 100%;
+  }
+  .pocket-foundry-root .header-stats.header-stats-priority .header-inspiration-button { @apply h-auto; }
+  .pocket-foundry-root .header-stats.header-stats-priority .header-inspiration-button i { @apply text-[.9rem]; }
+  .pocket-foundry-root .header-stats.header-stats-priority .header-inspiration-button.active { @apply border-mf-accent bg-mf-active; }
+  .pocket-foundry-root .header-stats.header-stats-priority .header-inspiration-button.active i { @apply text-mf-accent; }
+  .pocket-foundry-root .header-inspiration-button { @apply grid h-8 w-8 shrink-0 place-items-center rounded-md border border-mf-line bg-mf-surface p-0 text-mf-muted; }
+  .pocket-foundry-root .header-inspiration-button i { @apply text-[.95rem]; }
+  .pocket-foundry-root .header-inspiration-button.active { @apply border-mf-warm bg-mf-warning-surface; }
+  .pocket-foundry-root .header-inspiration-button.active i { @apply text-mf-warm; }
+
+  .pocket-foundry-root .feature-card { @apply rounded-lg border border-mf-line bg-mf-surface; }
+  .pocket-foundry-root .actor-sheet-shell.character-banner-enabled .feature-card {
+    background-color: var(--pf-banner-surface-bg);
+    backdrop-filter: blur(var(--pf-banner-blur));
+    -webkit-backdrop-filter: blur(var(--pf-banner-blur));
+  }
+
+  .pocket-foundry-root .inventory-detail-drawer,
+  .pocket-foundry-root .feature-detail-drawer,
+  .pocket-foundry-root .spell-detail-drawer,
+  .pocket-foundry-root .effect-detail-drawer { @apply block min-w-0; }
+  .pocket-foundry-root .inventory-detail-drawer summary,
+  .pocket-foundry-root .feature-detail-drawer summary,
+  .pocket-foundry-root .spell-detail-drawer summary,
+  .pocket-foundry-root .effect-detail-drawer summary { @apply cursor-pointer list-none; }
+  .pocket-foundry-root .biography-detail-drawer summary::-webkit-details-marker,
+  .pocket-foundry-root .favorite-detail-drawer summary::-webkit-details-marker { @apply hidden; }
+
   .pocket-foundry-root .actor-sheet-shell.character-banner-enabled .ability-tile,
   .pocket-foundry-root .actor-sheet-shell.character-banner-enabled .hero-number,
   .pocket-foundry-root .actor-sheet-shell.character-banner-enabled .diamond-row div,
@@ -467,6 +504,11 @@
 }
 
 @layer utilities {
+  @media (max-width: 480px) {
+    .pocket-foundry-root .header-inspiration-button { @apply h-7 w-7; }
+    .pocket-foundry-root .header-inspiration-button i { @apply text-[.84rem]; }
+  }
+
   @media (max-width: 899px) {
     .pocket-foundry-root .details-grid { @apply grid-cols-[repeat(auto-fit,minmax(min(100%,260px),1fr))]; }
     .pocket-foundry-root .table-panel { grid-row: auto; }

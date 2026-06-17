@@ -144,7 +144,6 @@ export async function buildShellContentViewModel(
 ): Promise<Pick<ShellViewModel, "characterPicker" | "actorSheet" | "journal" | "combat" | "recents" | "search" | "settings" | "itemDetail" | "pendingDetail">> {
   const characterSheetAdapter = getCharacterSheetAdapter();
   const visualMetadata = characterSheetAdapter.getVisualMetadata();
-  const paneTemplatePaths = characterSheetAdapter.getPaneTemplatePaths();
 
   switch (contentType) {
     case "character":
@@ -157,7 +156,7 @@ export async function buildShellContentViewModel(
         activePane
       });
       const paneModel = navigationModel.unavailable || navigationModel.limited
-        ? { pane: normalizedPane, context: characterSheetAdapter.getPaneContext(normalizedPane), data: undefined }
+        ? { pane: normalizedPane, context: characterSheetAdapter.getPaneContext(normalizedPane), templatePath: "", data: undefined }
         : await characterSheetAdapter.buildPaneViewModel({
             pane: normalizedPane,
             actor,
@@ -168,33 +167,16 @@ export async function buildShellContentViewModel(
       const actorSheet: ShellViewModel["actorSheet"] = {
         ...navigationModel,
         showCharacterBanner: getCharacterSheetBannerEnabled(),
-        paneTemplatePaths,
         canGoBack
       };
 
       if (!navigationModel.unavailable && !navigationModel.limited) {
-        const paneSpecs = characterSheetAdapter.getPaneSpecs({ actor, user: runtime.game?.user ?? null });
-        const headerPaneContext = characterSheetAdapter.getHeaderPaneContext?.() ?? null;
-        const headerPane = headerPaneContext
-          ? paneSpecs.find(spec => spec.context === headerPaneContext)?.id
-          : undefined;
-
-        const paneContext = characterSheetAdapter.getPaneContext(normalizedPane);
-        const paneData = paneModel.data as Record<string, unknown> | undefined;
-        (actorSheet as Record<string, unknown>)[paneContext] = paneData;
-        if (headerPane) {
-          if (headerPane === normalizedPane) {
-            actorSheet.headerDetails = paneData;
-          } else {
-            const headerPaneModel = await characterSheetAdapter.buildPaneViewModel({
-              pane: headerPane,
-              actor,
-              user: runtime.game?.user ?? null,
-              route: activeRoute
-            });
-            actorSheet.headerDetails = headerPaneModel.data as Record<string, unknown> | undefined;
-          }
-        }
+        actorSheet.activePaneContent = paneModel;
+        actorSheet.headerContent = await characterSheetAdapter.buildHeaderViewModel?.({
+          actor,
+          user: runtime.game?.user ?? null,
+          route: activeRoute
+        });
       }
 
       return {

@@ -1,6 +1,6 @@
 import { getFoundryRuntime } from "../core/foundry-globals.ts";
 import { createCharacterRoute, RouteView } from "../router/routes.ts";
-import type { CharacterSheetActionResult, CharacterSheetAdapter, CharacterSheetPaneTemplatePaths, CharacterSheetVisualMetadata } from "./character-sheet-adapter.ts";
+import type { CharacterSheetActionResult, CharacterSheetAdapter, CharacterSheetVisualMetadata } from "./character-sheet-adapter.ts";
 import { BUILT_IN_CHARACTER_SHEET_ADAPTERS } from "./character-sheet-adapters.generated.ts";
 
 const registeredAdapters = new Map<string, CharacterSheetAdapter>();
@@ -32,15 +32,6 @@ export function hasCharacterSheetAdapterForSystem(systemId?: string): boolean {
   return registeredAdapters.has(resolvedSystemId);
 }
 
-const unsupportedTemplatePaths: CharacterSheetPaneTemplatePaths = {
-  details: "",
-  inventory: "",
-  features: "",
-  spells: "",
-  effects: "",
-  biography: ""
-};
-
 const unsupportedVisualMetadata: CharacterSheetVisualMetadata = {
   bannerImage: null
 };
@@ -59,7 +50,7 @@ function buildUnsupportedSystemNavigationModel(): { unavailable: true; title: st
 const unsupportedCharacterSheetAdapter: CharacterSheetAdapter = {
   buildNavigationViewModel: () => buildUnsupportedSystemNavigationModel(),
   getPaneSpecs: () => [],
-  buildPaneViewModel: ({ pane }) => ({ pane, context: pane, data: undefined }),
+  buildPaneViewModel: ({ pane }) => ({ pane, context: pane, templatePath: "", data: undefined }),
   onPaneActionResult: () => undefined,
   clearTransientState: () => undefined,
   runPaneAction: () => ({ ok: false, reason: "unsupported" } satisfies CharacterSheetActionResult),
@@ -71,7 +62,6 @@ const unsupportedCharacterSheetAdapter: CharacterSheetAdapter = {
     parentPane: "Details",
     ...(options.scrollTop === undefined ? {} : { scrollTop: options.scrollTop })
   }),
-  getPaneTemplatePaths: () => unsupportedTemplatePaths,
   getStylePaths: () => [],
   getPaneContext: pane => pane,
   getPaneSearchDrawerPrefix: () => null,
