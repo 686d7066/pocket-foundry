@@ -7,7 +7,7 @@ import { handleJournalClickAction } from "./actions-journal.ts";
 import { handleShellClickAction } from "./actions-shell.ts";
 import { navigateCharacterPane, rememberCurrentRouteScroll, updateCharacterPickerSearch, updateNumberWheelSelection, updatePaneSearch } from "./controller-helpers-navigation.ts";
 import { handleEnrichedDocumentLinkClick, scheduleSearch } from "./controller-helpers-search.ts";
-import { openFavoriteContextMenu, updateJournalPageDraftFields } from "./controller-helpers-ui.ts";
+import { openFavoriteContextMenu, reportShellActionError, runHandledShellTask, updateJournalPageDraftFields } from "./controller-helpers-ui.ts";
 import type { SearchUiState } from "./types.ts";
 
 type SwipeStart = { x: number; y: number; route: CharacterRoute };
@@ -32,28 +32,32 @@ export function bindMobileShellEvents(options: {
   element.addEventListener(
     "click",
     async event => {
-      const target = event.target instanceof Element ? event.target.closest<HTMLElement>("[data-action]") : null;
-      const isHtmlButton =
-        typeof globalThis.HTMLButtonElement !== "undefined" && target instanceof globalThis.HTMLButtonElement;
-      const getAttribute = typeof (target as { getAttribute?: unknown } | null)?.getAttribute === "function"
-        ? (target as { getAttribute: (name: string) => string | null }).getAttribute.bind(target)
-        : undefined;
-      const isDisabledControl = isHtmlButton ? target.disabled : (getAttribute?.("disabled") ?? null) !== null;
-      const isAriaDisabled = (getAttribute?.("aria-disabled") ?? null) === "true";
-      if (isDisabledControl || isAriaDisabled) {
-        event.preventDefault();
-        event.stopPropagation();
-        return;
-      }
-      if (!target) {
-        void handleEnrichedDocumentLinkClick(event, element, router, searchState);
-        return;
-      }
+      try {
+        const target = event.target instanceof Element ? event.target.closest<HTMLElement>("[data-action]") : null;
+        const isHtmlButton =
+          typeof globalThis.HTMLButtonElement !== "undefined" && target instanceof globalThis.HTMLButtonElement;
+        const getAttribute = typeof (target as { getAttribute?: unknown } | null)?.getAttribute === "function"
+          ? (target as { getAttribute: (name: string) => string | null }).getAttribute.bind(target)
+          : undefined;
+        const isDisabledControl = isHtmlButton ? target.disabled : (getAttribute?.("disabled") ?? null) !== null;
+        const isAriaDisabled = (getAttribute?.("aria-disabled") ?? null) === "true";
+        if (isDisabledControl || isAriaDisabled) {
+          event.preventDefault();
+          event.stopPropagation();
+          return;
+        }
+        if (!target) {
+          await handleEnrichedDocumentLinkClick(event, element, router, searchState);
+          return;
+        }
 
-      if (await handleShellClickAction(actionContext, target, event)) return;
-      if (await handleCombatClickAction(actionContext, target, event)) return;
-      if (await handleJournalClickAction(actionContext, target, event)) return;
-      await handleCharacterSheetClickAction(actionContext, target, event);
+        if (await handleShellClickAction(actionContext, target, event)) return;
+        if (await handleCombatClickAction(actionContext, target, event)) return;
+        if (await handleJournalClickAction(actionContext, target, event)) return;
+        await handleCharacterSheetClickAction(actionContext, target, event);
+      } catch (error) {
+        reportShellActionError(element, error, { kind: "unknown", action: "click" });
+      }
     },
     { signal: abortController.signal }
   );
@@ -61,8 +65,12 @@ export function bindMobileShellEvents(options: {
   element.addEventListener(
     "change",
     event => {
-      const pageTypeSelect = event.target instanceof Element ? event.target.closest<HTMLSelectElement>("[data-journal-page-type-select]") : null;
-      if (pageTypeSelect) updateJournalPageDraftFields(pageTypeSelect.closest<HTMLFormElement>("[data-journal-page-draft-form]"));
+      try {
+        const pageTypeSelect = event.target instanceof Element ? event.target.closest<HTMLSelectElement>("[data-journal-page-type-select]") : null;
+        if (pageTypeSelect) updateJournalPageDraftFields(pageTypeSelect.closest<HTMLFormElement>("[data-journal-page-draft-form]"));
+      } catch (error) {
+        reportShellActionError(element, error, { kind: "journal", action: "journal-page-type-change" });
+      }
     },
     { signal: abortController.signal }
   );
@@ -91,32 +99,36 @@ export function bindMobileShellEvents(options: {
   element.addEventListener(
     "input",
     event => {
-      const characterPickerSearch = event.target instanceof Element ? event.target.closest<HTMLInputElement>("[data-character-picker-search-input]") : null;
-      if (characterPickerSearch?.dataset.characterPickerSearchInput) {
-        void updateCharacterPickerSearch(element, router, searchState, characterPickerSearch.value);
-        return;
+      try {
+        const characterPickerSearch = event.target instanceof Element ? event.target.closest<HTMLInputElement>("[data-character-picker-search-input]") : null;
+        if (characterPickerSearch?.dataset.characterPickerSearchInput) {
+          runHandledShellTask(element, updateCharacterPickerSearch(element, router, searchState, characterPickerSearch.value), { kind: "search", action: "character-picker-search" });
+          return;
+        }
+
+        const paneSearch = event.target instanceof Element ? event.target.closest<HTMLInputElement>("[data-pane-search-input]") : null;
+        if (paneSearch?.dataset.paneSearchInput) {
+          const pane = getCharacterSheetAdapter().normalizePane(paneSearch.dataset.paneSearchInput);
+          runHandledShellTask(element, updatePaneSearch(element, router, searchState, pane, paneSearch.value), { kind: "search", action: "pane-search" });
+          return;
+        }
+
+        const target = event.target instanceof Element ? event.target.closest<HTMLInputElement>("[data-search-input]") : null;
+        if (!target || !("searchInput" in target.dataset)) return;
+
+        const activeRoute = router.getCurrentRoute();
+        if (activeRoute.view !== RouteView.Search) return;
+
+        router.updateCurrentRoute({
+          ...activeRoute,
+          query: target.value,
+          focusedResultId: undefined,
+          scrollTop: 0
+        });
+        scheduleSearch(element, router, searchState);
+      } catch (error) {
+        reportShellActionError(element, error, { kind: "search", action: "search-input" });
       }
-
-      const paneSearch = event.target instanceof Element ? event.target.closest<HTMLInputElement>("[data-pane-search-input]") : null;
-      if (paneSearch?.dataset.paneSearchInput) {
-        const pane = getCharacterSheetAdapter().normalizePane(paneSearch.dataset.paneSearchInput);
-        void updatePaneSearch(element, router, searchState, pane, paneSearch.value);
-        return;
-      }
-
-      const target = event.target instanceof Element ? event.target.closest<HTMLInputElement>("[data-search-input]") : null;
-      if (!target || !("searchInput" in target.dataset)) return;
-
-      const activeRoute = router.getCurrentRoute();
-      if (activeRoute.view !== RouteView.Search) return;
-
-      router.updateCurrentRoute({
-        ...activeRoute,
-        query: target.value,
-        focusedResultId: undefined,
-        scrollTop: 0
-      });
-      scheduleSearch(element, router, searchState);
     },
     { signal: abortController.signal }
   );
@@ -172,28 +184,32 @@ export function bindMobileShellEvents(options: {
   element.addEventListener(
     "touchend",
     event => {
-      clearFavoriteLongPress();
-      if (!swipeStart) return;
+      try {
+        clearFavoriteLongPress();
+        if (!swipeStart) return;
 
-      const touch = event.changedTouches[0];
-      const activeRoute = router.getCurrentRoute();
-      const start = swipeStart;
-      swipeStart = undefined;
+        const touch = event.changedTouches[0];
+        const activeRoute = router.getCurrentRoute();
+        const start = swipeStart;
+        swipeStart = undefined;
 
-      const characterSheetAdapter = getCharacterSheetAdapter();
-      if (!touch || !characterSheetAdapter.isCharacterRoute(activeRoute) || activeRoute.actorUuid !== start.route.actorUuid || activeRoute.pane !== start.route.pane) return;
+        const characterSheetAdapter = getCharacterSheetAdapter();
+        if (!touch || !characterSheetAdapter.isCharacterRoute(activeRoute) || activeRoute.actorUuid !== start.route.actorUuid || activeRoute.pane !== start.route.pane) return;
 
-      const pane = characterSheetAdapter.getPaneFromSwipe(activeRoute.pane, {
-        startX: start.x,
-        startY: start.y,
-        endX: touch.clientX,
-        endY: touch.clientY
-      });
-      if (!pane) return;
+        const pane = characterSheetAdapter.getPaneFromSwipe(activeRoute.pane, {
+          startX: start.x,
+          startY: start.y,
+          endX: touch.clientX,
+          endY: touch.clientY
+        });
+        if (!pane) return;
 
-      event.preventDefault();
-      event.stopPropagation();
-      void navigateCharacterPane(element, router, pane, searchState);
+        event.preventDefault();
+        event.stopPropagation();
+        runHandledShellTask(element, navigateCharacterPane(element, router, pane, searchState), { kind: "navigation", action: "swipe-character-pane" });
+      } catch (error) {
+        reportShellActionError(element, error, { kind: "navigation", action: "swipe-character-pane" });
+      }
     },
     { signal: abortController.signal }
   );

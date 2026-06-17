@@ -551,6 +551,10 @@
   .pocket-foundry-root .confirm-dialog-panel p { @apply m-0; }
   .pocket-foundry-root .number-spinner p { @apply text-[.82rem] text-mf-muted; }
   .pocket-foundry-root .confirm-dialog-panel p { @apply text-[.86rem] text-mf-muted; }
+  .pocket-foundry-root .shell-action-error-panel { @apply max-h-[calc(100vh-48px)] overflow-y-auto; }
+  .pocket-foundry-root .shell-action-error-details { @apply rounded-md border border-mf-line bg-mf-panel p-2 text-[.74rem] text-mf-text; }
+  .pocket-foundry-root .shell-action-error-details summary { @apply cursor-pointer font-extrabold; }
+  .pocket-foundry-root .shell-action-error-details pre { @apply mt-2 max-h-48 overflow-auto whitespace-pre-wrap rounded bg-mf-bg p-2 text-[.68rem] leading-snug text-mf-muted; overflow-wrap: anywhere; }
   .pocket-foundry-root .spinner-wheel { @apply relative block h-[164px] overflow-y-auto rounded-[10px] border border-mf-line bg-mf-surface [overscroll-behavior:contain] [scroll-snap-type:y_mandatory] [scrollbar-width:none] [touch-action:pan-y]; padding-block: 58px; }
   .pocket-foundry-root .spinner-wheel::-webkit-scrollbar { @apply hidden; }
   .pocket-foundry-root .spinner-wheel button { @apply grid min-h-12 w-full place-items-center border-0 bg-transparent text-[1.05rem] font-extrabold text-mf-muted [scroll-snap-align:center]; }

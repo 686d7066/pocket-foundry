@@ -335,7 +335,10 @@ export async function runCharacterSheetAction(
   const result = await characterSheetAdapter.runPaneAction(actionContext);
   characterSheetAdapter.onPaneActionResult?.({ actionContext, result });
 
-  if (!result.ok) return;
+  if (!result.ok) {
+    notifyCharacterSheetActionUnavailable(result.reason);
+    return;
+  }
 
   if (options.closeDialogs) setNumberDialogOpen(element, undefined, false);
   await options.onSuccess?.(result);
@@ -375,6 +378,18 @@ export function notifyJournalMutationUnavailable(reason?: JournalPageMutationRes
       : reason === "upload-failed"
         ? "The selected file could not be uploaded."
       : "This journal page action is not available here.";
+  notifications?.warn?.(message);
+}
+
+export function notifyCharacterSheetActionUnavailable(reason?: string): void {
+  const notifications = getFoundryRuntime().ui?.notifications;
+  const message = reason === "forbidden"
+    ? "You do not have permission to change this character."
+    : reason === "unavailable"
+      ? "That character option is no longer available."
+      : reason === "unsupported"
+        ? "That character action is not supported here."
+        : "The character action could not be completed.";
   notifications?.warn?.(message);
 }
 

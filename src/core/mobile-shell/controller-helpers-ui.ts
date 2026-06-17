@@ -19,15 +19,161 @@ import type { ConfirmationDialogOptions, SearchUiState } from "./types.ts";
 const HISTORY_DEBUG_STORAGE_KEY = `${MODULE_ID}.historyDebug`;
 const JOURNAL_MEDIA_UPLOAD_SOURCE = "data";
 const JOURNAL_MEDIA_UPLOAD_PATH = `uploads/${MODULE_ID}/journal`;
+const SHELL_ACTION_ERROR_DIALOG_ID = "shell-action-error";
 export let browserHistoryActive = false;
 let browserHistorySequence = 0;
 let originalConfirm: ((message?: string) => boolean) | undefined;
+
+export type ShellActionErrorKind =
+  | "character"
+  | "journal"
+  | "navigation"
+  | "render"
+  | "search"
+  | "settings"
+  | "storage"
+  | "unknown";
 
 
 export function consumeShellActionEvent(event: Event): void {
   event.preventDefault();
   event.stopPropagation();
   event.stopImmediatePropagation();
+}
+
+/**
+ * Reports an unexpected shell action failure with a user-safe primary message
+ * and expandable technical details for debugging.
+ */
+export function reportShellActionError(
+  root: HTMLElement | undefined,
+  error: unknown,
+  options: { kind?: ShellActionErrorKind; action?: string; userMessage?: string } = {}
+): void {
+  const message = options.userMessage ?? getShellActionErrorMessage(options.kind ?? "unknown");
+  const detail = formatShellActionErrorDetail(error);
+  globalThis.console?.error?.(`${MODULE_ID} ${options.action ?? "shell action"} failed.`, error);
+  notifyShellActionError(message);
+  if (root) openShellActionErrorDialog(root, message, detail);
+}
+
+/**
+ * Runs async work from non-async DOM callbacks without leaving rejected
+ * promises unhandled.
+ */
+export function runHandledShellTask(
+  root: HTMLElement | undefined,
+  task: Promise<unknown>,
+  options: { kind?: ShellActionErrorKind; action?: string; userMessage?: string } = {}
+): void {
+  void task.catch(error => reportShellActionError(root, error, options));
+}
+
+export async function awaitHandledShellTask(
+  root: HTMLElement | undefined,
+  task: Promise<unknown>,
+  options: { kind?: ShellActionErrorKind; action?: string; userMessage?: string } = {}
+): Promise<void> {
+  try {
+    await task;
+  } catch (error) {
+    reportShellActionError(root, error, options);
+  }
+}
+
+export function closeShellActionErrorDialog(root: HTMLElement): void {
+  root.querySelectorAll<HTMLElement>(`[data-shell-action-error-dialog='${SHELL_ACTION_ERROR_DIALOG_ID}']`).forEach(dialog => dialog.remove());
+}
+
+function openShellActionErrorDialog(root: HTMLElement, message: string, detail: string): void {
+  closeShellActionErrorDialog(root);
+  const modalHost = root.querySelector<HTMLElement>(".pocket-foundry-root") ?? root;
+  const dialog = document.createElement("section");
+  dialog.className = "mock-dialog shell-action-error-dialog open";
+  dialog.setAttribute("aria-label", "Pocket Foundry action failed");
+  dialog.dataset.shellActionErrorDialog = SHELL_ACTION_ERROR_DIALOG_ID;
+
+  const backdrop = document.createElement("button");
+  backdrop.className = "dialog-backdrop";
+  backdrop.type = "button";
+  backdrop.dataset.action = "shell-error-close";
+  backdrop.setAttribute("aria-label", "Close");
+  dialog.append(backdrop);
+
+  const panel = document.createElement("div");
+  panel.className = "confirm-dialog-panel shell-action-error-panel";
+  panel.setAttribute("role", "dialog");
+  panel.setAttribute("aria-modal", "true");
+
+  const title = document.createElement("h2");
+  title.textContent = "Action Failed";
+  const body = document.createElement("p");
+  body.textContent = message;
+  panel.append(title, body);
+
+  if (detail) {
+    const details = document.createElement("details");
+    details.className = "shell-action-error-details";
+    const summary = document.createElement("summary");
+    summary.textContent = "Detailed information";
+    const pre = document.createElement("pre");
+    pre.textContent = detail;
+    details.append(summary, pre);
+    panel.append(details);
+  }
+
+  const actions = document.createElement("div");
+  actions.className = "dialog-actions";
+  const close = document.createElement("button");
+  close.type = "button";
+  close.className = "primary-action";
+  close.dataset.action = "shell-error-close";
+  close.textContent = "Close";
+  actions.append(close);
+  panel.append(actions);
+
+  dialog.append(panel);
+  modalHost.append(dialog);
+  close.focus();
+}
+
+export function getShellActionErrorMessage(kind: ShellActionErrorKind): string {
+  switch (kind) {
+    case "character":
+      return "The character action could not be completed. Check your permissions and try again.";
+    case "journal":
+      return "The journal change could not be completed. Check your permissions and try again.";
+    case "navigation":
+      return "The requested view could not be opened. The document may have changed or become unavailable.";
+    case "render":
+      return "Pocket Foundry could not refresh the mobile view. Try again or reload the page.";
+    case "search":
+      return "Search could not be updated. Try again.";
+    case "settings":
+      return "That setting could not be updated. Try again or reload the world.";
+    case "storage":
+      return "Your Pocket Foundry data could not be saved. Try again or reload the world.";
+    case "unknown":
+      return "The action could not be completed. Try again or reload the page.";
+  }
+}
+
+function notifyShellActionError(message: string): void {
+  const notifications = getFoundryRuntime().ui?.notifications;
+  if (typeof notifications?.error === "function") {
+    notifications.error(message);
+    return;
+  }
+  notifications?.warn?.(message);
+}
+
+function formatShellActionErrorDetail(error: unknown): string {
+  if (error instanceof Error) {
+    return error.stack || `${error.name}: ${error.message}`;
+  }
+  if (typeof error === "string") return error;
+  if (error === null || error === undefined) return "";
+  return String(error);
 }
 
 export function openFavoriteContextMenu(root: HTMLElement, row: HTMLElement): void {
@@ -519,9 +665,9 @@ export function bindBrowserBack(router: MobileRouter, getRootElement: () => HTML
     // stack entry so transient route state (scroll, expanded drawers, focus)
     // survives Back navigation.
     if (!hasPocketRouteState && router.canGoBack()) {
-      void router.back().then(() => {
+      runHandledShellTask(element, router.back().then(() => {
         return renderShell(element, router, searchState);
-      });
+      }), { kind: "navigation", action: "browser-back" });
       return;
     }
 
@@ -529,22 +675,22 @@ export function bindBrowserBack(router: MobileRouter, getRootElement: () => HTML
     // expanded drawers). If the target identity equals the previous stack
     // route, consume Back via the internal stack to preserve exact state.
     if (normalizedRoute && shouldConsumeAsInternalBack(router, normalizedRoute)) {
-      void router.back().then(() => {
+      runHandledShellTask(element, router.back().then(() => {
         return renderShell(element, router, searchState);
-      });
+      }), { kind: "navigation", action: "browser-back" });
       return;
     }
 
     if (!normalizedRoute && router.canGoBack()) {
-      void router.back().then(() => {
+      runHandledShellTask(element, router.back().then(() => {
         return renderShell(element, router, searchState);
-      });
+      }), { kind: "navigation", action: "browser-back" });
       return;
     }
 
     if (!normalizedRoute) return;
 
-    void router.restore(normalizedRoute).then(() => renderShell(element, router, searchState));
+    runHandledShellTask(element, router.restore(normalizedRoute).then(() => renderShell(element, router, searchState)), { kind: "navigation", action: "browser-restore" });
   };
 
   globalThis.addEventListener(

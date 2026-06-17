@@ -7,7 +7,7 @@ import { navigateShellDestination } from "../shell-navigation.ts";
 import { createFoundryRecentsService, isShellDestination, navigateCharacterPane, normalizeSearchTypeFilter, rememberCurrentRouteScroll, setCharacterPickerRouteFavorite, updateCharacterPickerFolderExpansion, updateCharacterPickerSearch } from "./controller-helpers-navigation.ts";
 import { openRecentRoute, openSearchResult, runSearchImmediately } from "./controller-helpers-search.ts";
 import { renderShell } from "./controller-helpers-shell.ts";
-import { browserHistoryActive, closeFavoriteContextMenu, consumeShellActionEvent, recordHistoryDebug } from "./controller-helpers-ui.ts";
+import { awaitHandledShellTask, browserHistoryActive, closeFavoriteContextMenu, closeShellActionErrorDialog, consumeShellActionEvent, recordHistoryDebug } from "./controller-helpers-ui.ts";
 import type { MobileShellActionContext } from "./event-context.ts";
 
 export async function handleShellClickAction(context: MobileShellActionContext, target: HTMLElement, event: Event): Promise<boolean> {
@@ -19,27 +19,36 @@ export async function handleShellClickAction(context: MobileShellActionContext, 
           return true;
         }
 
+        if (target.dataset.action === "shell-error-close") {
+          consumeShellActionEvent(event);
+          closeShellActionErrorDialog(element);
+          return true;
+        }
+
         if (target.dataset.action === "toggle-mobile-view") {
           consumeShellActionEvent(event);
-          void setMobileViewEnabled(!getMobileViewEnabled());
+          await awaitHandledShellTask(element, setMobileViewEnabled(!getMobileViewEnabled()), { kind: "settings", action: target.dataset.action });
           return true;
         }
 
         if (target.dataset.action === "toggle-character-banner") {
           consumeShellActionEvent(event);
-          void setCharacterSheetBannerEnabled(!getCharacterSheetBannerEnabled());
+          await awaitHandledShellTask(element, setCharacterSheetBannerEnabled(!getCharacterSheetBannerEnabled()), { kind: "settings", action: target.dataset.action });
           return true;
         }
 
         if (target.dataset.action === "toggle-color-blind-mode") {
           consumeShellActionEvent(event);
-          void setColorBlindMode(!getColorBlindMode());
+          await awaitHandledShellTask(element, setColorBlindMode(!getColorBlindMode()), { kind: "settings", action: target.dataset.action });
           return true;
         }
 
         if (target.dataset.action === "clear-recents") {
           consumeShellActionEvent(event);
-          void createFoundryRecentsService()?.clearRoutes().then(() => renderShell(element, router, searchState));
+          const recents = createFoundryRecentsService();
+          if (recents) {
+            await awaitHandledShellTask(element, recents.clearRoutes().then(() => renderShell(element, router, searchState)), { kind: "storage", action: target.dataset.action });
+          }
           return true;
         }
 
@@ -55,7 +64,7 @@ export async function handleShellClickAction(context: MobileShellActionContext, 
           if (isShellDestination(route)) {
             rememberCurrentRouteScroll(element, router);
             recordHistoryDebug("click:navigate", { route, current: router.getCurrentRoute(), stack: router.getHistory() });
-            void navigateShellDestination(router, route).then(() => renderShell(element, router, searchState));
+            await awaitHandledShellTask(element, navigateShellDestination(router, route).then(() => renderShell(element, router, searchState)), { kind: "navigation", action: target.dataset.action });
           }
           return true;
         }
@@ -66,7 +75,7 @@ export async function handleShellClickAction(context: MobileShellActionContext, 
           if (!actorUuid) return true;
 
           rememberCurrentRouteScroll(element, router);
-          void router.push(getCharacterSheetAdapter().createPaneRoute({ actorUuid, pane: undefined })).then(() => renderShell(element, router, searchState));
+          await awaitHandledShellTask(element, router.push(getCharacterSheetAdapter().createPaneRoute({ actorUuid, pane: undefined })).then(() => renderShell(element, router, searchState)), { kind: "navigation", action: target.dataset.action });
           return true;
         }
 
@@ -75,13 +84,13 @@ export async function handleShellClickAction(context: MobileShellActionContext, 
           const actorUuid = target.dataset.favoriteId ?? target.dataset.uuid;
           if (!actorUuid) return true;
 
-          void setCharacterPickerRouteFavorite(actorUuid, target.dataset.action === "character-picker-add-favorite").then(() => renderShell(element, router, searchState));
+          await awaitHandledShellTask(element, setCharacterPickerRouteFavorite(actorUuid, target.dataset.action === "character-picker-add-favorite").then(() => renderShell(element, router, searchState)), { kind: "storage", action: target.dataset.action });
           return true;
         }
 
         if (target.dataset.action === "character-picker-clear-search") {
           consumeShellActionEvent(event);
-          void updateCharacterPickerSearch(element, router, searchState, "");
+          await awaitHandledShellTask(element, updateCharacterPickerSearch(element, router, searchState, ""), { kind: "search", action: target.dataset.action });
           return true;
         }
 
@@ -94,7 +103,7 @@ export async function handleShellClickAction(context: MobileShellActionContext, 
             ...activeRoute,
             favoriteHelpOpen: !activeRoute.favoriteHelpOpen
           });
-          void renderShell(element, router, searchState);
+          await awaitHandledShellTask(element, renderShell(element, router, searchState), { kind: "render", action: target.dataset.action });
           return true;
         }
 
@@ -103,14 +112,14 @@ export async function handleShellClickAction(context: MobileShellActionContext, 
           const folderId = target.dataset.folderId;
           if (!folderId) return true;
           const expanded = (target.dataset.expanded ?? "false") !== "true";
-          void updateCharacterPickerFolderExpansion(element, router, searchState, folderId, expanded);
+          await awaitHandledShellTask(element, updateCharacterPickerFolderExpansion(element, router, searchState, folderId, expanded), { kind: "navigation", action: target.dataset.action });
           return true;
         }
 
         if (target.dataset.action === "navigate-character-pane") {
           consumeShellActionEvent(event);
           const pane = getCharacterSheetAdapter().normalizePane(target.dataset.pane);
-          void navigateCharacterPane(element, router, pane, searchState);
+          await awaitHandledShellTask(element, navigateCharacterPane(element, router, pane, searchState), { kind: "navigation", action: target.dataset.action });
           return true;
         }
 
@@ -125,7 +134,7 @@ export async function handleShellClickAction(context: MobileShellActionContext, 
             typeFilter: typeFilter === ALL_SEARCH_RESULT_TYPES ? undefined : typeFilter,
             scrollTop: 0
           });
-          void runSearchImmediately(element, router, searchState).then(() => renderShell(element, router, searchState));
+          await awaitHandledShellTask(element, runSearchImmediately(element, router, searchState).then(() => renderShell(element, router, searchState)), { kind: "search", action: target.dataset.action });
           return true;
         }
 
@@ -134,7 +143,7 @@ export async function handleShellClickAction(context: MobileShellActionContext, 
           const resultId = target.dataset.resultId;
           if (!resultId) return true;
 
-          void openSearchResult(element, router, searchState, resultId);
+          await awaitHandledShellTask(element, openSearchResult(element, router, searchState, resultId), { kind: "navigation", action: target.dataset.action });
           return true;
         }
 
@@ -143,7 +152,7 @@ export async function handleShellClickAction(context: MobileShellActionContext, 
           const recentId = target.dataset.recentId;
           if (!recentId) return true;
 
-          void openRecentRoute(element, router, searchState, recentId);
+          await awaitHandledShellTask(element, openRecentRoute(element, router, searchState, recentId), { kind: "navigation", action: target.dataset.action });
           return true;
         }
 
@@ -156,7 +165,7 @@ export async function handleShellClickAction(context: MobileShellActionContext, 
             return true;
           }
 
-          void router.back().then(() => renderShell(element, router, searchState));
+          await awaitHandledShellTask(element, router.back().then(() => renderShell(element, router, searchState)), { kind: "navigation", action: target.dataset.action });
           return true;
         }
 
