@@ -27,6 +27,10 @@ import type {
   Dnd5eSpellSlotTrackViewModel
 } from "./types.ts";
 
+/**
+ * Builds the dnd5e spells pane from visible spell items, spellcasting classes,
+ * slot tracks, search state, and enriched spell descriptions.
+ */
 export async function buildDnd5eSpellsViewModel(options: {
   actor: Dnd5eSpellsActor | null | undefined;
   user: FoundryUserLike;

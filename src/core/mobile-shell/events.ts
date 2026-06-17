@@ -12,6 +12,10 @@ import type { SearchUiState } from "./types.ts";
 
 type SwipeStart = { x: number; y: number; route: CharacterRoute };
 
+/**
+ * Binds delegated shell event handlers for navigation, actions, search, scroll
+ * persistence, browser history, and touch gestures.
+ */
 export function bindMobileShellEvents(options: {
   element: HTMLElement;
   abortController: AbortController;

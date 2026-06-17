@@ -5,6 +5,9 @@ import { getJournalParentRoute, renderShell } from "./controller-helpers-shell.t
 import { awaitHandledShellTask, closeJournalPageDeleteDialog, closeJournalPageDraftDialog, consumeShellActionEvent, getJournalPageDraftFromForm, openJournalPageDeleteDialog, openJournalPageDraftDialog } from "./controller-helpers-ui.ts";
 import type { MobileShellActionContext } from "./event-context.ts";
 
+/**
+ * Handles journal navigation and mutation actions from delegated shell clicks.
+ */
 export async function handleJournalClickAction(context: MobileShellActionContext, target: HTMLElement, event: Event): Promise<boolean> {
   const { element, router, searchState } = context;
 

@@ -94,6 +94,10 @@ const TRAIT_FIELDS = [
   { id: "appearance", label: "Appearance", localizationKey: "DND5E.Appearance", icon: "fa-solid fa-image-portrait" }
 ] as const;
 
+/**
+ * Builds the dnd5e biography pane from character details, identity fields,
+ * traits, and enriched backstory content.
+ */
 export async function buildDnd5eBiographyViewModel(options: {
   actor: Dnd5eBiographyActor | null | undefined;
   user: FoundryUserLike;

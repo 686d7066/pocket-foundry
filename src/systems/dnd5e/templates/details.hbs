@@ -28,7 +28,7 @@
           <span class="mini-stat death-save-stat death-save-panel">
             <em class="death-save-title">{{localize 'DND5E.DeathSave'}}</em>
             <b class="death-save-pips" aria-label="{{localize 'POCKETFOUNDRY.DND5E.Details.DeathSavesStatus' successes=deathSaves.success failures=deathSaves.failure}}">
-              <span class="death-save-label">{{localize 'DND5E.DeathSaveFailure'}}</span>
+              <span class="death-save-label">{{localize 'DND5E.DeathSaveFailures'}}</span>
               {{> "modules/pocket-foundry/templates/partials/fillable-blips.hbs"
                 pips=deathSaves.failurePips
                 count=3
@@ -52,7 +52,7 @@
                 kind="success"
                 ariaLabel=(localize 'POCKETFOUNDRY.DND5E.Details.MarkDeathSaveSuccess')
               }}
-              <span class="death-save-label">{{localize 'DND5E.DeathSaveSuccess'}}</span>
+              <span class="death-save-label">{{localize 'DND5E.DeathSaveSuccesses'}}</span>
             </b>
           </span>
           <div class="mini-grid">

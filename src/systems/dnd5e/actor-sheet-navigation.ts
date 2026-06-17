@@ -397,6 +397,10 @@ function getActorItems(actor: ActorSheetNavigationActor): Array<{ name?: string;
   return getCollectionContents(actor.items) as Array<{ name?: string; type?: string; system?: Record<string, unknown> }>;
 }
 
+/**
+ * Dispatches dnd5e pane actions to the owning pane service while keeping the
+ * adapter boundary as the only place that knows concrete dnd5e action ids.
+ */
 export function runCharacterSheetPaneAction(options: CharacterSheetActionContext): CharacterSheetActionResult | Promise<CharacterSheetActionResult> {
   const actor = options.actor;
   const user = options.user;
@@ -736,6 +740,9 @@ function buildDetailsRestConfig(data: Readonly<Record<string, string>>): Dnd5eDe
   };
 }
 
+/**
+ * Builds the active dnd5e pane view model and applies pane-specific template state.
+ */
 export async function buildCharacterSheetPaneViewModel(options: {
   pane: ActorSheetPaneId;
   actor: ActorSheetNavigationActor | null | undefined;

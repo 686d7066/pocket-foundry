@@ -159,6 +159,10 @@ export type Dnd5eFavoritesControlResult = {
 const SORT_DENSITY = 100000;
 export const DND5E_FAVORITES_GROUP_PARTIAL = "modules/pocket-foundry/systems/dnd5e/templates/partials/favorites-group.hbs";
 
+/**
+ * Builds the dnd5e favorites pane from stored favorites plus supported skills,
+ * tools, inventory, spells, features, effects, and legacy resources.
+ */
 export async function buildDnd5eFavoritesViewModel(options: {
   actor: Dnd5eFavoritesActor | null | undefined;
   user: FoundryUserLike;
@@ -241,6 +245,10 @@ function idsMatch(favoriteId: string, rowId: string): boolean {
   return favoriteIdsMatch(favoriteId, rowId);
 }
 
+/**
+ * Executes a dnd5e favorite using the appropriate actor, item, activity, effect,
+ * skill, or tool API.
+ */
 export async function useFavorite(
   actor: Dnd5eFavoritesActor | null | undefined,
   user: FoundryUserLike,
@@ -280,6 +288,9 @@ export async function useFavorite(
   return { ok: true };
 }
 
+/**
+ * Adjusts a supported favorite's remaining uses or legacy resource value.
+ */
 export async function adjustFavoriteValue(
   actor: Dnd5eFavoritesActor | null | undefined,
   user: FoundryUserLike,

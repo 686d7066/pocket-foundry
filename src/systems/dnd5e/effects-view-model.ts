@@ -176,6 +176,10 @@ const CATEGORY_LABELS: Record<string, string> = {
   enchantmentInactive: "Inactive Enchantments"
 };
 
+/**
+ * Builds the dnd5e effects pane by grouping active effects, conditions, and
+ * concentration state with permission-aware actions.
+ */
 export async function buildDnd5eEffectsViewModel(options: {
   actor: Dnd5eEffectsActor | null | undefined;
   user: FoundryUserLike;

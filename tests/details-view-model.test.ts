@@ -562,8 +562,8 @@ test("details template and styles preserve required regions without local submen
   assert.match(blipPartialTemplate, /data-pip-value="\{\{value\}\}"/);
   assert.match(template, /class="death-save-title">\{\{localize 'DND5E\.DeathSave'\}\}/);
   assert.match(template, /death-save-divider/);
-  assert.match(template, /class="death-save-label">\{\{localize 'DND5E\.DeathSaveSuccess'\}\}/);
-  assert.match(template, /class="death-save-label">\{\{localize 'DND5E\.DeathSaveFailure'\}\}/);
+  assert.match(template, /class="death-save-label">\{\{localize 'DND5E\.DeathSaveSuccesses'\}\}/);
+  assert.match(template, /class="death-save-label">\{\{localize 'DND5E\.DeathSaveFailures'\}\}/);
   assert.match(template, /data-action="details-exhaustion-pip"/);
   assert.match(template, /data-action="details-rest"/);
   assert.match(template, /id="details-short-rest-dialog"/);

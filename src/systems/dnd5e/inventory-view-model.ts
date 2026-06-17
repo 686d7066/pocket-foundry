@@ -219,6 +219,10 @@ export type Dnd5eInventoryControlResult = {
 
 const CURRENCY_ORDER = ["pp", "gp", "ep", "sp", "cp"] as const;
 
+/**
+ * Builds the dnd5e inventory pane from visible owned physical items, containers,
+ * currency, encumbrance, attunement, and update actions.
+ */
 export async function buildDnd5eInventoryViewModel(options: {
   actor: Dnd5eInventoryActor | null | undefined;
   user: FoundryUserLike;

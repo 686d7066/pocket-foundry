@@ -93,6 +93,10 @@ export function createCombatService(): CombatService {
   };
 }
 
+/**
+ * Builds the current encounter model from Foundry combat state while preserving
+ * player visibility and system-owned combat terminology.
+ */
 export function buildCombatViewModel(): CombatViewModel {
   const runtime = getFoundryRuntime();
   const game = runtime.game as FoundryGameCombatLike | undefined;

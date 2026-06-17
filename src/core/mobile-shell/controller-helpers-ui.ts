@@ -177,6 +177,9 @@ function formatShellActionErrorDetail(error: unknown): string {
   return String(error);
 }
 
+/**
+ * Opens a modal action sheet from the hidden row-level favorite actions.
+ */
 export function openFavoriteContextMenu(root: HTMLElement, row: HTMLElement): void {
   closeFavoriteContextMenu(root);
   const sourceActions = [...row.querySelectorAll<HTMLButtonElement>(".favorite-context-menu button[data-action]")];
@@ -238,6 +241,9 @@ export function closeFavoriteContextMenu(root: HTMLElement): void {
   root.querySelectorAll<HTMLElement>("[data-favorite-action-sheet='true']").forEach(dialog => dialog.remove());
 }
 
+/**
+ * Opens the create/edit journal page dialog and populates its initial draft state.
+ */
 export async function openJournalPageDraftDialog(
   root: HTMLElement,
   options: { mode: "create"; entryUuid: string } | { mode: "edit"; entryUuid: string; pageUuid: string }
@@ -335,6 +341,9 @@ export function closeJournalPageDeleteDialog(root: HTMLElement): void {
   closeConfirmationDialog(root, "journal-page-delete");
 }
 
+/**
+ * Opens a reusable confirmation dialog with caller-provided actions and data.
+ */
 export function openConfirmationDialog(root: HTMLElement, options: ConfirmationDialogOptions): void {
   closeConfirmationDialog(root, options.id);
 

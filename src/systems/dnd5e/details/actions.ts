@@ -38,6 +38,10 @@ import type {
 
 const ABILITY_ORDER = ["str", "dex", "con", "int", "wis", "cha"] as const;
 
+/**
+ * Builds the dnd5e details pane from actor attributes, abilities, traits,
+ * proficiencies, health state, and rest controls.
+ */
 export async function buildDnd5eDetailsViewModel(options: {
   actor: Dnd5eDetailsActor | null | undefined;
   user: FoundryUserLike;

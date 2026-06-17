@@ -136,6 +136,9 @@ export function createReactiveRefreshController(options: ReactiveRefreshControll
   };
 }
 
+/**
+ * Converts a Foundry hook payload into a route refresh invalidation record.
+ */
 export function createRefreshInvalidation(hookName: string, args: unknown[]): RefreshInvalidation | null {
   if (hookName === "combatTurnChange") {
     return {

@@ -253,6 +253,10 @@ export async function buildShellContentViewModel(
   }
 }
 
+/**
+ * Builds the journal portion of the shell view model from the current route,
+ * including list, entry, page, and unavailable states.
+ */
 export async function buildJournalShellViewModel(activeRoute: MobileRoute): Promise<JournalShellViewModel> {
   const service = createFoundryJournalService();
   if (activeRoute.view !== RouteView.Journal) {
@@ -334,6 +338,10 @@ export function addJournalPageRowState(page: JournalPageSummaryViewModel): Journ
   };
 }
 
+/**
+ * Creates the Foundry-backed journal service with UUID lookup, enrichment,
+ * page creation, page updates, and desktop sheet fallbacks wired in.
+ */
 export function createFoundryJournalService(): MobileJournalService {
   const runtime = getFoundryRuntime();
   const fromUuid = runtime.foundry?.utils?.fromUuid;

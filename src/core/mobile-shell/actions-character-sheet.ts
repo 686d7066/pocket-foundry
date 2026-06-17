@@ -16,6 +16,10 @@ import { renderShell } from "./controller-helpers-shell.ts";
 import { closeFavoriteContextMenu, consumeShellActionEvent } from "./controller-helpers-ui.ts";
 import type { MobileShellActionContext } from "./event-context.ts";
 
+/**
+ * Routes character-sheet click actions through generic shell behavior first and
+ * then through the active system adapter.
+ */
 export async function handleCharacterSheetClickAction(context: MobileShellActionContext, target: HTMLElement, event: Event): Promise<boolean> {
   const { element, router, searchState } = context;
   const action = target.dataset.action;

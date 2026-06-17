@@ -10,6 +10,10 @@ export type RichTextSummary = {
 
 type RichTextEnricher = (content: string, options?: Record<string, unknown>) => Promise<string> | string;
 
+/**
+ * Produces a short plain-text summary from rich text and extracts document
+ * references that should remain available as mobile links.
+ */
 export async function summarizeRichTextWithReferences(
   content: string,
   options: {
@@ -42,6 +46,9 @@ export async function summarizeRichTextWithReferences(
   };
 }
 
+/**
+ * Extracts unique Foundry UUID references from enriched anchors and raw UUID tags.
+ */
 export function extractRichTextReferences(value: string, fallbackRaw = ""): RichTextReference[] {
   const references: RichTextReference[] = [];
   const seen = new Set<string>();

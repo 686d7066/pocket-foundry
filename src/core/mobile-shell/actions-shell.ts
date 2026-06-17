@@ -10,6 +10,9 @@ import { renderShell } from "./controller-helpers-shell.ts";
 import { awaitHandledShellTask, browserHistoryActive, closeFavoriteContextMenu, closeShellActionErrorDialog, consumeShellActionEvent, recordHistoryDebug } from "./controller-helpers-ui.ts";
 import type { MobileShellActionContext } from "./event-context.ts";
 
+/**
+ * Handles global shell clicks that are not owned by a specific route content area.
+ */
 export async function handleShellClickAction(context: MobileShellActionContext, target: HTMLElement, event: Event): Promise<boolean> {
   const { element, router, searchState } = context;
 

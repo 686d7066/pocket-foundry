@@ -342,6 +342,10 @@ async function updatePageFromDraft(
   };
 }
 
+/**
+ * Builds a permission-checked page view model for supported Foundry journal page
+ * types and enriches text pages when an enricher is available.
+ */
 export async function buildJournalPageViewModel(options: {
   page: JournalPageDocumentLike | null | undefined;
   user: FoundryUserLike;

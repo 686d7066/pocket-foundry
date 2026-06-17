@@ -50,6 +50,9 @@ import {
   uniqueStrings
 } from "./format.ts";
 
+/**
+ * Builds spellcasting summary cards from dnd5e class spellcasting data.
+ */
 export function buildSpellcastingCards(
   actor: Dnd5eSpellsActor,
   config: Dnd5eSpellsConfig,
@@ -123,6 +126,10 @@ function maxDefinedNumber(values: Array<number | null>): number | null {
   return currentMax;
 }
 
+/**
+ * Groups dnd5e spell items into spellbook sections and attaches slot tracks
+ * where the spellcasting method consumes slots.
+ */
 export function buildSpellSections(
   actor: Dnd5eSpellsActor,
   spells: Dnd5eSpellItem[],

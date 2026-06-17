@@ -304,6 +304,10 @@ export function getEnrichedLinkUuid(link: HTMLAnchorElement | null): string {
   return uuidMatch?.[1] ?? "";
 }
 
+/**
+ * Resolves a Foundry document UUID to the most specific mobile route available
+ * after checking document availability and ownership context.
+ */
 export async function resolveDocumentLinkRoute(uuid: string, previousRoute: MobileRoute): Promise<MobileRoute | null> {
   const runtime = getFoundryRuntime();
   const user = runtime.game?.user;

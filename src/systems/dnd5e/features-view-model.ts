@@ -175,6 +175,10 @@ export type Dnd5eFeaturesControlResult = {
   reason?: "unavailable" | "forbidden" | "unsupported";
 };
 
+/**
+ * Builds the dnd5e features pane from visible owned features, progression
+ * sources, activities, usage state, and favorite metadata.
+ */
 export async function buildDnd5eFeaturesViewModel(options: {
   actor: Dnd5eFeaturesActor | null | undefined;
   user: FoundryUserLike;
