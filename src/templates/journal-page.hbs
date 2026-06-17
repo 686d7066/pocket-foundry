@@ -10,7 +10,7 @@
       <div class="section-heading content-group-heading pf-view-section-heading journal-page-title-row">
         <h2>{{title}}</h2>
         {{#if canUpdate}}
-          <button class="journal-page-edit-button" type="button" data-action="journal-edit-page" data-entry-uuid="{{entryUuid}}" data-page-uuid="{{uuid}}" aria-label="Edit {{title}}" title="Edit page">
+          <button class="journal-page-edit-button" type="button" data-action="journal-edit-page" data-entry-uuid="{{entryUuid}}" data-page-uuid="{{uuid}}" aria-label="{{localize 'POCKETFOUNDRY.Journal.EditPageNamed' name=title}}" title="{{localize 'POCKETFOUNDRY.Journal.EditPage'}}">
             <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
           </button>
         {{/if}}
@@ -27,7 +27,7 @@
             <figcaption>{{title}}</figcaption>
           </figure>
         {{else}}
-          {{> "modules/pocket-foundry/templates/partials/empty-state.hbs" title="Image Unavailable" body="This image page does not expose a visible source."}}
+          {{> "modules/pocket-foundry/templates/partials/empty-state.hbs" title=(localize 'POCKETFOUNDRY.Journal.ImageUnavailable.Title') body=(localize 'POCKETFOUNDRY.Journal.ImageUnavailable.Body')}}
         {{/if}}
       {{/if}}
 
@@ -35,10 +35,10 @@
         {{#if src}}
           <div class="journal-media-frame journal-pdf-frame">
             <object data="{{src}}" type="application/pdf" aria-label="{{title}}"></object>
-            <a class="chip" href="{{src}}" target="_blank" rel="noreferrer">Open PDF</a>
+            <a class="chip" href="{{src}}" target="_blank" rel="noreferrer">{{localize 'POCKETFOUNDRY.Journal.OpenPDF'}}</a>
           </div>
         {{else}}
-          {{> "modules/pocket-foundry/templates/partials/empty-state.hbs" title="PDF Unavailable" body="This PDF page does not expose a visible source."}}
+          {{> "modules/pocket-foundry/templates/partials/empty-state.hbs" title=(localize 'POCKETFOUNDRY.Journal.PDFUnavailable.Title') body=(localize 'POCKETFOUNDRY.Journal.PDFUnavailable.Body')}}
         {{/if}}
       {{/if}}
 
@@ -49,12 +49,12 @@
             <figcaption>{{title}}</figcaption>
           </figure>
         {{else}}
-          {{> "modules/pocket-foundry/templates/partials/empty-state.hbs" title="Video Unavailable" body="This video page does not expose a visible source."}}
+          {{> "modules/pocket-foundry/templates/partials/empty-state.hbs" title=(localize 'POCKETFOUNDRY.Journal.VideoUnavailable.Title') body=(localize 'POCKETFOUNDRY.Journal.VideoUnavailable.Body')}}
         {{/if}}
       {{/if}}
 
       {{#if unsupportedPage}}
-        {{> "modules/pocket-foundry/templates/partials/empty-state.hbs" title="Unsupported Page" body=unsupportedBody}}
+        {{> "modules/pocket-foundry/templates/partials/empty-state.hbs" title=(localize 'POCKETFOUNDRY.Journal.UnsupportedPage.Title') body=unsupportedBody}}
       {{/if}}
     </article>
   </section>

@@ -178,7 +178,7 @@ test("features template and styles preserve required regions without create or d
   assert.match(template, /class="content sheet-dense features-pane"/);
   assert.match(template, /partials\/pane-search-toolbar\.hbs/);
   assert.match(template, /toolbarClass="pane-search-toolbar features-toolbar"/);
-  assert.match(template, /placeholder="Search features"/);
+  assert.match(template, /placeholder=\(localize 'DND5E\.FeatureSearch'\)/);
   assert.match(template, /pane="Features"/);
   assert.match(template, /value=searchQuery/);
   assert.match(template, /canClear=canClearSearch/);

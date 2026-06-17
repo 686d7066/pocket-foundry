@@ -1,5 +1,6 @@
 import type { foundry } from "fvtt-types";
 import { getFoundryRuntime, type FoundryDataShape } from "../../core/foundry-globals.ts";
+import { localize, localizeSystemKey } from "../../core/localization.ts";
 import { getInitials, getNumber, getObject, getString } from "../../core/utils.ts";
 import {
   favoriteIdsMatch,
@@ -108,7 +109,7 @@ export type Dnd5eFavoriteRowViewModel = {
   canInspect: boolean;
   canAdjustValue: boolean;
   canRemoveFavorite: boolean;
-  removeContextLabel: "Remove from Favorites";
+  removeContextLabel: string;
   detailFacts: Array<{ label: string; value: string }>;
   adjustment: Dnd5eFavoriteAdjustmentViewModel | null;
 };
@@ -133,19 +134,19 @@ export type Dnd5eFavoritesViewModel = Omit<FavoritesViewModel, "groups"> & {
 };
 
 export type Dnd5eFavoriteSourceSectionViewModel =
-  | { id: "skills"; label: "Skills"; kind: "skills"; partial: typeof DND5E_FAVORITES_GROUP_PARTIAL; skills: Dnd5eDetailsSkillViewModel[]; empty: boolean }
-  | { id: "tools"; label: "Tools"; kind: "tools"; partial: typeof DND5E_FAVORITES_GROUP_PARTIAL; tools: Dnd5eDetailsToolViewModel[]; empty: boolean }
-  | { id: "inventory"; label: "Inventory"; kind: "inventory"; partial: typeof DND5E_FAVORITES_GROUP_PARTIAL; items: Dnd5eInventoryItemViewModel[]; empty: boolean }
-  | { id: "spells"; label: "Spells"; kind: "spells"; partial: typeof DND5E_FAVORITES_GROUP_PARTIAL; spells: Dnd5eSpellRowViewModel[]; empty: boolean }
-  | { id: "spell-slots"; label: "Spell Slots"; kind: "spell-slots"; partial: typeof DND5E_FAVORITES_GROUP_PARTIAL; slotTracks: Dnd5eSpellSlotTrackViewModel[]; empty: boolean }
-  | { id: "features"; label: "Features"; kind: "features"; partial: typeof DND5E_FAVORITES_GROUP_PARTIAL; features: Dnd5eFeatureItemViewModel[]; empty: boolean }
-  | { id: "effects"; label: "Effects"; kind: "effects"; partial: typeof DND5E_FAVORITES_GROUP_PARTIAL; effects: Dnd5eEffectRowViewModel[]; empty: boolean }
-  | { id: "legacy-resources"; label: "Resources"; kind: "legacy-resources"; partial: typeof DND5E_FAVORITES_GROUP_PARTIAL; rows: Dnd5eFavoriteRowViewModel[]; empty: boolean };
+  | { id: "skills"; label: string; kind: "skills"; partial: typeof DND5E_FAVORITES_GROUP_PARTIAL; skills: Dnd5eDetailsSkillViewModel[]; empty: boolean }
+  | { id: "tools"; label: string; kind: "tools"; partial: typeof DND5E_FAVORITES_GROUP_PARTIAL; tools: Dnd5eDetailsToolViewModel[]; empty: boolean }
+  | { id: "inventory"; label: string; kind: "inventory"; partial: typeof DND5E_FAVORITES_GROUP_PARTIAL; items: Dnd5eInventoryItemViewModel[]; empty: boolean }
+  | { id: "spells"; label: string; kind: "spells"; partial: typeof DND5E_FAVORITES_GROUP_PARTIAL; spells: Dnd5eSpellRowViewModel[]; empty: boolean }
+  | { id: "spell-slots"; label: string; kind: "spell-slots"; partial: typeof DND5E_FAVORITES_GROUP_PARTIAL; slotTracks: Dnd5eSpellSlotTrackViewModel[]; empty: boolean }
+  | { id: "features"; label: string; kind: "features"; partial: typeof DND5E_FAVORITES_GROUP_PARTIAL; features: Dnd5eFeatureItemViewModel[]; empty: boolean }
+  | { id: "effects"; label: string; kind: "effects"; partial: typeof DND5E_FAVORITES_GROUP_PARTIAL; effects: Dnd5eEffectRowViewModel[]; empty: boolean }
+  | { id: "legacy-resources"; label: string; kind: "legacy-resources"; partial: typeof DND5E_FAVORITES_GROUP_PARTIAL; rows: Dnd5eFavoriteRowViewModel[]; empty: boolean };
 
 export type UnavailableDnd5eFavoritesViewModel = {
   unavailable: true;
-  title: "Favorites Unavailable";
-  body: "These favorites are not available to the current user.";
+  title: string;
+  body: string;
 };
 
 export type Dnd5eFavoritesModel = Dnd5eFavoritesViewModel | UnavailableDnd5eFavoritesViewModel;
@@ -168,8 +169,8 @@ export async function buildDnd5eFavoritesViewModel(options: {
   if (!actor || actor.type !== "character" || !canViewDocument(actor, options.user)) {
     return {
       unavailable: true,
-      title: "Favorites Unavailable",
-      body: "These favorites are not available to the current user."
+      title: localize("POCKETFOUNDRY.Favorites.Unavailable.Title", "Favorites Unavailable"),
+      body: localize("POCKETFOUNDRY.Favorites.Unavailable.Body", "These favorites are not available to the current user.")
     };
   }
 
@@ -184,9 +185,9 @@ export async function buildDnd5eFavoritesViewModel(options: {
     unavailable: false,
     actorUuid: actor.uuid ?? (actor.id ? `Actor.${actor.id}` : ""),
     canUpdate,
-    helpText: "Use long-press or right-click to add or remove favorites.",
-    emptyTitle: "No Favorites",
-    emptyBody: "Add favorites from supported skills, tools, inventory, spells, features, effects, and resources.",
+    helpText: localize("POCKETFOUNDRY.Favorites.HelpText", "Use long-press or right-click to add or remove favorites."),
+    emptyTitle: localize("POCKETFOUNDRY.Favorites.Empty.Title", "No Favorites"),
+    emptyBody: localize("POCKETFOUNDRY.Favorites.Empty.Body", "Add favorites from supported skills, tools, inventory, spells, features, effects, and resources."),
     groups,
     sections: groups,
     rows,
@@ -219,14 +220,14 @@ async function buildSourceSections(actor: Dnd5eFavoritesActor, user: FoundryUser
   const effectRows = effects.unavailable ? [] : effects.sections.flatMap(section => section.effects).filter(effect => matchesAnyFavoriteId(effectIds, effect.id, effect.uuid, effect.favoriteId));
 
   const sections: Dnd5eFavoriteSourceSectionViewModel[] = [
-    { id: "skills", label: "Skills", kind: "skills", partial: DND5E_FAVORITES_GROUP_PARTIAL, skills, empty: skills.length === 0 },
-    { id: "tools", label: "Tools", kind: "tools", partial: DND5E_FAVORITES_GROUP_PARTIAL, tools, empty: tools.length === 0 },
-    { id: "inventory", label: "Inventory", kind: "inventory", partial: DND5E_FAVORITES_GROUP_PARTIAL, items: inventoryItems, empty: inventoryItems.length === 0 },
-    { id: "spells", label: "Spells", kind: "spells", partial: DND5E_FAVORITES_GROUP_PARTIAL, spells: spellRows, empty: spellRows.length === 0 },
-    { id: "spell-slots", label: "Spell Slots", kind: "spell-slots", partial: DND5E_FAVORITES_GROUP_PARTIAL, slotTracks, empty: slotTracks.length === 0 },
-    { id: "features", label: "Features", kind: "features", partial: DND5E_FAVORITES_GROUP_PARTIAL, features: featureRows, empty: featureRows.length === 0 },
-    { id: "effects", label: "Effects", kind: "effects", partial: DND5E_FAVORITES_GROUP_PARTIAL, effects: effectRows, empty: effectRows.length === 0 },
-    { id: "legacy-resources", label: "Resources", kind: "legacy-resources", partial: DND5E_FAVORITES_GROUP_PARTIAL, rows: resources, empty: resources.length === 0 }
+    { id: "skills", label: localizeSystemKey("DND5E.Skills", "Skills"), kind: "skills", partial: DND5E_FAVORITES_GROUP_PARTIAL, skills, empty: skills.length === 0 },
+    { id: "tools", label: localizeSystemKey("DND5E.TraitToolProf", "Tools"), kind: "tools", partial: DND5E_FAVORITES_GROUP_PARTIAL, tools, empty: tools.length === 0 },
+    { id: "inventory", label: localizeSystemKey("DND5E.Inventory", "Inventory"), kind: "inventory", partial: DND5E_FAVORITES_GROUP_PARTIAL, items: inventoryItems, empty: inventoryItems.length === 0 },
+    { id: "spells", label: localizeSystemKey("TYPES.Item.spellPl", "Spells"), kind: "spells", partial: DND5E_FAVORITES_GROUP_PARTIAL, spells: spellRows, empty: spellRows.length === 0 },
+    { id: "spell-slots", label: localizeSystemKey("DND5E.CONSUMPTION.Type.SpellSlots.Label", "Spell Slots"), kind: "spell-slots", partial: DND5E_FAVORITES_GROUP_PARTIAL, slotTracks, empty: slotTracks.length === 0 },
+    { id: "features", label: localizeSystemKey("DND5E.Features", "Features"), kind: "features", partial: DND5E_FAVORITES_GROUP_PARTIAL, features: featureRows, empty: featureRows.length === 0 },
+    { id: "effects", label: localizeSystemKey("DND5E.Effects", "Effects"), kind: "effects", partial: DND5E_FAVORITES_GROUP_PARTIAL, effects: effectRows, empty: effectRows.length === 0 },
+    { id: "legacy-resources", label: localizeSystemKey("DND5E.Resources", "Resources"), kind: "legacy-resources", partial: DND5E_FAVORITES_GROUP_PARTIAL, rows: resources, empty: resources.length === 0 }
   ];
   return sections.filter(section => !section.empty);
 }
@@ -443,7 +444,7 @@ function buildFavoriteRow(options: {
     canInspect: Boolean(itemUuid || getString(data.reference) || effectId),
     canAdjustValue: adjustment !== null,
     canRemoveFavorite: canUpdate,
-    removeContextLabel: "Remove from Favorites",
+    removeContextLabel: localize("POCKETFOUNDRY.Favorites.Remove", "Remove from Favorites"),
     detailFacts: buildDetailFacts(type, data, target, primary, secondary),
     adjustment
   };
@@ -508,8 +509,12 @@ function buildSlotFavoriteData(actor: Dnd5eFavoritesActor, config: Dnd5eFavorite
 
   return {
     img: getString(model?.img).replace("{id}", id),
-    title: method === "pact" ? "Pact Magic Slots" : level ? `${ordinal(level)} Level Slots` : "Spell Slots",
-    subtitle: [level ? `${ordinal(level)} Level` : "", model?.isSR === true ? "SR" : "LR"].filter(Boolean),
+    title: method === "pact"
+      ? localizeSystemKey("DND5E.SpellSlotsPact", "Pact Magic Slots")
+      : level
+        ? localizeSystemKey(getSpellSlotsLevelKey(level), "{level} Level Slots", { n: level, level: ordinal(level) })
+        : localizeSystemKey("DND5E.CONSUMPTION.Type.SpellSlots.Label", "Spell Slots"),
+    subtitle: [level ? localizeSystemKey(`DND5E.SpellLevel${level}`, "{level} Level", { level: ordinal(level) }) : "", model?.isSR === true ? "SR" : "LR"].filter(Boolean),
     uses: { value, max, name: `system.spells.${id}.value` },
     level,
     value: method
@@ -520,23 +525,23 @@ function buildPrimary(data: Dnd5ePreparedFavoriteData): Dnd5eFavoritePrimaryView
   const uses = getObject(data.uses);
   const usesMax = getNumber(uses?.max);
   if (usesMax !== null) {
-    return { kind: "uses", label: "Uses", value: formatLooseValue(uses?.value), max: formatNumber(usesMax), active: true };
+    return { kind: "uses", label: localizeSystemKey("DND5E.Uses", "Uses"), value: formatLooseValue(uses?.value), max: formatNumber(usesMax), active: true };
   }
 
-  if (data.modifier !== undefined) return { kind: "modifier", label: "Modifier", value: formatModifier(data.modifier), max: "", active: true };
+  if (data.modifier !== undefined) return { kind: "modifier", label: localizeSystemKey("DND5E.AbilityModifier", "Modifier"), value: formatModifier(data.modifier), max: "", active: true };
 
   const save = getObject(data.save);
   const saveDc = getObject(save?.dc);
   const saveDcValue = getNumber(saveDc?.value) ?? getNumber(save?.dc);
-  if (saveDcValue !== null) return { kind: "save", label: "Save", value: `DC ${formatNumber(saveDcValue)}`, max: "", active: true };
+  if (saveDcValue !== null) return { kind: "save", label: localizeSystemKey("DND5E.SavingThrowShort", "Save"), value: `DC ${formatNumber(saveDcValue)}`, max: "", active: true };
 
-  if (data.value !== undefined) return { kind: "value", label: "Value", value: formatLooseValue(data.value), max: "", active: true };
-  if (data.quantity !== undefined && formatLooseValue(data.quantity)) return { kind: "quantity", label: "Qty", value: `x${formatLooseValue(data.quantity)}`, max: "", active: true };
-  if (data.toggle !== undefined) return { kind: "toggle", label: "Toggle", value: data.toggle ? "on" : "off", max: "", active: data.toggle };
+  if (data.value !== undefined) return { kind: "value", label: localizeSystemKey("DND5E.Value", "Value"), value: formatLooseValue(data.value), max: "", active: true };
+  if (data.quantity !== undefined && formatLooseValue(data.quantity)) return { kind: "quantity", label: localizeSystemKey("DND5E.QuantityAbbr", "Qty"), value: `x${formatLooseValue(data.quantity)}`, max: "", active: true };
+  if (data.toggle !== undefined) return { kind: "toggle", label: localize("POCKETFOUNDRY.DND5E.Favorites.Toggle", "Toggle"), value: data.toggle ? localize("POCKETFOUNDRY.Common.On", "on") : localize("POCKETFOUNDRY.Common.Off", "off"), max: "", active: data.toggle };
 
   const resource = getObject(data.resource);
   const resourceMax = getNumber(resource?.max);
-  if (resourceMax !== null) return { kind: "resource", label: "Resource", value: formatLooseValue(resource?.value), max: formatNumber(resourceMax), active: true };
+  if (resourceMax !== null) return { kind: "resource", label: localizeSystemKey("DND5E.ResourceLabel", "Resource"), value: formatLooseValue(resource?.value), max: formatNumber(resourceMax), active: true };
 
   return { kind: "empty", label: "", value: "", max: "", active: false };
 }
@@ -567,11 +572,11 @@ function buildDetailFacts(
   secondary: string
 ): Array<{ label: string; value: string }> {
   return [
-    { label: "Type", value: type },
-    { label: "Source", value: target?.name ?? "" },
+    { label: localizeSystemKey("DND5E.Type", "Type"), value: type },
+    { label: localizeSystemKey("DND5E.SOURCE.FIELDS.source.label", "Source"), value: target?.name ?? "" },
     { label: primary.label, value: primary.max ? `${primary.value}/${primary.max}` : primary.value },
-    { label: "Secondary", value: secondary },
-    { label: "Reference", value: getString(data.reference) }
+    { label: localize("POCKETFOUNDRY.DND5E.Favorites.Secondary", "Secondary"), value: secondary },
+    { label: localizeSystemKey("DND5E.Scroll.Explanation.Reference", "Reference"), value: getString(data.reference) }
   ].filter(fact => fact.label && fact.value);
 }
 
@@ -648,4 +653,14 @@ function formatLooseValue(value: unknown): string {
 function ordinal(value: number): string {
   const suffix = value % 10 === 1 && value % 100 !== 11 ? "st" : value % 10 === 2 && value % 100 !== 12 ? "nd" : value % 10 === 3 && value % 100 !== 13 ? "rd" : "th";
   return `${value}${suffix}`;
+}
+
+function getSpellSlotsLevelKey(level: number): string {
+  const normalized = Math.abs(Math.trunc(level)) % 100;
+  if (normalized >= 11 && normalized <= 13) return "DND5E.SpellSlotsN.other";
+  const ones = normalized % 10;
+  if (ones === 1) return "DND5E.SpellSlotsN.one";
+  if (ones === 2) return "DND5E.SpellSlotsN.two";
+  if (ones === 3) return "DND5E.SpellSlotsN.few";
+  return "DND5E.SpellSlotsN.other";
 }

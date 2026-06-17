@@ -255,7 +255,7 @@ test("actor sheet template preserves required regions and Character terminology"
   assert.match(template, /class="content actor-pane-content limited-character-view"/);
   assert.match(dnd5eHeaderTemplate, /header\.hp\.value/);
   assert.match(dnd5eHeaderTemplate, /class="header-inspiration-button .*inspiration-toggle/);
-  assert.match(dnd5eHeaderTemplate, /aria-label="Heroic Inspiration"/);
+  assert.match(dnd5eHeaderTemplate, /aria-label="\{\{localize 'POCKETFOUNDRY\.DND5E\.Details\.HeroicInspiration'\}\}"/);
   assert.match(template, /railClass="pane-rail"/);
   const paneRailTemplate = readFileSync(new URL("../src/templates/partials/pane-rail.hbs", import.meta.url), "utf8");
   assert.match(paneRailTemplate, /aria-label="\{\{label\}\}"/);

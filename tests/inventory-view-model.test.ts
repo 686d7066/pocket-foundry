@@ -295,7 +295,7 @@ test("inventory template and styles preserve required regions without a local ca
   assert.match(template, /class="inventory-list-view compact-panels"/);
   assert.match(template, /class="section-heading sheet-group-heading inventory-section-heading"/);
   assert.match(template, /class="chip inventory-section-summary"/);
-  assert.match(template, /<span>Weight<\/span><strong>\{\{weight\}\}<\/strong>/);
+  assert.match(template, /<span>\{\{localize 'DND5E\.Weight'\}\}<\/span><strong>\{\{weight\}\}<\/strong>/);
   assert.doesNotMatch(template, /\{\{count\}\}|>items</);
   assert.match(template, /sheet-table/);
   assert.match(template, /class="sheet-table sheet-list inventory-list"/);

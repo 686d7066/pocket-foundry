@@ -238,7 +238,7 @@ test("effects template and styles preserve required regions with minimal effect 
   assert.match(template, /class="content sheet-dense effects-pane"/);
   assert.match(template, /partials\/pane-search-toolbar\.hbs/);
   assert.match(template, /toolbarClass="pane-search-toolbar effects-toolbar"/);
-  assert.match(template, /placeholder="Search effects"/);
+  assert.match(template, /placeholder=\(localize 'DND5E\.EffectsSearch'\)/);
   assert.match(template, /pane="Effects"/);
   assert.match(template, /value=searchQuery/);
   assert.match(template, /canClear=canClearSearch/);

@@ -1,5 +1,6 @@
 import type { foundry } from "fvtt-types";
 import { getFoundryRuntime, type FoundryDataShape } from "../../core/foundry-globals.ts";
+import { localize, localizeSystemKey } from "../../core/localization.ts";
 import { getCollectionContents, getInitials, getObject, getString } from "../../core/utils.ts";
 import { canUpdateDocument, canViewDocument, type FoundryDocumentMutationApi, type FoundryUserLike, type PermissionCheckedDocument } from "../../services/permissions.ts";
 import { enrichHtml } from "../../services/rich-text-enrichment.ts";
@@ -144,8 +145,8 @@ export type Dnd5eEffectsViewModel = {
 
 export type UnavailableDnd5eEffectsViewModel = {
   unavailable: true;
-  title: "Effects Unavailable";
-  body: "These effects are not available to the current user.";
+  title: string;
+  body: string;
 };
 
 export type Dnd5eEffectsModel = Dnd5eEffectsViewModel | UnavailableDnd5eEffectsViewModel;
@@ -185,8 +186,8 @@ export async function buildDnd5eEffectsViewModel(options: {
   if (!actor || actor.type !== "character" || !canViewDocument(actor, options.user)) {
     return {
       unavailable: true,
-      title: "Effects Unavailable",
-      body: "These effects are not available to the current user."
+      title: localize("POCKETFOUNDRY.DND5E.Effects.Unavailable.Title", "Effects Unavailable"),
+      body: localize("POCKETFOUNDRY.DND5E.Effects.Unavailable.Body", "These effects are not available to the current user.")
     };
   }
 
@@ -374,16 +375,16 @@ async function buildEffectRow(
     id,
     uuid: effect.uuid ?? (actor.uuid ? `${actor.uuid}.ActiveEffect.${id}` : id),
     parentId: effect.target === effect.parent ? "" : getString(effect.parent?.id),
-    name: effect.name?.trim() || "Effect",
+    name: effect.name?.trim() || localizeSystemKey("DND5E.Effect", "Effect"),
     icon: effect.img || null,
-    iconText: getInitials(effect.name ?? "Effect", "E"),
+    iconText: getInitials(effect.name ?? localizeSystemKey("DND5E.Effect", "Effect"), "E"),
     category: category.id,
     categoryLabel: category.label,
     sourceName,
     sourceUuid,
     sourceLinkable: isExpandableDetailEntityLinkPillLinkable(effect, source),
     durationLabel,
-    durationParts: durationLabel === "None" ? [] : durationLabel.split(", ").filter(Boolean),
+    durationParts: durationLabel === localizeSystemKey("DND5E.None", "None") ? [] : durationLabel.split(", ").filter(Boolean),
     disabled,
     active: !disabled,
     toggleable,
@@ -392,11 +393,11 @@ async function buildEffectRow(
     favoriteId: getEffectFavoriteId(actor, effect),
     description,
     changes,
-    chips: uniqueStrings([category.label, sourceName, durationLabel, disabled ? "Disabled" : "Enabled", concentrating ? "Concentration" : ""]),
+    chips: uniqueStrings([category.label, sourceName, durationLabel, disabled ? localize("POCKETFOUNDRY.Common.Disabled", "Disabled") : localize("POCKETFOUNDRY.Common.Enabled", "Enabled"), concentrating ? localizeSystemKey("DND5E.Concentration", "Concentration") : ""]),
     facts: [
       { label: "System Category", value: category.label },
       { label: "Duration", value: durationLabel },
-      { label: "State", value: disabled ? "Disabled" : "Enabled" }
+      { label: "State", value: disabled ? localize("POCKETFOUNDRY.Common.Disabled", "Disabled") : localize("POCKETFOUNDRY.Common.Enabled", "Enabled") }
     ],
     actions: {
       canToggle: canUpdate && toggleable && typeof effect.update === "function",
@@ -458,19 +459,19 @@ function buildStatusCards(
   const activeConditions = conditions.filter(condition => condition.active);
   const concentration = [...concentrationEffects][0];
   return [
-    { id: "temporary", value: String(count("temporary")), label: "Temporary Effects", tone: count("temporary") ? "active" : "normal" },
-    { id: "passive", value: String(count("passive")), label: "Passive Effects", tone: count("passive") ? "active" : "normal" },
-    { id: "inactive", value: String(count("inactive")), label: "Inactive Effects", tone: count("inactive") ? "warning" : "normal" },
+    { id: "temporary", value: String(count("temporary")), label: localizeSystemKey("DND5E.EffectTemporary", "Temporary Effects"), tone: count("temporary") ? "active" : "normal" },
+    { id: "passive", value: String(count("passive")), label: localizeSystemKey("DND5E.EffectPassive", "Passive Effects"), tone: count("passive") ? "active" : "normal" },
+    { id: "inactive", value: String(count("inactive")), label: localizeSystemKey("DND5E.EffectInactive", "Inactive Effects"), tone: count("inactive") ? "warning" : "normal" },
     {
       id: "conditions",
       value: activeConditions.length ? String(activeConditions.length) : "Clear",
-      label: "Conditions",
+      label: localizeSystemKey("DND5E.Conditions", "Conditions"),
       tone: activeConditions.length ? "warning" : "normal"
     },
     {
       id: "concentration",
-      value: concentration ? "Active" : "Clear",
-      label: concentration?.name ?? "Concentration",
+      value: concentration ? localize("POCKETFOUNDRY.Combat.Active", "Active") : localize("POCKETFOUNDRY.Action.Clear", "Clear"),
+      label: concentration?.name ?? localizeSystemKey("DND5E.Concentration", "Concentration"),
       tone: concentration ? "warning" : "normal"
     }
   ];
@@ -481,10 +482,10 @@ function prepareEffectCategories(actor: Dnd5eEffectsActor, effects: Dnd5eActiveE
   for (const id of CATEGORY_ORDER) {
     categories.set(id, {
       id,
-      label: CATEGORY_LABELS[id] ?? titleCase(id),
+      label: getEffectCategoryLabel(id),
       hidden: id === "enchantment" && !getObject(actor.system)?.isEnchantment,
       disabled: id === "suppressed",
-      info: id === "suppressed" ? "These effects are currently unavailable." : "",
+      info: id === "suppressed" ? localize("POCKETFOUNDRY.DND5E.Effects.SuppressedInfo", "These effects are currently unavailable.") : "",
       effects: []
     });
   }
@@ -573,7 +574,7 @@ function getEffectChanges(effect: Dnd5eActiveEffect, config: Dnd5eEffectsConfig)
       const value = formatEffectChangeValue(key, change.value, config);
       const label = formatEffectChangeLabel(key);
       if (!label && !value) return null;
-      return { label: label || "Change", value };
+      return { label: label || localize("POCKETFOUNDRY.DND5E.Effects.Change", "Change"), value };
     })
     .filter((change): change is { label: string; value: string } => Boolean(change));
 }
@@ -599,12 +600,12 @@ function formatEffectChangeValue(key: string, rawValue: unknown, config: Dnd5eEf
 
 function formatEffectChangeLabel(key: string): string {
   if (!key) return "";
-  if (key.startsWith("system.traits.di.value")) return "Damage Immunity";
-  if (key.startsWith("system.traits.dr.value")) return "Damage Resistance";
-  if (key.startsWith("system.traits.dv.value")) return "Damage Vulnerability";
-  if (key.startsWith("system.traits.ci.value")) return "Condition Immunity";
-  if (key.startsWith("system.attributes.senses.")) return `Senses: ${toTitleCaseWords(key.replace("system.attributes.senses.", ""))}`;
-  if (key.startsWith("system.bonuses.")) return `Bonus: ${toTitleCaseWords(key.replace("system.bonuses.", ""))}`;
+  if (key.startsWith("system.traits.di.value")) return localizeSystemKey("DND5E.Immunities", "Damage Immunity");
+  if (key.startsWith("system.traits.dr.value")) return localizeSystemKey("DND5E.Resistances", "Damage Resistance");
+  if (key.startsWith("system.traits.dv.value")) return localizeSystemKey("DND5E.Vulnerabilities", "Damage Vulnerability");
+  if (key.startsWith("system.traits.ci.value")) return localizeSystemKey("DND5E.Immunities", "Condition Immunity");
+  if (key.startsWith("system.attributes.senses.")) return localize("POCKETFOUNDRY.DND5E.Effects.SensesChange", "Senses: {label}", { label: toTitleCaseWords(key.replace("system.attributes.senses.", "")) });
+  if (key.startsWith("system.bonuses.")) return localize("POCKETFOUNDRY.DND5E.Effects.BonusChange", "Bonus: {label}", { label: toTitleCaseWords(key.replace("system.bonuses.", "")) });
   return toTitleCaseWords(key.replace(/^system\./, "").replace(/\.value$/, ""));
 }
 
@@ -614,7 +615,19 @@ function getDurationLabel(effect: Dnd5eActiveEffect): string {
   const label = getString(duration?.label);
   if (remaining && label) return label;
   if (label && label !== "None") return label;
-  return "None";
+  return localizeSystemKey("DND5E.None", "None");
+}
+
+function getEffectCategoryLabel(id: string): string {
+  const fallback = CATEGORY_LABELS[id] ?? titleCase(id);
+  if (id === "temporary") return localizeSystemKey("DND5E.EffectTemporary", fallback);
+  if (id === "passive") return localizeSystemKey("DND5E.EffectPassive", fallback);
+  if (id === "inactive") return localizeSystemKey("DND5E.EffectInactive", fallback);
+  if (id === "suppressed") return localizeSystemKey("DND5E.EffectUnavailable", fallback);
+  if (id === "enchantment") return localizeSystemKey("TYPES.ActiveEffect.enchantmentPl", fallback);
+  if (id === "enchantmentActive") return localizeSystemKey("DND5E.ENCHANTMENT.Category.Active", fallback);
+  if (id === "enchantmentInactive") return localizeSystemKey("DND5E.ENCHANTMENT.Category.Inactive", fallback);
+  return fallback;
 }
 
 function isFavorite(actor: Dnd5eEffectsActor, effect: Dnd5eActiveEffect): boolean {

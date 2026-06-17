@@ -143,7 +143,7 @@ test("biography template, styles, and shell wiring preserve required regions and
   assert.match(template, /class="section sheet-group biography-backstory"/);
   assert.match(template, /class="sheet-group-body biography-backstory-body"/);
   assert.match(template, /class="reader bio-backstory-content"/);
-  assert.match(template, /<h2>Backstory<\/h2>/);
+  assert.match(template, /<h2>\{\{localize 'POCKETFOUNDRY\.DND5E\.Biography\.Backstory'\}\}<\/h2>/);
   assert.match(template, /data-biography-links/);
   assert.match(moduleSource, /getTemplatePaths/);
   assert.match(searchSource, /handleBiographyDocumentLinkClick/);

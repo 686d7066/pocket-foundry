@@ -4,10 +4,10 @@
   <div class="actor-sheet-shell {{#if showCharacterBanner}}character-banner-enabled{{/if}}" data-region="actor-sheet-shell" data-actor-uuid="{{actorUuid}}" data-active-pane="{{activePane}}">
     <div class="actor-top-chrome">
       <header class="mf-header actor-sheet-header">
-        <button class="icon-button" type="button" data-action="back" aria-label="Back" {{#unless canGoBack}}disabled{{/unless}}>&lt;</button>
+        <button class="icon-button" type="button" data-action="back" aria-label="{{localize 'POCKETFOUNDRY.Action.Back'}}" {{#unless canGoBack}}disabled{{/unless}}>&lt;</button>
         {{#if portraitImage}}
-          <button class="portrait portrait-open-button" type="button" data-action="portrait-open-dialog" data-dialog-id="portrait-viewer-dialog" aria-label="Open character portrait" data-swipe-ignore>
-            <img src="{{portraitImage}}" alt="Character portrait">
+          <button class="portrait portrait-open-button" type="button" data-action="portrait-open-dialog" data-dialog-id="portrait-viewer-dialog" aria-label="{{localize 'POCKETFOUNDRY.Character.Portrait.Open'}}" data-swipe-ignore>
+            <img src="{{portraitImage}}" alt="{{localize 'POCKETFOUNDRY.Character.Portrait.Alt'}}">
           </button>
         {{else}}
           <div class="portrait" aria-hidden="true">{{portraitInitials}}</div>
@@ -17,7 +17,7 @@
           {{#if classSummary}}<p>{{classSummary}}</p>{{/if}}
         </div>
         {{#unless limited}}
-          <div class="header-stats {{headerContent.headerClass}}" aria-label="Priority character state">
+          <div class="header-stats {{headerContent.headerClass}}" aria-label="{{localize 'POCKETFOUNDRY.Character.PriorityState'}}">
             {{#if headerContent}}
               {{> (lookup headerContent "templatePath") headerContent.data}}
             {{else}}
@@ -34,7 +34,7 @@
       </header>
 
       {{#unless limited}}
-        {{> "modules/pocket-foundry/templates/partials/pane-rail.hbs" railClass="pane-rail" label="Character sheet panes" panes=panes}}
+        {{> "modules/pocket-foundry/templates/partials/pane-rail.hbs" railClass="pane-rail" label=(localize 'POCKETFOUNDRY.Character.Panes') panes=panes}}
       {{/unless}}
     </div>
 
@@ -43,10 +43,10 @@
     {{/if}}
 
     {{#if portraitImage}}
-      <section id="portrait-viewer-dialog" class="mock-dialog portrait-viewer-dialog" data-action="portrait-close-dialog" aria-label="Character portrait preview" data-swipe-ignore>
+      <section id="portrait-viewer-dialog" class="mock-dialog portrait-viewer-dialog" data-action="portrait-close-dialog" aria-label="{{localize 'POCKETFOUNDRY.Character.Portrait.Preview'}}" data-swipe-ignore>
         <div class="dialog-backdrop" aria-hidden="true"></div>
-        <div class="portrait-viewer-panel" role="dialog" aria-modal="true" aria-label="Character portrait" data-swipe-ignore>
-          <img src="{{portraitImage}}" alt="Character portrait">
+        <div class="portrait-viewer-panel" role="dialog" aria-modal="true" aria-label="{{localize 'POCKETFOUNDRY.Character.Portrait.Label'}}" data-swipe-ignore>
+          <img src="{{portraitImage}}" alt="{{localize 'POCKETFOUNDRY.Character.Portrait.Alt'}}">
         </div>
       </section>
     {{/if}}
@@ -55,7 +55,7 @@
       <section class="content actor-pane-content limited-character-view" data-region="limited-character-view">
         <div class="limited-character-identity">
           {{#if portraitImage}}
-            <img src="{{portraitImage}}" alt="Character portrait">
+            <img src="{{portraitImage}}" alt="{{localize 'POCKETFOUNDRY.Character.Portrait.Alt'}}">
           {{else}}
             <span class="portrait" aria-hidden="true">{{portraitInitials}}</span>
           {{/if}}
@@ -71,7 +71,7 @@
             <div class="section-heading">
               <h2>{{activePaneLabel}}</h2>
             </div>
-            {{> "modules/pocket-foundry/templates/partials/empty-state.hbs" title="Pane Content Pending" body="This character pane is wired for navigation. Pane data binding is implemented in its dedicated step."}}
+            {{> "modules/pocket-foundry/templates/partials/empty-state.hbs" title=(localize 'POCKETFOUNDRY.Character.PanePending.Title') body=(localize 'POCKETFOUNDRY.Character.PanePending.Body')}}
           </div>
         </section>
       {{/if}}

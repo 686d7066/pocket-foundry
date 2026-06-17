@@ -1,4 +1,5 @@
 import type { foundry } from "fvtt-types";
+import { localize, localizeSystemKey } from "../../core/localization.ts";
 import { getCollectionContents, getInitials, getNumber, getObject, getString } from "../../core/utils.ts";
 import { getFoundryRuntime, type FoundryDataShape } from "../../core/foundry-globals.ts";
 import { canUpdateDocument, canViewDocument, type FoundryDocumentMutationApi, type FoundryUserLike, type PermissionCheckedDocument } from "../../services/permissions.ts";
@@ -205,8 +206,8 @@ export type Dnd5eInventoryViewModel = {
 
 export type UnavailableDnd5eInventoryViewModel = {
   unavailable: true;
-  title: "Inventory Unavailable";
-  body: "This inventory is not available to the current user.";
+  title: string;
+  body: string;
 };
 
 export type Dnd5eInventoryModel = Dnd5eInventoryViewModel | UnavailableDnd5eInventoryViewModel;
@@ -227,8 +228,8 @@ export async function buildDnd5eInventoryViewModel(options: {
   if (!actor || actor.type !== "character" || !canViewDocument(actor, options.user)) {
     return {
       unavailable: true,
-      title: "Inventory Unavailable",
-      body: "This inventory is not available to the current user."
+      title: localize("POCKETFOUNDRY.DND5E.Inventory.Unavailable.Title", "Inventory Unavailable"),
+      body: localize("POCKETFOUNDRY.DND5E.Inventory.Unavailable.Body", "This inventory is not available to the current user.")
     };
   }
 
@@ -494,7 +495,7 @@ function buildCurrency(currency: Record<string, unknown>, canUpdate: boolean): D
 
   return {
     total: total ? `${formatNumber(total.value)} ${total.label}` : "0 gp",
-    coins: nonZero.length > 0 ? nonZero.map(coin => `${formatNumber(coin.value)} ${coin.label}`).join(", ") : "No coins",
+    coins: nonZero.length > 0 ? nonZero.map(coin => `${formatNumber(coin.value)} ${coin.label}`).join(", ") : localize("POCKETFOUNDRY.DND5E.Inventory.NoCoins", "No coins"),
     values
   };
 }
@@ -508,11 +509,11 @@ function buildContainer(container: Dnd5eInventoryItem, children: Dnd5eInventoryI
   return {
     id: getItemId(container),
     uuid: getItemUuid(container),
-    name: container.name?.trim() || "Container",
-    iconText: getInitials(container.name ?? "Container", "C"),
+    name: container.name?.trim() || localizeSystemKey("TYPES.Item.container", "Container"),
+    iconText: getInitials(container.name ?? localizeSystemKey("TYPES.Item.container", "Container"), "C"),
     capacityLabel: max === null ? contentsLabel : `${formatNumber(value)} / ${formatNumber(max)} ${units}`,
     pct: getPercent(value, max),
-    contents: children.map(item => item.name?.trim()).filter(Boolean).join(", ") || "Empty"
+    contents: children.map(item => item.name?.trim()).filter(Boolean).join(", ") || localize("POCKETFOUNDRY.Empty.Generic", "Empty")
   };
 }
 
@@ -534,7 +535,7 @@ function buildSections(
     const sectionItems = grouped.get(id) ?? [];
     return {
       id,
-      label: SECTION_CONFIG[id].label,
+      label: getInventorySectionLabel(id),
       weight: formatWeight(sumItemWeight(sectionItems)),
       listColumns: getListColumns(id),
       items: sectionItems.map(item => buildItemViewModel(item, id, childrenByContainer.get(getItemId(item)) ?? [], canUpdate)),
@@ -566,7 +567,7 @@ function buildItemViewModel(item: Dnd5eInventoryItem, sectionId: InventorySectio
   const primary = getPrimaryValue(item, system, labels);
   const containerName = getString(getObject(system.container)?.name) || getString(system.containerName);
   const damage = getDamageLabel(labels);
-  const contents = children.map(child => child.name?.trim()).filter(Boolean).join(", ") || "Empty";
+  const contents = children.map(child => child.name?.trim()).filter(Boolean).join(", ") || localize("POCKETFOUNDRY.Empty.Generic", "Empty");
   const usesLabel = getUsesLabel(uses);
   const usesMax = getNumber(uses?.max);
   const usesCurrent = usesMax === null ? null : getNumber(uses?.value) ?? getRemainingUses(uses) ?? usesMax;
@@ -578,7 +579,7 @@ function buildItemViewModel(item: Dnd5eInventoryItem, sectionId: InventorySectio
     id: getItemId(item),
     sectionId,
     uuid: getItemUuid(item),
-    name: item.name?.trim() || "Unnamed Item",
+    name: item.name?.trim() || localize("POCKETFOUNDRY.Document.UnnamedItem", "Unnamed Item"),
     icon: item.img || null,
     iconText: getInitials(item.name ?? "Item", "I"),
     type: item.type ?? "item",
@@ -624,7 +625,19 @@ function buildItemViewModel(item: Dnd5eInventoryItem, sectionId: InventorySectio
 }
 
 function getListColumns(sectionId: InventorySectionId): Dnd5eInventoryListColumnViewModel[] {
-  return SECTION_CONFIG[sectionId].listColumns;
+  return SECTION_CONFIG[sectionId].listColumns.map(column => ({
+    ...column,
+    label: getInventoryColumnLabel(column.id, column.label)
+  }));
+}
+
+function getInventorySectionLabel(sectionId: InventorySectionId): string {
+  return localizeSystemKey(getInventorySectionKey(sectionId), SECTION_CONFIG[sectionId].label);
+}
+
+function getInventoryColumnLabel(columnId: string, fallback: string): string {
+  const key = getInventoryColumnKey(columnId);
+  return key ? localizeSystemKey(key, fallback) : fallback;
 }
 
 function buildListCells(sectionId: InventorySectionId, item: Dnd5eInventoryItemViewModel): Dnd5eInventoryListCellViewModel[] {
@@ -666,7 +679,7 @@ function buildListCells(sectionId: InventorySectionId, item: Dnd5eInventoryItemV
 function buildAdjustment(id: "quantity" | "charges", current: number, max: number | null, value: string): Dnd5eInventoryAdjustmentViewModel {
   return {
     id,
-    title: id === "charges" ? "Adjust Charges" : "Adjust Quantity",
+    title: id === "charges" ? localize("POCKETFOUNDRY.DND5E.Inventory.AdjustCharges", "Adjust Charges") : localize("POCKETFOUNDRY.DND5E.Inventory.AdjustQuantity", "Adjust Quantity"),
     label: id === "charges" && max !== null ? `${formatNumber(current)} / ${formatNumber(max)}` : formatNumber(current),
     value,
     current,
@@ -701,28 +714,30 @@ function normalizeSectionId(type: string | undefined): string {
 function getSubtitle(item: Dnd5eInventoryItem, system: Record<string, unknown>): string {
   const type = getObject(system.type);
   const activation = getString(getObject(system.activation)?.type);
-  return [getString(type?.label) || item.type || "Item", activation].filter(Boolean).join(" - ");
+  return [getString(type?.label) || item.type || localize("POCKETFOUNDRY.Document.Item", "Item"), activation].filter(Boolean).join(" - ");
 }
 
 function getPrimaryValue(item: Dnd5eInventoryItem, system: Record<string, unknown>, labels: Record<string, unknown>): { label: string; value: string } {
   const modifier = getString(labels.modifier);
-  if (item.type === "weapon" && modifier) return { label: "Roll", value: formatAttackValue(modifier) };
+  if (item.type === "weapon" && modifier) return { label: localizeSystemKey("DND5E.Roll", "Roll"), value: formatAttackValue(modifier) };
   const ac = getObject(system.armor);
   const acValue = getNumber(ac?.value);
-  if (item.type === "armor" && acValue !== null && acValue > 0) return { label: "Armor Class", value: String(acValue) };
-  if (item.type === "equipment" && acValue !== null && acValue > 0) return { label: "Armor Class", value: String(acValue) };
+  if (item.type === "armor" && acValue !== null && acValue > 0) return { label: localizeSystemKey("DND5E.ArmorClass", "Armor Class"), value: String(acValue) };
+  if (item.type === "equipment" && acValue !== null && acValue > 0) return { label: localizeSystemKey("DND5E.ArmorClass", "Armor Class"), value: String(acValue) };
   if (item.type === "container") {
     const capacity = getObject(system.capacity);
     const value = getNumber(capacity?.value);
     const max = getNumber(capacity?.max);
-    return value === null && max === null ? { label: "Container", value: "" } : { label: "Capacity", value: formatPair(value, max) };
+    return value === null && max === null
+      ? { label: localizeSystemKey("TYPES.Item.container", "Container"), value: "" }
+      : { label: localizeSystemKey("DND5E.CONTAINER.FIELDS.capacity.label", "Capacity"), value: formatPair(value, max) };
   }
   const uses = getObject(system.uses);
   const usesValue = getNumber(uses?.value) ?? getRemainingUses(uses);
   const usesMax = getNumber(uses?.max);
-  if (usesValue !== null || usesMax !== null) return { label: "Uses", value: formatPair(usesValue, usesMax) };
+  if (usesValue !== null || usesMax !== null) return { label: localizeSystemKey("DND5E.Uses", "Uses"), value: formatPair(usesValue, usesMax) };
   const quantity = getNumber(system.quantity);
-  return quantity === null ? { label: "", value: "" } : { label: "Quantity", value: String(quantity) };
+  return quantity === null ? { label: "", value: "" } : { label: localizeSystemKey("DND5E.Quantity", "Quantity"), value: String(quantity) };
 }
 
 function getValueLabel(item: Dnd5eInventoryItem, system: Record<string, unknown>, labels: Record<string, unknown>): string {
@@ -766,18 +781,18 @@ function buildFacts(
 
   const shownFacts = new Set<InventoryFactField>(SECTION_CONFIG[sectionId].shownFactFields);
 
-  if (item.type === "weapon" && damage && !shownFacts.has("damage")) facts.push({ label: "Damage", value: damage });
-  if (item.type === "weapon" && range) facts.push({ label: "Range", value: range });
-  if (item.type === "equipment" && ac !== null && ac > 0) facts.push({ label: "Armor Class", value: String(ac) });
-  if (item.type === "armor" && ac !== null && ac > 0) facts.push({ label: "Armor Class", value: String(ac) });
+  if (item.type === "weapon" && damage && !shownFacts.has("damage")) facts.push({ label: localizeSystemKey("DND5E.Damage", "Damage"), value: damage });
+  if (item.type === "weapon" && range) facts.push({ label: localizeSystemKey("DND5E.Range", "Range"), value: range });
+  if (item.type === "equipment" && ac !== null && ac > 0) facts.push({ label: localizeSystemKey("DND5E.ArmorClass", "Armor Class"), value: String(ac) });
+  if (item.type === "armor" && ac !== null && ac > 0) facts.push({ label: localizeSystemKey("DND5E.ArmorClass", "Armor Class"), value: String(ac) });
   if (item.type !== "container") {
     const usesLabel = getUsesLabel(getObject(system.uses));
-    if (usesLabel !== "-" && !shownFacts.has("charges")) facts.push({ label: "Uses", value: usesLabel });
+    if (usesLabel !== "-" && !shownFacts.has("charges")) facts.push({ label: localizeSystemKey("DND5E.Uses", "Uses"), value: usesLabel });
   }
-  if (quantity !== null && !shownFacts.has("quantity")) facts.push({ label: "Quantity", value: String(quantity) });
-  if (weight !== "-" && !shownFacts.has("weight")) facts.push({ label: "Weight", value: weight });
-  if (price && !shownFacts.has("value")) facts.push({ label: "Value", value: price });
-  if (containerName) facts.push({ label: "Container", value: containerName });
+  if (quantity !== null && !shownFacts.has("quantity")) facts.push({ label: localizeSystemKey("DND5E.Quantity", "Quantity"), value: String(quantity) });
+  if (weight !== "-" && !shownFacts.has("weight")) facts.push({ label: localizeSystemKey("DND5E.Weight", "Weight"), value: weight });
+  if (price && !shownFacts.has("value")) facts.push({ label: localizeSystemKey("DND5E.Value", "Value"), value: price });
+  if (containerName) facts.push({ label: localizeSystemKey("TYPES.Item.container", "Container"), value: containerName });
 
   return facts;
 }
@@ -789,7 +804,7 @@ function buildChildViewModel(item: Dnd5eInventoryItem): Dnd5eInventoryChildViewM
   return {
     id: getItemId(item),
     uuid: getItemUuid(item),
-    name: item.name?.trim() || "Unnamed Item",
+    name: item.name?.trim() || localize("POCKETFOUNDRY.Document.UnnamedItem", "Unnamed Item"),
     subtitle: getSubtitle(item, system),
     quantityLabel: formatNullableQuantity(quantity),
     weightLabel: weight,
@@ -808,9 +823,9 @@ function buildChips(
   containerName: string
 ): string[] {
   const chips = [
-    containerName ? `In ${containerName}` : "",
-    states.identified === false ? "Unidentified" : "",
-    item.type === "container" ? "Container" : ""
+    containerName ? localize("POCKETFOUNDRY.DND5E.Inventory.InContainer", "In {name}", { name: containerName }) : "",
+    states.identified === false ? localizeSystemKey("DND5E.Unidentified.Title", "Unidentified") : "",
+    item.type === "container" ? localizeSystemKey("TYPES.Item.container", "Container") : ""
   ];
   return uniqueStrings(chips);
 }
@@ -869,9 +884,9 @@ function isAttunableItem(system: Record<string, unknown>): boolean {
 }
 
 function getContainerContentsLabel(children: Dnd5eInventoryItem[]): string {
-  if (children.length === 0) return "Empty container";
-  if (children.length === 1) return "1 item";
-  return `${children.length} items`;
+  if (children.length === 0) return localize("POCKETFOUNDRY.DND5E.Inventory.EmptyContainer", "Empty container");
+  if (children.length === 1) return localize("POCKETFOUNDRY.DND5E.Inventory.ItemCount.One", "1 item");
+  return localize("POCKETFOUNDRY.DND5E.Inventory.ItemCount.Many", "{count} items", { count: children.length });
 }
 
 
@@ -901,9 +916,29 @@ function getCurrencyIconPath(id: string): string {
 }
 
 function getCurrencyLabel(id: string): string {
-  if (id === "pp") return "Platinum";
-  if (id === "gp") return "Gold";
-  if (id === "ep") return "Electrum";
-  if (id === "sp") return "Silver";
-  return "Copper";
+  if (id === "pp") return localizeSystemKey("DND5E.CurrencyPP", "Platinum");
+  if (id === "gp") return localizeSystemKey("DND5E.CurrencyGP", "Gold");
+  if (id === "ep") return localizeSystemKey("DND5E.CurrencyEP", "Electrum");
+  if (id === "sp") return localizeSystemKey("DND5E.CurrencySP", "Silver");
+  return localizeSystemKey("DND5E.CurrencyCP", "Copper");
+}
+
+function getInventorySectionKey(sectionId: InventorySectionId): string {
+  if (sectionId === "weapon") return "TYPES.Item.weaponPl";
+  if (sectionId === "equipment") return "TYPES.Item.equipmentPl";
+  if (sectionId === "consumable") return "TYPES.Item.consumablePl";
+  if (sectionId === "tool") return "TYPES.Item.toolPl";
+  if (sectionId === "loot") return "TYPES.Item.lootPl";
+  return "TYPES.Item.containerPl";
+}
+
+function getInventoryColumnKey(columnId: string): string | null {
+  if (columnId === "roll") return "DND5E.Roll";
+  if (columnId === "weight") return "DND5E.Weight";
+  if (columnId === "quantity") return "DND5E.Quantity";
+  if (columnId === "value") return "DND5E.Value";
+  if (columnId === "charges") return "DND5E.UsesPeriods.Charges";
+  if (columnId === "formula") return "DND5E.SpellHeader.Formula";
+  if (columnId === "contents") return "DND5E.Container";
+  return null;
 }

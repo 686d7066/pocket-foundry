@@ -23,7 +23,7 @@
         </div>
       {{/if}}
     {{else}}
-      <p class="skill-detail-text">No additional details are available for this skill.</p>
+      <p class="skill-detail-text">{{localize 'POCKETFOUNDRY.DND5E.Details.NoSkillDetails'}}</p>
     {{/if}}
   {{/inline}}
   {{> "modules/pocket-foundry/templates/partials/expandable-detail-row.hbs"
@@ -37,8 +37,8 @@
     ariaLabel=label
     addAction="context-add-favorite"
     removeAction="context-remove-favorite"
-    addLabel="Add to Favorites"
-    removeLabel="Remove from Favorites"
+    addLabel=(localize 'POCKETFOUNDRY.Favorites.Add')
+    removeLabel=(localize 'POCKETFOUNDRY.Favorites.Remove')
     favoriteType="skill"
     favoriteId=id
   }}

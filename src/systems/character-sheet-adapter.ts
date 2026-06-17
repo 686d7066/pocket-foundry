@@ -1,4 +1,5 @@
 import type { foundry } from "fvtt-types";
+import type { LocalizationData } from "../core/localization.ts";
 import type { FoundryDataShape } from "../core/foundry-globals.ts";
 import type { ActorSheetPaneId, CharacterRoute, MobileRoute, OwnedDocumentRoute } from "../router/routes.ts";
 import type { FoundryDocumentMutationApi, FoundryUserLike, PermissionCheckedDocument } from "../services/permissions.ts";
@@ -164,6 +165,41 @@ export type CharacterSheetPaneViewModel = {
 };
 
 /**
+ * System-owned terminology that generic Pocket Foundry UI may need without
+ * referencing concrete system localization keys.
+ */
+export type SystemTermId =
+  | "armorClass"
+  | "activation"
+  | "cantrip"
+  | "charges"
+  | "characterLevel"
+  | "hitPoints"
+  | "duration"
+  | "enemy"
+  | "formula"
+  | "initiative"
+  | "initiativeAbbreviation"
+  | "characterClass"
+  | "itemType"
+  | "level"
+  | "passive"
+  | "price"
+  | "quantity"
+  | "range"
+  | "recovery"
+  | "roll"
+  | "school"
+  | "skill"
+  | "source"
+  | "target"
+  | "time"
+  | "tool"
+  | "total"
+  | "uses"
+  | "weight";
+
+/**
  * Shared context used by adapter action handlers.
  *
  * Foundry/runtime boundaries may surface either null or undefined for missing
@@ -276,6 +312,11 @@ export type CharacterSheetAdapter = {
    */
   getCompendiumSearchCustomization?(): CompendiumSearchCustomization;
   getVisualMetadata(): CharacterSheetVisualMetadata;
+  /**
+   * Resolves a system-owned term for generic UI, such as initiative or item
+   * field labels, using the active system's localization keys when available.
+   */
+  getSystemTermLabel?(term: SystemTermId, data?: LocalizationData): string;
   getPaneFromSwipe(activePane: ActorSheetPaneId | undefined, gesture: PaneSwipeGesture): ActorSheetPaneId | null;
   normalizePane(pane: string | undefined): ActorSheetPaneId;
   getDefaultPane(): ActorSheetPaneId;

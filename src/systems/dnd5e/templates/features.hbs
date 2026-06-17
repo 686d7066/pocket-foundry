@@ -6,8 +6,9 @@
       toolbarClass="pane-search-toolbar features-toolbar"
       searchClass="pane-search-field features-search"
       region="features-toolbar"
-      placeholder="Search features"
-      ariaLabel="Search features"
+      placeholder=(localize 'DND5E.FeatureSearch')
+      ariaLabel=(localize 'DND5E.FeatureSearch')
+      clearAriaLabel=(localize 'POCKETFOUNDRY.DND5E.Features.ClearSearch')
       clearAriaLabel="Clear feature search"
       value=searchQuery
       pane="Features"
@@ -21,7 +22,7 @@
           <em>{{secondary}}</em>
         </button>
       {{else}}
-        <span><b>No classes</b><em>Progression appears here</em></span>
+        <span><b>{{localize 'POCKETFOUNDRY.DND5E.Features.NoClasses.Title'}}</b><em>{{localize 'POCKETFOUNDRY.DND5E.Features.NoClasses.Body'}}</em></span>
       {{/each}}
     </div>
 
@@ -33,9 +34,9 @@
           </div>
           <div class="sheet-table sheet-list features-list">
             <div class="sheet-list-head features-list-head dnd5e-table-head pf-list-schema pf-list-schema--icon-title-2meta-actions" aria-hidden="true">
-              <span>Name</span>
-              <span>Uses</span>
-              <span>Recovery</span>
+              <span>{{localize 'POCKETFOUNDRY.Table.Name'}}</span>
+              <span>{{localize 'DND5E.Uses'}}</span>
+              <span>{{localize 'DND5E.Recovery'}}</span>
               <span></span>
             </div>
             {{#each items}}
@@ -43,7 +44,7 @@
             {{else}}
               <div class="feature-card empty-feature-card">
                 <strong>No {{label}} features</strong>
-                <p class="mini">Features from this group appear here when present.</p>
+                <p class="mini">{{localize 'POCKETFOUNDRY.DND5E.Features.EmptyGroup'}}</p>
               </div>
             {{/each}}
           </div>

@@ -1,6 +1,6 @@
 import { execFileSync } from "node:child_process";
 import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
-import { dirname, relative, resolve } from "node:path";
+import { basename, dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -33,6 +33,7 @@ runTypeCheck();
 stageOutput();
 await bundleModule();
 copyStaticFiles();
+mergeLanguageFiles();
 compileStyles();
 publishOutput();
 
@@ -104,12 +105,77 @@ export const BUILT_IN_CHARACTER_SHEET_ADAPTERS: ReadonlyArray<{ systemId: string
   writeFileSync(generatedPath, payload, "utf8");
 }
 
+/**
+ * Copies static module assets into the temporary build tree.
+ */
 function copyStaticFiles(): void {
   for (const entry of staticEntries) {
     const source = resolve(addonRoot, entry);
     if (!existsSync(source)) throw new Error(`Required module asset is missing: ${entry}`);
-    cpSync(source, resolve(tempModule, entry), { recursive: true });
+    cpSync(source, resolve(tempModule, entry), { recursive: true, filter: shouldCopyStaticAsset });
   }
+}
+
+/**
+ * Excludes source language folders from raw static copying because they are
+ * merged into Foundry's module-level language directory separately.
+ */
+function shouldCopyStaticAsset(sourcePath: string): boolean {
+  const relativePath = relative(addonRoot, sourcePath);
+  return !relativePath.split(/[\\/]/).includes("lang");
+}
+
+/**
+ * Merges core and system-owned language JSON files into Foundry module language
+ * files keyed by locale.
+ */
+function mergeLanguageFiles(): void {
+  const languageSources = collectLanguageSources();
+  const outputRoot = resolve(tempModule, "lang");
+  mkdirSync(outputRoot, { recursive: true });
+
+  for (const [lang, files] of [...languageSources.entries()].sort(([left], [right]) => left.localeCompare(right))) {
+    const merged: Record<string, unknown> = {};
+    for (const file of files.sort()) {
+      Object.assign(merged, JSON.parse(readFileSync(file, "utf8")) as Record<string, unknown>);
+    }
+    writeFileSync(resolve(outputRoot, `${lang}.json`), `${JSON.stringify(merged, null, 2)}\n`, "utf8");
+  }
+}
+
+/**
+ * Collects every source language JSON file grouped by locale name.
+ */
+function collectLanguageSources(): Map<string, string[]> {
+  const sources = new Map<string, string[]>();
+  for (const file of collectJsonFiles(resolve(addonRoot, "lang"))) addLanguageSource(sources, file);
+  for (const file of collectJsonFiles(resolve(addonRoot, "systems"))) {
+    if (file.split(/[\\/]/).includes("lang")) addLanguageSource(sources, file);
+  }
+  if (sources.size === 0) throw new Error("No language source files found.");
+  return sources;
+}
+
+/**
+ * Adds one language JSON path to the grouped locale source map.
+ */
+function addLanguageSource(sources: Map<string, string[]>, file: string): void {
+  const lang = basename(file, ".json");
+  sources.set(lang, [...(sources.get(lang) ?? []), file]);
+}
+
+/**
+ * Recursively lists JSON files below a root directory when it exists.
+ */
+function collectJsonFiles(root: string): string[] {
+  if (!existsSync(root)) return [];
+  const files: string[] = [];
+  for (const entry of readdirSync(root, { withFileTypes: true })) {
+    const entryPath = join(root, entry.name);
+    if (entry.isDirectory()) files.push(...collectJsonFiles(entryPath));
+    else if (entry.isFile() && entry.name.toLowerCase().endsWith(".json")) files.push(entryPath);
+  }
+  return files;
 }
 
 function publishOutput(): void {

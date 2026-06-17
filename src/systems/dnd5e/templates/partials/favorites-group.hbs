@@ -1,7 +1,7 @@
 {{#if (eq kind "skills")}}
   <div class="detail-table skills-table favorites-source-table">
     <div class="sheet-list-head dnd5e-table-head dnd5e-detail-schema dnd5e-detail-schema--skill" aria-hidden="true">
-      <span>Ability</span><span>Skill</span><span>Total</span><span>Passive</span>
+      <span>{{localize 'DND5E.Ability'}}</span><span>{{localize 'DND5E.Skill'}}</span><span>{{localize 'DND5E.PropertyTotal'}}</span><span>{{localize 'DND5E.Passive'}}</span>
     </div>
     {{#each skills}}
       {{> "modules/pocket-foundry/systems/dnd5e/templates/partials/details-skill-row.hbs" this}}
@@ -12,7 +12,7 @@
 {{#if (eq kind "tools")}}
   <div class="detail-table tool-table favorites-source-table">
     <div class="sheet-list-head dnd5e-table-head dnd5e-detail-schema dnd5e-detail-schema--tool" aria-hidden="true">
-      <span>Ability</span><span>Tool</span><span>Total</span>
+      <span>{{localize 'DND5E.Ability'}}</span><span>{{localize 'TYPES.Item.tool'}}</span><span>{{localize 'DND5E.PropertyTotal'}}</span>
     </div>
     {{#each tools}}
       {{> "modules/pocket-foundry/systems/dnd5e/templates/partials/details-tool-row.hbs" this}}
@@ -23,10 +23,10 @@
 {{#if (eq kind "inventory")}}
   <div class="sheet-table sheet-list inventory-list favorites-source-list">
     <div class="sheet-list-head inventory-list-head inventory-list-head-favorites dnd5e-table-head pf-list-schema pf-list-schema--icon-title-3meta-actions" aria-hidden="true">
-      <span>Name</span>
-      <span class="inventory-list-head-cell inventory-list-head-cell-roll">Roll</span>
-      <span class="inventory-list-head-cell inventory-list-head-cell-formula">Formula</span>
-      <span class="inventory-list-head-cell inventory-list-head-cell-charges">Charges</span>
+      <span>{{localize 'POCKETFOUNDRY.Table.Name'}}</span>
+      <span class="inventory-list-head-cell inventory-list-head-cell-roll">{{localize 'DND5E.Roll'}}</span>
+      <span class="inventory-list-head-cell inventory-list-head-cell-formula">{{localize 'DND5E.Formula'}}</span>
+      <span class="inventory-list-head-cell inventory-list-head-cell-charges">{{localize 'DND5E.Charges'}}</span>
       <span></span>
     </div>
     {{#each items}}
@@ -38,11 +38,11 @@
 {{#if (eq kind "spells")}}
   <div class="sheet-table sheet-list spells-table favorites-source-list">
     <div class="sheet-list-head spells-list-head dnd5e-table-head pf-list-schema pf-list-schema--icon-title-4meta-actions" aria-hidden="true">
-      <span>Name</span>
-      <span>Time</span>
-      <span>Range</span>
-      <span>Target</span>
-      <span>Roll</span>
+      <span>{{localize 'POCKETFOUNDRY.Table.Name'}}</span>
+      <span>{{localize 'DND5E.DurationTime'}}</span>
+      <span>{{localize 'DND5E.Range'}}</span>
+      <span>{{localize 'DND5E.Target'}}</span>
+      <span>{{localize 'DND5E.Roll'}}</span>
       <span></span>
     </div>
     {{#each spells}}
@@ -54,7 +54,7 @@
 {{#if (eq kind "spell-slots")}}
   <div class="favorites-slot-tracks">
     {{#each slotTracks}}
-      <div class="slot-tracks spell-section-slots" aria-label="{{label}} slot controls" data-region="slot-tracks" data-favorite-context>
+      <div class="slot-tracks spell-section-slots" aria-label="{{localize 'POCKETFOUNDRY.DND5E.Spells.SlotControls' label=label}}" data-region="slot-tracks" data-favorite-context>
         <strong>{{label}}</strong>
         {{#each pips}}
           <button
@@ -78,8 +78,8 @@
             ariaLabel=label
             addAction="context-add-favorite"
             removeAction="context-remove-favorite"
-            addLabel="Add to Favorites"
-            removeLabel="Remove from Favorites"
+            addLabel=(localize 'POCKETFOUNDRY.Favorites.Add')
+            removeLabel=(localize 'POCKETFOUNDRY.Favorites.Remove')
             favoriteType="slots"
             favoriteId=id
           }}
@@ -92,9 +92,9 @@
 {{#if (eq kind "features")}}
   <div class="sheet-table sheet-list features-list favorites-source-list">
     <div class="sheet-list-head features-list-head dnd5e-table-head pf-list-schema pf-list-schema--icon-title-2meta-actions" aria-hidden="true">
-      <span>Name</span>
-      <span>Uses</span>
-      <span>Recovery</span>
+      <span>{{localize 'POCKETFOUNDRY.Table.Name'}}</span>
+      <span>{{localize 'DND5E.Uses'}}</span>
+      <span>{{localize 'DND5E.Recovery'}}</span>
       <span></span>
     </div>
     {{#each features}}
@@ -106,8 +106,8 @@
 {{#if (eq kind "effects")}}
   <div class="sheet-table sheet-list effects-list favorites-source-list">
     <div class="sheet-list-head effects-list-head dnd5e-table-head pf-list-schema pf-list-schema--icon-title-source-actions" aria-hidden="true">
-      <span>Name</span>
-      <span>Source</span>
+      <span>{{localize 'POCKETFOUNDRY.Table.Name'}}</span>
+      <span>{{localize 'DND5E.SOURCE.FIELDS.source.label'}}</span>
       <span></span>
     </div>
     {{#each effects}}

@@ -57,6 +57,10 @@ export type FoundryDocumentCollection = foundry.utils.Collection<string, unknown
  */
 export type FoundryGame = Partial<foundry.Game> & {
   settings: FoundrySettings;
+  i18n?: {
+    localize: (stringId: string, data?: Record<string, unknown>) => string;
+    has?: (stringId: string, fallback?: boolean) => boolean;
+  };
   logOut?: () => void;
   actors?: FoundryDocumentCollection;
   folders?: FoundryDocumentCollection;

@@ -524,7 +524,7 @@ test("details template and styles preserve required regions without local submen
   assert.match(template, /class="[^"]*sheet-panel[^"]*table-panel"/);
   assert.match(template, /class="sheet-panel traits-panel"/);
   assert.match(template, /class="section-heading sheet-group-heading"/);
-  assert.match(template, /<h2>Tool Proficiencies<\/h2>/);
+  assert.match(template, /<h2>\{\{localize 'DND5E\.TraitToolProf'\}\}<\/h2>/);
   assert.match(template, /class="detail-table skills-table"/);
   assert.match(template, /partials\/details-skill-row\.hbs/);
   assert.match(skillRowTemplate, /partials\/expandable-detail-row\.hbs/);
@@ -534,7 +534,7 @@ test("details template and styles preserve required regions without local submen
   assert.match(template, /class="detail-table tool-table"/);
   assert.match(template, /class="trait-groups"/);
   assert.match(template, /class="trait-group proficiency-group"/);
-  assert.match(template, /<h2>Proficiencies<\/h2>/);
+  assert.match(template, /<h2>\{\{localize 'JOURNALENTRYPAGE\.DND5E\.Class\.Traits\.Header'\}\}<\/h2>/);
   const dnd5eHeaderTemplate = readFileSync(new URL("../src/systems/dnd5e/templates/partials/header-details.hbs", import.meta.url), "utf8");
   const dnd5eHeaderDialogsTemplate = readFileSync(new URL("../src/systems/dnd5e/templates/partials/header-details-dialogs.hbs", import.meta.url), "utf8");
   assert.match(dnd5eHeaderTemplate, /data-action="details-toggle-inspiration"/);
@@ -546,7 +546,7 @@ test("details template and styles preserve required regions without local submen
   assert.match(dnd5eHeaderDialogsTemplate, /selectAction="details-select-delta"/);
   assert.match(dnd5eHeaderDialogsTemplate, /confirmActionMiddle="hp"/);
   assert.match(dnd5eHeaderDialogsTemplate, /confirmActionMiddle="temp-hp"/);
-  assert.match(numberAdjustDialogTemplate, /\{\{#if confirmLabel\}\}\{\{confirmLabel\}\}\{\{else\}\}OK\{\{\/if\}\}/);
+  assert.match(numberAdjustDialogTemplate, /\{\{#if confirmLabel\}\}\{\{confirmLabel\}\}\{\{else\}\}\{\{localize 'POCKETFOUNDRY\.Action\.OK'\}\}\{\{\/if\}\}/);
   assert.match(template, /partials\/fillable-blips\.hbs/);
   assert.match(template, /direction="rtl"/);
   assert.match(template, /direction="ltr"/);
@@ -560,10 +560,10 @@ test("details template and styles preserve required regions without local submen
   assert.match(blipPartialTemplate, /color-\{\{color\}\}/);
   assert.match(blipPartialTemplate, /data-action="\{\{..\/action\}\}"/);
   assert.match(blipPartialTemplate, /data-pip-value="\{\{value\}\}"/);
-  assert.match(template, /class="death-save-title">Death Saves/);
+  assert.match(template, /class="death-save-title">\{\{localize 'DND5E\.DeathSave'\}\}/);
   assert.match(template, /death-save-divider/);
-  assert.match(template, /class="death-save-label">Success/);
-  assert.match(template, /class="death-save-label">Fail/);
+  assert.match(template, /class="death-save-label">\{\{localize 'DND5E\.DeathSaveSuccess'\}\}/);
+  assert.match(template, /class="death-save-label">\{\{localize 'DND5E\.DeathSaveFailure'\}\}/);
   assert.match(template, /data-action="details-exhaustion-pip"/);
   assert.match(template, /data-action="details-rest"/);
   assert.match(template, /id="details-short-rest-dialog"/);

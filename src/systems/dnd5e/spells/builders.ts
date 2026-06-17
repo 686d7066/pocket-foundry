@@ -1,3 +1,4 @@
+import { localize, localizeSystemKey } from "../../../core/localization.ts";
 import { getInitials, getNumber, getObject, getString } from "../../../core/utils.ts";
 import { canToggleDnd5eFavorites, hasDnd5eFavoriteReference } from "../favorites-storage.ts";
 import { toSearchTerms } from "../view-model-helpers.ts";
@@ -69,13 +70,13 @@ export function buildSpellcastingCards(
       const labelItem = getString(getObject(item.system)?.spellcasting && getObject(getObject(item.system)?.spellcasting)?.progression) === getString(sc.progression)
         ? item
         : item.subclass ?? item;
-      const name = getItemName(labelItem, "Spellcasting");
+      const name = getItemName(labelItem, localizeSystemKey("DND5E.Spellcasting", "Spellcasting"));
 
       return {
         id,
-        label: `${name} Spellcasting`,
+        label: localizeSystemKey("DND5E.SpellcastingClass", "{class} Spellcasting", { class: name }),
         ability,
-        abilityLabel: abilityConfig?.abbreviation || ability.toUpperCase() || "Spell",
+        abilityLabel: abilityConfig?.abbreviation || ability.toUpperCase() || localizeSystemKey("TYPES.Item.spell", "Spell"),
         abilityMod: formatModifier(getNumber(abilityData?.mod) ?? 0),
         attack: formatModifier(getNumber(sc.attack) ?? 0),
         save: formatNumber(getNumber(sc.save) ?? 0),
@@ -175,7 +176,7 @@ export function buildSpellSections(
       if (linkedActivity && linkedActivity.displayInSpellbook === false) continue;
       key = "item";
       method = "item";
-      methodConfig = { key: "item", order: 900, slots: false, getLabel: () => "Item Spells" };
+      methodConfig = { key: "item", order: 900, slots: false, getLabel: () => localize("POCKETFOUNDRY.DND5E.Spells.ItemSpells", "Item Spells") };
       level = null;
     }
 
@@ -226,12 +227,12 @@ function buildSlotTrack(
   const value = getNumber(slot.value) ?? 0;
   const max = getNumber(slot.override) ?? getNumber(slot.max) ?? 0;
   const displayMax = Math.max(max, value);
-  const label = methodConfig?.key === "pact" ? "Pact" : methodConfig?.getLabel?.({ level }) ?? getFallbackSectionLabel(slotId, level);
+  const label = methodConfig?.key === "pact" ? localizeSystemKey("DND5E.PactMagic", "Pact") : methodConfig?.getLabel?.({ level }) ?? getFallbackSectionLabel(slotId, level);
 
   return {
     id: slotId,
     label,
-    levelLabel: level > 0 ? `${ordinal(level)} level` : "Cantrip",
+    levelLabel: level > 0 ? localizeSystemKey(`DND5E.SpellLevel${level}`, "{level} level", { level: ordinal(level) }) : localizeSystemKey("DND5E.SpellCantrip", "Cantrip"),
     value,
     max,
     displayMax,
@@ -247,7 +248,11 @@ function buildSlotTrack(
         n,
         temporary,
         filled,
-        label: temporary ? "Temporary spell slot" : filled ? `${ordinal(n)} spell slot available` : "Expended spell slot"
+        label: temporary
+          ? localizeSystemKey("DND5E.SpellSlotTemporary", "Temporary spell slot")
+          : filled
+            ? localize("POCKETFOUNDRY.DND5E.Spells.AvailableSlot", "{slot} spell slot available", { slot: ordinal(n) })
+            : localizeSystemKey("DND5E.SpellSlotExpended", "Expended spell slot")
       };
     })
   };
@@ -288,9 +293,9 @@ function buildSpellRow(
   return {
     id: getItemId(item),
     uuid: getItemUuid(item),
-    name: getItemName(item, "Spell"),
+    name: getItemName(item, localizeSystemKey("TYPES.Item.spell", "Spell")),
     icon: item.img || null,
-    iconText: getInitials(item.name ?? "Spell", "S"),
+    iconText: getInitials(item.name ?? localizeSystemKey("TYPES.Item.spell", "Spell"), "S"),
     subtitle: uniqueStrings([source, components]).join(" - "),
     source,
     components,
@@ -310,17 +315,17 @@ function buildSpellRow(
       section.label || "",
       source || "",
       school || "",
-      concentration ? "Concentration" : "",
-      ritual ? "Ritual" : "",
-      alwaysPrepared ? "Always Prepared" : prepared ? "Prepared" : ""
+      concentration ? localizeSystemKey("DND5E.Concentration", "Concentration") : "",
+      ritual ? localizeSystemKey("DND5E.Ritual", "Ritual") : "",
+      alwaysPrepared ? localizeSystemKey("DND5E.SpellPrepAlways", "Always Prepared") : prepared ? localizeSystemKey("DND5E.SpellPrepPrepared", "Prepared") : ""
     ]),
     facts: [
-      { label: "Time", value: getSpellTimeChipLabel(getString(labels.activation), activation) || "-" },
-      { label: "Range", value: range || "-" },
-      { label: "Target", value: target || "-" },
-      { label: "Roll", value: roll || "-" },
-      { label: "Prep", value: preparationLabel || "-" },
-      { label: "Uses", value: usesLabel || "-" }
+      { label: localizeSystemKey("DND5E.SpellHeader.Time", "Time"), value: getSpellTimeChipLabel(getString(labels.activation), activation) || "-" },
+      { label: localizeSystemKey("DND5E.Range", "Range"), value: range || "-" },
+      { label: localizeSystemKey("DND5E.Target", "Target"), value: target || "-" },
+      { label: localizeSystemKey("DND5E.Roll", "Roll"), value: roll || "-" },
+      { label: localizeSystemKey("DND5E.SpellPreparation.Label", "Prep"), value: preparationLabel || "-" },
+      { label: localizeSystemKey("DND5E.Uses", "Uses"), value: usesLabel || "-" }
     ],
     activities,
     adjustments: adjustment ? [adjustment] : [],
@@ -350,9 +355,9 @@ function buildActivityViewModel(activity: Dnd5eSpellActivity): Dnd5eSpellActivit
 
   return {
     id: getString(prepared._id) || getString(prepared.id) || activity._id || activity.id || "",
-    name: getString(prepared.name) || activity.name || "Activity",
+    name: getString(prepared.name) || activity.name || localizeSystemKey("DOCUMENT.DND5E.Activity", "Activity"),
     icon: getString(prepared.img) || activity.img || null,
-    iconText: getInitials(getString(prepared.name) || activity.name || "Activity", "A"),
+    iconText: getInitials(getString(prepared.name) || activity.name || localizeSystemKey("DOCUMENT.DND5E.Activity", "Activity"), "A"),
     activation: activation || "-",
     range: getString(labels.range) || getString(range?.label) || "-",
     target: getString(labels.target) || "-",
@@ -373,27 +378,27 @@ function getSpellTimeChipLabel(rawActivation: string, activation: string): strin
 function expandActivationAbbreviation(value: string): string {
   const normalized = value.trim();
   if (!normalized) return normalized;
-  if (normalized === "A") return "Action";
-  if (normalized === "BA") return "Bonus Action";
-  if (normalized === "R") return "Reaction";
+  if (normalized === "A") return localizeSystemKey("DND5E.Action", "Action");
+  if (normalized === "BA") return localizeSystemKey("DND5E.BonusAction", "Bonus Action");
+  if (normalized === "R") return localizeSystemKey("DND5E.Reaction", "Reaction");
 
   const actionMatch = normalized.match(/^(\d+(?:\.\d+)?)(A|BA|R)$/);
   if (actionMatch) {
     const amount = actionMatch[1] ?? "";
     const kind = actionMatch[2] ?? "";
-    if (kind === "A") return `${amount} Action${amount === "1" ? "" : "s"}`;
-    if (kind === "BA") return `${amount} Bonus Action${amount === "1" ? "" : "s"}`;
-    if (kind === "R") return `${amount} Reaction${amount === "1" ? "" : "s"}`;
+    if (kind === "A") return localize(amount === "1" ? "POCKETFOUNDRY.DND5E.Spells.ActionCount.One" : "POCKETFOUNDRY.DND5E.Spells.ActionCount.Many", amount === "1" ? "{count} Action" : "{count} Actions", { count: amount });
+    if (kind === "BA") return localize(amount === "1" ? "POCKETFOUNDRY.DND5E.Spells.BonusActionCount.One" : "POCKETFOUNDRY.DND5E.Spells.BonusActionCount.Many", amount === "1" ? "{count} Bonus Action" : "{count} Bonus Actions", { count: amount });
+    if (kind === "R") return localize(amount === "1" ? "POCKETFOUNDRY.DND5E.Spells.ReactionCount.One" : "POCKETFOUNDRY.DND5E.Spells.ReactionCount.Many", amount === "1" ? "{count} Reaction" : "{count} Reactions", { count: amount });
   }
 
   const durationMatch = normalized.match(/^(\d+(?:\.\d+)?)(m|h|d|r)$/i);
   if (durationMatch) {
     const amount = durationMatch[1] ?? "";
     const unit = (durationMatch[2] ?? "").toLowerCase();
-    if (unit === "m") return `${amount} minute${amount === "1" ? "" : "s"}`;
-    if (unit === "h") return `${amount} hour${amount === "1" ? "" : "s"}`;
-    if (unit === "d") return `${amount} day${amount === "1" ? "" : "s"}`;
-    if (unit === "r") return `${amount} round${amount === "1" ? "" : "s"}`;
+    if (unit === "m") return localize(amount === "1" ? "POCKETFOUNDRY.Time.Minute.One" : "POCKETFOUNDRY.Time.Minute.Many", amount === "1" ? "{count} minute" : "{count} minutes", { count: amount });
+    if (unit === "h") return localize(amount === "1" ? "POCKETFOUNDRY.Time.Hour.One" : "POCKETFOUNDRY.Time.Hour.Many", amount === "1" ? "{count} hour" : "{count} hours", { count: amount });
+    if (unit === "d") return localize(amount === "1" ? "POCKETFOUNDRY.Time.Day.One" : "POCKETFOUNDRY.Time.Day.Many", amount === "1" ? "{count} day" : "{count} days", { count: amount });
+    if (unit === "r") return localize(amount === "1" ? "POCKETFOUNDRY.Time.Round.One" : "POCKETFOUNDRY.Time.Round.Many", amount === "1" ? "{count} round" : "{count} rounds", { count: amount });
   }
 
   return normalized;

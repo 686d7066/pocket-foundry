@@ -1,4 +1,5 @@
 import { RouteView } from "../../router/routes.ts";
+import { localizeSystemKey } from "../../core/localization.ts";
 import type { CharacterSheetAdapter } from "../character-sheet-adapter.ts";
 import {
   buildActorSheetNavigationViewModel,
@@ -65,6 +66,68 @@ export const dnd5eCharacterSheetAdapter: CharacterSheetAdapter = {
   }),
   getCompendiumSearchCustomization: () => DND5E_COMPENDIUM_SEARCH_CUSTOMIZATION,
   getVisualMetadata: () => DND5E_VISUAL_METADATA,
+  getSystemTermLabel: (term, data = {}) => {
+    switch (term) {
+      case "armorClass":
+        return localizeSystemKey("DND5E.ArmorClass", "AC");
+      case "activation":
+        return localizeSystemKey("DND5E.ItemActivation", "Activation");
+      case "cantrip":
+        return localizeSystemKey("DND5E.SpellCantrip", "Cantrip");
+      case "charges":
+        return localizeSystemKey("DND5E.Charges", "Charges");
+      case "characterLevel":
+        return localizeSystemKey("DND5E.LevelNumber", "Level {level}", data);
+      case "hitPoints":
+        return localizeSystemKey("DND5E.HitPoints", "HP");
+      case "duration":
+        return localizeSystemKey("DND5E.Duration", "Duration");
+      case "enemy":
+        return localizeSystemKey("DND5E.TARGET.Type.Enemy.Label", "Enemy");
+      case "formula":
+        return localizeSystemKey("DND5E.Formula", "Formula");
+      case "initiative":
+        return localizeSystemKey("DND5E.Initiative", "Initiative");
+      case "initiativeAbbreviation":
+        return localizeSystemKey("DND5E.InitiativeAbbr", "Init");
+      case "characterClass":
+        return localizeSystemKey("TYPES.Item.class", "Class");
+      case "itemType":
+        return localizeSystemKey("DND5E.Type", "Type");
+      case "level":
+        return localizeSystemKey("DND5E.Level", "Level");
+      case "passive":
+        return localizeSystemKey("DND5E.Passive", "Passive");
+      case "price":
+        return localizeSystemKey("DND5E.Price", "Price");
+      case "quantity":
+        return localizeSystemKey("DND5E.Quantity", "Quantity");
+      case "range":
+        return localizeSystemKey("DND5E.Range", "Range");
+      case "recovery":
+        return localizeSystemKey("DND5E.Recovery", "Recovery");
+      case "roll":
+        return localizeSystemKey("DND5E.Roll", "Roll");
+      case "school":
+        return localizeSystemKey("DND5E.School", "School");
+      case "skill":
+        return localizeSystemKey("DND5E.Skill", "Skill");
+      case "source":
+        return localizeSystemKey("DND5E.SOURCE.FIELDS.source.label", "Source");
+      case "target":
+        return localizeSystemKey("DND5E.Target", "Target");
+      case "time":
+        return localizeSystemKey("DND5E.DurationTime", "Time");
+      case "tool":
+        return localizeSystemKey("TYPES.Item.tool", "Tool");
+      case "total":
+        return localizeSystemKey("DND5E.PropertyTotal", "Total");
+      case "uses":
+        return localizeSystemKey("DND5E.Uses", "Uses");
+      case "weight":
+        return localizeSystemKey("DND5E.Weight", "Weight");
+    }
+  },
   getDefaultPane: () => DND5E_DEFAULT_PANE,
   getDefaultOwnedItemParentPane: () => DND5E_DEFAULT_OWNED_ITEM_PARENT_PANE,
   getPaneFromSwipe,

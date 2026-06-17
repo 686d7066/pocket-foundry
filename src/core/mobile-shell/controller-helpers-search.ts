@@ -20,6 +20,7 @@ import {
 } from "../../services/search.ts";
 import { getCharacterSheetAdapter } from "../../systems/character-sheet-adapter-registry.ts";
 import { getFoundryRuntime } from "../foundry-globals.ts";
+import { localize } from "../localization.ts";
 import { buildSearchTypeFilters, createFoundryRecentsService, createSearchResultViewModel, getSearchRequestKey, hasUsableSearchQuery, normalizeSearchTypeFilter, rememberCurrentRouteScroll } from "./controller-helpers-navigation.ts";
 import { renderShell } from "./controller-helpers-shell.ts";
 import { consumeShellActionEvent, runHandledShellTask } from "./controller-helpers-ui.ts";
@@ -349,7 +350,7 @@ export async function resolveDocumentLinkRoute(uuid: string, previousRoute: Mobi
 
 export function notifyDocumentLinkUnavailable(): void {
   const notifications = getFoundryRuntime().ui?.notifications;
-  notifications?.warn?.("This document is no longer available or you do not have permission to view it.");
+  notifications?.warn?.(localize("POCKETFOUNDRY.Document.Unavailable.Body", "This document is no longer available or you do not have permission to view it."));
 }
 
 /**

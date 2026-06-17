@@ -1,7 +1,7 @@
 {
   "name": "pocket-foundry",
   "private": true,
-  "version": "1.2.0",
+  "version": "1.3.0",
   "type": "module",
   "scripts": {
     "clean": "tsx scripts/build.ts --clean",

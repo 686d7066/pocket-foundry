@@ -1,5 +1,6 @@
 import { canUpdateDocument, canViewDocument, type FoundryUserLike } from "../../../services/permissions.ts";
 import { getFoundryRuntime } from "../../../core/foundry-globals.ts";
+import { localize } from "../../../core/localization.ts";
 import { getObject, getNumber } from "../../../core/utils.ts";
 import { enrichSectionRows } from "../../../services/rich-text-enrichment.ts";
 import { setDnd5eFavoriteEntry } from "../favorites-storage.ts";
@@ -36,8 +37,8 @@ export async function buildDnd5eSpellsViewModel(options: {
   if (!actor || actor.type !== "character" || !canViewDocument(actor, options.user)) {
     return {
       unavailable: true,
-      title: "Spells Unavailable",
-      body: "These spells are not available to the current user."
+      title: localize("POCKETFOUNDRY.DND5E.Spells.Unavailable.Title", "Spells Unavailable"),
+      body: localize("POCKETFOUNDRY.DND5E.Spells.Unavailable.Body", "These spells are not available to the current user.")
     };
   }
 

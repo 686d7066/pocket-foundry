@@ -12,6 +12,7 @@ import {
 import { getCharacterSheetAdapter } from "../../systems/character-sheet-adapter-registry.ts";
 import { MODULE_ID } from "../constants.ts";
 import { getFoundryRuntime } from "../foundry-globals.ts";
+import { localize } from "../localization.ts";
 import { notifyJournalMutationUnavailable } from "./controller-helpers-navigation.ts";
 import { createFoundryJournalService, normalizeCharacterRoutePanes, renderShell } from "./controller-helpers-shell.ts";
 import type { ConfirmationDialogOptions, SearchUiState } from "./types.ts";
@@ -90,14 +91,14 @@ function openShellActionErrorDialog(root: HTMLElement, message: string, detail: 
   const modalHost = root.querySelector<HTMLElement>(".pocket-foundry-root") ?? root;
   const dialog = document.createElement("section");
   dialog.className = "mock-dialog shell-action-error-dialog open";
-  dialog.setAttribute("aria-label", "Pocket Foundry action failed");
+  dialog.setAttribute("aria-label", localize("POCKETFOUNDRY.Error.ActionFailed.Aria", "Pocket Foundry action failed"));
   dialog.dataset.shellActionErrorDialog = SHELL_ACTION_ERROR_DIALOG_ID;
 
   const backdrop = document.createElement("button");
   backdrop.className = "dialog-backdrop";
   backdrop.type = "button";
   backdrop.dataset.action = "shell-error-close";
-  backdrop.setAttribute("aria-label", "Close");
+  backdrop.setAttribute("aria-label", localize("POCKETFOUNDRY.Action.Close", "Close"));
   dialog.append(backdrop);
 
   const panel = document.createElement("div");
@@ -106,7 +107,7 @@ function openShellActionErrorDialog(root: HTMLElement, message: string, detail: 
   panel.setAttribute("aria-modal", "true");
 
   const title = document.createElement("h2");
-  title.textContent = "Action Failed";
+  title.textContent = localize("POCKETFOUNDRY.Error.ActionFailed.Title", "Action Failed");
   const body = document.createElement("p");
   body.textContent = message;
   panel.append(title, body);
@@ -115,7 +116,7 @@ function openShellActionErrorDialog(root: HTMLElement, message: string, detail: 
     const details = document.createElement("details");
     details.className = "shell-action-error-details";
     const summary = document.createElement("summary");
-    summary.textContent = "Detailed information";
+    summary.textContent = localize("POCKETFOUNDRY.Error.DetailedInformation", "Detailed information");
     const pre = document.createElement("pre");
     pre.textContent = detail;
     details.append(summary, pre);
@@ -128,7 +129,7 @@ function openShellActionErrorDialog(root: HTMLElement, message: string, detail: 
   close.type = "button";
   close.className = "primary-action";
   close.dataset.action = "shell-error-close";
-  close.textContent = "Close";
+  close.textContent = localize("POCKETFOUNDRY.Action.Close", "Close");
   actions.append(close);
   panel.append(actions);
 
@@ -140,21 +141,21 @@ function openShellActionErrorDialog(root: HTMLElement, message: string, detail: 
 export function getShellActionErrorMessage(kind: ShellActionErrorKind): string {
   switch (kind) {
     case "character":
-      return "The character action could not be completed. Check your permissions and try again.";
+      return localize("POCKETFOUNDRY.Error.CharacterAction", "The character action could not be completed. Check your permissions and try again.");
     case "journal":
-      return "The journal change could not be completed. Check your permissions and try again.";
+      return localize("POCKETFOUNDRY.Error.JournalAction", "The journal change could not be completed. Check your permissions and try again.");
     case "navigation":
-      return "The requested view could not be opened. The document may have changed or become unavailable.";
+      return localize("POCKETFOUNDRY.Error.Navigation", "The requested view could not be opened. The document may have changed or become unavailable.");
     case "render":
-      return "Pocket Foundry could not refresh the mobile view. Try again or reload the page.";
+      return localize("POCKETFOUNDRY.Error.Refresh", "Pocket Foundry could not refresh the mobile view. Try again or reload the page.");
     case "search":
-      return "Search could not be updated. Try again.";
+      return localize("POCKETFOUNDRY.Error.Search", "Search could not be updated. Try again.");
     case "settings":
-      return "That setting could not be updated. Try again or reload the world.";
+      return localize("POCKETFOUNDRY.Error.Setting", "That setting could not be updated. Try again or reload the world.");
     case "storage":
-      return "Your Pocket Foundry data could not be saved. Try again or reload the world.";
+      return localize("POCKETFOUNDRY.Error.Storage", "Your Pocket Foundry data could not be saved. Try again or reload the world.");
     case "unknown":
-      return "The action could not be completed. Try again or reload the page.";
+      return localize("POCKETFOUNDRY.Error.Generic", "The action could not be completed. Try again or reload the page.");
   }
 }
 
@@ -184,7 +185,7 @@ export function openFavoriteContextMenu(root: HTMLElement, row: HTMLElement): vo
 
   const label = row.querySelector<HTMLElement>(".row-title strong, .sheet-row-title strong, .item-card-title strong, summary strong, strong")?.textContent?.trim()
     || row.getAttribute("aria-label")
-    || "Favorite";
+    || localize("POCKETFOUNDRY.Favorites.Fallback", "Favorite");
   const dialog = document.createElement("section");
   dialog.className = "mock-dialog favorite-action-sheet open";
   dialog.setAttribute("aria-label", `${label} favorite actions`);
@@ -194,7 +195,7 @@ export function openFavoriteContextMenu(root: HTMLElement, row: HTMLElement): vo
   backdrop.className = "dialog-backdrop";
   backdrop.type = "button";
   backdrop.dataset.action = "favorite-context-close";
-  backdrop.setAttribute("aria-label", "Close");
+  backdrop.setAttribute("aria-label", localize("POCKETFOUNDRY.Action.Close", "Close"));
   dialog.append(backdrop);
 
   const sheet = document.createElement("div");
@@ -212,7 +213,7 @@ export function openFavoriteContextMenu(root: HTMLElement, row: HTMLElement): vo
     const action = document.createElement("button");
     action.type = "button";
     action.className = "favorite-action-button";
-    action.textContent = sourceAction.textContent?.trim() || "Favorite Action";
+    action.textContent = sourceAction.textContent?.trim() || localize("POCKETFOUNDRY.Favorites.Action", "Favorite Action");
     action.setAttribute("data-swipe-ignore", "");
     for (const [key, value] of Object.entries(sourceAction.dataset)) {
       action.dataset[key] = value;
@@ -225,7 +226,7 @@ export function openFavoriteContextMenu(root: HTMLElement, row: HTMLElement): vo
   cancel.className = "favorite-action-cancel";
   cancel.type = "button";
   cancel.dataset.action = "favorite-context-close";
-  cancel.textContent = "Cancel";
+  cancel.textContent = localize("POCKETFOUNDRY.Action.Cancel", "Cancel");
   sheet.append(cancel);
 
   dialog.append(sheet);
@@ -254,14 +255,14 @@ export async function openJournalPageDraftDialog(
   const modalHost = root.querySelector<HTMLElement>(".pocket-foundry-root") ?? root;
   const dialog = document.createElement("section");
   dialog.className = "mock-dialog journal-page-draft-dialog open";
-  dialog.setAttribute("aria-label", options.mode === "create" ? "Create journal page" : "Edit journal page");
+  dialog.setAttribute("aria-label", options.mode === "create" ? localize("POCKETFOUNDRY.Journal.CreatePage", "Create journal page") : localize("POCKETFOUNDRY.Journal.EditPage", "Edit page"));
   dialog.dataset.journalPageDraftDialog = "true";
 
   const backdrop = document.createElement("button");
   backdrop.className = "dialog-backdrop";
   backdrop.type = "button";
   backdrop.dataset.action = "journal-close-page-dialog";
-  backdrop.setAttribute("aria-label", "Close");
+  backdrop.setAttribute("aria-label", localize("POCKETFOUNDRY.Action.Close", "Close"));
   dialog.append(backdrop);
 
   const form = document.createElement("form");
@@ -273,12 +274,12 @@ export async function openJournalPageDraftDialog(
   form.setAttribute("aria-modal", "true");
 
   const title = document.createElement("h2");
-  title.textContent = options.mode === "create" ? "Create Page" : "Edit Page";
+  title.textContent = options.mode === "create" ? localize("POCKETFOUNDRY.Journal.CreatePageTitle", "Create Page") : localize("POCKETFOUNDRY.Journal.EditPageTitle", "Edit Page");
   form.append(title);
 
-  form.append(createJournalTextInput("Name", "name", initialDraft.name));
+  form.append(createJournalTextInput(localize("POCKETFOUNDRY.Table.Name", "Name"), "name", initialDraft.name));
   form.append(createJournalPageTypeSelect(initialDraft.type, getJournalPageDraftTypesForDialog(initialDraft.type, options.mode)));
-  form.append(createJournalTextarea("Text Content", "textContent", initialDraft.textContent ?? "", "text"));
+  form.append(createJournalTextarea(localize("POCKETFOUNDRY.Journal.TextContent", "Text Content"), "textContent", initialDraft.textContent ?? "", "text"));
   form.append(createJournalFileInput(initialDraft.type, initialDraft.src ?? ""));
 
   const actions = document.createElement("div");
@@ -286,12 +287,12 @@ export async function openJournalPageDraftDialog(
   const cancel = document.createElement("button");
   cancel.type = "button";
   cancel.dataset.action = "journal-close-page-dialog";
-  cancel.textContent = "Cancel";
+  cancel.textContent = localize("POCKETFOUNDRY.Action.Cancel", "Cancel");
   const save = document.createElement("button");
   save.type = "button";
   save.className = "primary-action";
   save.dataset.action = "journal-save-page-draft";
-  save.textContent = options.mode === "create" ? "Create" : "Save";
+  save.textContent = options.mode === "create" ? localize("POCKETFOUNDRY.Action.Create", "Create") : localize("POCKETFOUNDRY.Action.Save", "Save");
   actions.append(cancel, save);
   form.append(actions);
 
@@ -320,9 +321,9 @@ export function closeJournalPageDraftDialog(root: HTMLElement): void {
 export function openJournalPageDeleteDialog(root: HTMLElement, entryUuid: string, pageUuid: string): void {
   openConfirmationDialog(root, {
     id: "journal-page-delete",
-    title: "Delete Page",
+    title: localize("POCKETFOUNDRY.Journal.DeletePageTitle", "Delete Page"),
     body: "Delete this journal page?",
-    confirmLabel: "Delete",
+    confirmLabel: localize("POCKETFOUNDRY.Action.Delete", "Delete"),
     confirmAction: "journal-confirm-delete-page",
     cancelAction: "journal-close-delete-dialog",
     danger: true,
@@ -348,7 +349,7 @@ export function openConfirmationDialog(root: HTMLElement, options: ConfirmationD
   backdrop.className = "dialog-backdrop";
   backdrop.type = "button";
   backdrop.dataset.action = options.cancelAction;
-  backdrop.setAttribute("aria-label", "Cancel");
+  backdrop.setAttribute("aria-label", localize("POCKETFOUNDRY.Action.Cancel", "Cancel"));
   dialog.append(backdrop);
 
   const panel = document.createElement("div");
@@ -367,7 +368,7 @@ export function openConfirmationDialog(root: HTMLElement, options: ConfirmationD
   const cancel = document.createElement("button");
   cancel.type = "button";
   cancel.dataset.action = options.cancelAction;
-  cancel.textContent = "Cancel";
+  cancel.textContent = localize("POCKETFOUNDRY.Action.Cancel", "Cancel");
   const confirm = document.createElement("button");
   confirm.type = "button";
   confirm.className = options.danger ? "primary-action danger-action" : "primary-action";
@@ -416,11 +417,16 @@ export function createJournalPageTypeSelect(value: JournalPageDraft["type"], typ
   const label = document.createElement("label");
   label.className = "journal-page-form-field";
   const span = document.createElement("span");
-  span.textContent = "Type";
+  span.textContent = localize("POCKETFOUNDRY.Table.Type", "Type");
   const select = document.createElement("select");
   select.name = "type";
   select.dataset.journalPageTypeSelect = "true";
-  const labels: Record<JournalPageDraft["type"], string> = { text: "Text", image: "Image", pdf: "PDF", video: "Video" };
+  const labels: Record<JournalPageDraft["type"], string> = {
+    text: localize("POCKETFOUNDRY.Journal.PageKind.Text", "Text"),
+    image: localize("POCKETFOUNDRY.Journal.PageKind.Image", "Image"),
+    pdf: localize("POCKETFOUNDRY.Journal.PageKind.PDF", "PDF"),
+    video: localize("POCKETFOUNDRY.Journal.PageKind.Video", "Video")
+  };
   for (const type of types) {
     const option = document.createElement("option");
     option.value = type;
@@ -446,7 +452,7 @@ export function createJournalFileInput(type: JournalPageDraft["type"], src: stri
 
   const label = document.createElement("label");
   const span = document.createElement("span");
-  span.textContent = "Media File";
+  span.textContent = localize("POCKETFOUNDRY.Journal.MediaFile", "Media File");
   const input = document.createElement("input");
   input.type = "file";
   input.name = "mediaFile";

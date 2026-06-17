@@ -1,5 +1,6 @@
 import type { foundry } from "fvtt-types";
 import { getFoundryRuntime, type FoundryDataShape } from "../core/foundry-globals.ts";
+import { localize } from "../core/localization.ts";
 import { getCollectionContents, getObject, getNumber, getString } from "../core/utils.ts";
 import { RouteView, type MobileRoute } from "../router/routes.ts";
 import {
@@ -153,8 +154,8 @@ export type JournalPageViewModel = JournalTextPageViewModel | JournalMediaPageVi
 
 export type UnavailableJournalViewModel = {
   unavailable: true;
-  title: "Journal Unavailable";
-  body: "This journal content is not available to the current user.";
+  title: string;
+  body: string;
 };
 
 export type JournalRouteResolution = {
@@ -200,8 +201,8 @@ export function createMobileJournalService(environment: JournalServiceEnvironmen
 export function createJournalUnavailableState(): UnavailableJournalViewModel {
   return {
     unavailable: true,
-    title: "Journal Unavailable",
-    body: "This journal content is not available to the current user."
+    title: localize("POCKETFOUNDRY.Journal.Unavailable.Title", "Journal Unavailable"),
+    body: localize("POCKETFOUNDRY.Journal.Unavailable.Body", "This journal content is not available to the current user.")
   };
 }
 
@@ -221,7 +222,7 @@ export function buildJournalEntryViewModel(options: {
     unavailable: false,
     uuid: getEntryUuid(entry),
     id: getDocumentId(entry),
-    name: getDocumentName(entry, "Journal Entry"),
+    name: getDocumentName(entry, localize("POCKETFOUNDRY.Document.JournalEntry", "Journal Entry")),
     icon: entry.img ?? null,
     visiblePages,
     selectedPageUuid,
@@ -353,7 +354,7 @@ export async function buildJournalPageViewModel(options: {
   const summary = buildPageSummary(page, entry, options.user);
   const title = getPageTitle(page);
   const entryUuid = getEntryUuid(entry);
-  const entryName = getDocumentName(entry, "Journal Entry");
+  const entryName = getDocumentName(entry, localize("POCKETFOUNDRY.Document.JournalEntry", "Journal Entry"));
 
   if (summary.pageType === "text") {
     const textSource = getString(page.text?.content) || getString(getObject(page.system)?.content);
@@ -412,7 +413,7 @@ function listVisibleEntries(environment: JournalServiceEnvironment): JournalEntr
     .map(entry => ({
       uuid: getEntryUuid(entry),
       id: getDocumentId(entry),
-      name: getDocumentName(entry, "Journal Entry"),
+      name: getDocumentName(entry, localize("POCKETFOUNDRY.Document.JournalEntry", "Journal Entry")),
       icon: entry.img ?? null,
       visiblePageCount: getVisiblePages(entry, environment.user).length,
       route: { view: RouteView.Journal, entryUuid: getEntryUuid(entry) }
@@ -509,7 +510,7 @@ function buildPageSummary(page: JournalPageDocumentLike, entry: JournalEntryDocu
   return {
     uuid: pageUuid,
     id: getDocumentId(page),
-    name: getDocumentName(page, "Journal Page"),
+    name: getDocumentName(page, localize("POCKETFOUNDRY.Document.JournalPage", "Journal Page")),
     type: getString(page.type) || "unknown",
     pageType: normalizePageType(page.type),
     sort: getNumber(page.sort) ?? 0,
@@ -677,7 +678,7 @@ function normalizePageType(type: string | undefined): JournalPageType {
 
 function getPageTitle(page: JournalPageDocumentLike): string {
   const title = typeof page.title === "string" ? page.title : "";
-  return getString(title) || getDocumentName(page, "Journal Page");
+  return getString(title) || getDocumentName(page, localize("POCKETFOUNDRY.Document.JournalPage", "Journal Page"));
 }
 
 function getPageSource(page: JournalPageDocumentLike): string {

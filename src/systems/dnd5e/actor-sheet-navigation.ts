@@ -1,4 +1,5 @@
 import { getCollectionContents, getInitials, getNumber, getObject, getString } from "../../core/utils.ts";
+import { localizeSystemKey } from "../../core/localization.ts";
 import {
     createCharacterRoute,
     RouteView,
@@ -349,7 +350,7 @@ function getCharacterSummary(actor: ActorSheetNavigationActor): string {
   const classSummary = getClassSummary(actor);
   const level = getNumber(details?.level);
 
-  const parts = [species, classSummary || (level !== null ? `Level ${level}` : "")].filter(Boolean);
+  const parts = [species, classSummary || (level !== null ? localizeSystemKey("DND5E.LevelNumber", "Level {level}", { level }) : "")].filter(Boolean);
   return parts.join(" ");
 }
 
@@ -363,7 +364,7 @@ function getClassSummary(actor: ActorSheetNavigationActor): string {
   return classItems
     .map(item => {
       const levels = getNumber(getObject(item.system)?.levels);
-      return `${item.name?.trim() || "Class"}${levels === null ? "" : ` ${levels}`}`;
+      return `${item.name?.trim() || localizeSystemKey("TYPES.Item.class", "Class")}${levels === null ? "" : ` ${levels}`}`;
     })
     .join(" / ");
 }
@@ -379,15 +380,15 @@ function getHeaderStats(actor: ActorSheetNavigationActor): ActorSheetHeaderStat[
   const stats: ActorSheetHeaderStat[] = [];
 
   const acValue = getNumber(ac?.value);
-  if (acValue !== null) stats.push({ id: "ac", label: "AC", value: String(acValue) });
+  if (acValue !== null) stats.push({ id: "ac", label: localizeSystemKey("DND5E.ArmorClass", "AC"), value: String(acValue) });
 
   const hpValue = getNumber(hp?.value);
   const hpMax = getNumber(hp?.max);
   if (hpValue !== null || hpMax !== null) {
-    stats.push({ id: "hp", label: "HP", value: String(hpValue ?? "-"), suffix: hpMax === null ? undefined : `/${hpMax}` });
+    stats.push({ id: "hp", label: localizeSystemKey("DND5E.HitPoints", "HP"), value: String(hpValue ?? "-"), suffix: hpMax === null ? undefined : `/${hpMax}` });
   }
 
-  stats.push({ id: "temp", label: "Temp", value: String(tempHp) });
+  stats.push({ id: "temp", label: localizeSystemKey("DND5E.HitPointsTempShort", "Temp"), value: String(tempHp) });
 
   return stats;
 }

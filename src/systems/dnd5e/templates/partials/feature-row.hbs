@@ -9,8 +9,8 @@
       </span>
       <span class="sheet-list-value features-list-value">{{usesLabel}}</span>
       <span class="sheet-list-value features-list-value">{{recovery}}</span>
-      <span class="feature-row-actions" aria-label="{{name}} controls">
-        {{#if actions.canRecharge}}<button type="button" data-action="features-recharge" data-item-id="{{id}}" aria-label="Recharge {{name}}" data-swipe-ignore><i class="fa-solid fa-bolt" aria-hidden="true"></i></button>{{/if}}
+      <span class="feature-row-actions" aria-label="{{localize 'POCKETFOUNDRY.DND5E.Row.Controls' name=name}}">
+        {{#if actions.canRecharge}}<button type="button" data-action="features-recharge" data-item-id="{{id}}" aria-label="{{localize 'POCKETFOUNDRY.DND5E.RechargeNamed' name=name}}" data-swipe-ignore><i class="fa-solid fa-bolt" aria-hidden="true"></i></button>{{/if}}
       </span>
   {{/inline}}
   {{#*inline "body"}}
@@ -44,8 +44,8 @@
     ariaLabel=name
     addAction="context-add-favorite"
     removeAction="context-remove-favorite"
-    addLabel="Add to Favorites"
-    removeLabel="Remove from Favorites"
+    addLabel=(localize 'POCKETFOUNDRY.Favorites.Add')
+    removeLabel=(localize 'POCKETFOUNDRY.Favorites.Remove')
     favoriteType="item"
     favoriteId=uuid
   }}

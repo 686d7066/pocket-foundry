@@ -24,6 +24,7 @@ import {
 import { getCharacterSheetAdapter } from "../../systems/character-sheet-adapter-registry.ts";
 import { MODULE_ID } from "../constants.ts";
 import { getFoundryRuntime } from "../foundry-globals.ts";
+import { localize } from "../localization.ts";
 import { getCharacterSheetBannerEnabled, getColorBlindMode, getMobileViewEnabled } from "../settings.ts";
 import { getCollectionContents, getInitials } from "../utils.ts";
 import { buildBottomNav, createFoundryRecentsService, getActorByUuid, getCharacterPickerRouteFavorites, getHeader, persistSelectedCharacterRoute, restoreCharacterPickerSearchFocus, restorePaneSearchFocus, restoreRouteScroll, restoreSearchFocus } from "./controller-helpers-navigation.ts";
@@ -92,7 +93,7 @@ export async function buildShellViewModel(
     portraitInitials: header.portraitInitials,
     portraitImage: header.portraitImage,
     bottomNav: {
-      label: "Shell navigation",
+      label: localize("POCKETFOUNDRY.Navigation.Shell", "Shell navigation"),
       items: buildBottomNav(activeRoute, activeDestination, selectedCharacterRoute)
     },
     ...contentViewModel
@@ -207,8 +208,8 @@ export async function buildShellContentViewModel(
 
       return {
         pendingDetail: {
-          title: "Character Item",
-          body: "This item detail is not available from this view."
+          title: localize("POCKETFOUNDRY.Route.CharacterItem", "Character Item"),
+          body: localize("POCKETFOUNDRY.ItemDetail.UnavailableFromView", "This item detail is not available from this view.")
         }
       };
     case "document-detail":
@@ -220,8 +221,8 @@ export async function buildShellContentViewModel(
 
       return {
         pendingDetail: {
-          title: "Unavailable document",
-          body: "This document is no longer available or you do not have permission to view it."
+          title: localize("POCKETFOUNDRY.Document.Unavailable.Title", "Unavailable document"),
+          body: localize("POCKETFOUNDRY.Document.Unavailable.Body", "This document is no longer available or you do not have permission to view it.")
         }
       };
     case ShellDestination.Journal:
@@ -243,10 +244,10 @@ export async function buildShellContentViewModel(
           characterSheetBannerEnabled: getCharacterSheetBannerEnabled(),
           colorBlindMode: getColorBlindMode(),
           characterSheetBannerAvailable: Boolean(visualMetadata.bannerImage),
-          characterSheetBannerLabel: visualMetadata.bannerLabel ?? "Character Sheet Banner",
-          characterSheetBannerHint: visualMetadata.bannerHint ?? "Show the character sheet banner texture at the top of mobile character sheets.",
-          characterSheetBannerAriaLabel: visualMetadata.bannerAriaLabel ?? "Character Sheet Banner",
-          colorBlindModeAriaLabel: "Color-Blind Mode"
+          characterSheetBannerLabel: visualMetadata.bannerLabel ?? localize("POCKETFOUNDRY.Settings.CharacterSheetBanner.Label", "Character Sheet Banner"),
+          characterSheetBannerHint: visualMetadata.bannerHint ?? localize("POCKETFOUNDRY.Settings.CharacterSheetBanner.Hint", "Show the character sheet banner texture at the top of mobile character sheets."),
+          characterSheetBannerAriaLabel: visualMetadata.bannerAriaLabel ?? localize("POCKETFOUNDRY.Settings.CharacterSheetBanner.Label", "Character Sheet Banner"),
+          colorBlindModeAriaLabel: localize("POCKETFOUNDRY.Settings.ColorBlindMode.Label", "Color-Blind Mode")
         }
       };
   }
@@ -315,7 +316,7 @@ export function addJournalPageTemplateState(page: JournalPageViewModel | Unavail
     pdfPage: page.pageType === "pdf",
     videoPage: page.pageType === "video",
     unsupportedPage: page.pageType === "unsupported",
-    unsupportedBody: `This ${page.type || "journal"} page type is not supported by the mobile journal reader yet.`
+    unsupportedBody: localize("POCKETFOUNDRY.Journal.UnsupportedPage.Body", "This {type} page type is not supported by the mobile journal reader yet.", { type: page.type || "journal" })
   };
 }
 
@@ -446,15 +447,15 @@ export function getJournalPageIconText(page: JournalPageSummaryViewModel): strin
 export function getJournalPageTypeLabel(pageType: JournalPageSummaryViewModel["pageType"]): string {
   switch (pageType) {
     case "text":
-      return "Text page";
+      return localize("POCKETFOUNDRY.Journal.PageType.Text", "Text page");
     case "image":
-      return "Image page";
+      return localize("POCKETFOUNDRY.Journal.PageType.Image", "Image page");
     case "pdf":
-      return "PDF page";
+      return localize("POCKETFOUNDRY.Journal.PageType.PDF", "PDF page");
     case "video":
-      return "Video page";
+      return localize("POCKETFOUNDRY.Journal.PageType.Video", "Video page");
     case "unsupported":
-      return "Unsupported page";
+      return localize("POCKETFOUNDRY.Journal.PageType.Unsupported", "Unsupported page");
   }
 }
 
