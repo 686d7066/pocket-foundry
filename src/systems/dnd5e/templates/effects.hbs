@@ -22,11 +22,7 @@
             {{#if info}}<span class="chip warn">{{info}}</span>{{/if}}
           </div>
           <div class="sheet-table sheet-list effects-list">
-            <div class="sheet-list-head effects-list-head dnd5e-table-head pf-list-schema pf-list-schema--icon-title-source-actions" aria-hidden="true">
-              <span>{{localize 'POCKETFOUNDRY.Table.Name'}}</span>
-              <span>{{localize 'DND5E.SOURCE.FIELDS.source.label'}}</span>
-              <span></span>
-            </div>
+            {{> "modules/pocket-foundry/systems/dnd5e/templates/partials/table-head.hbs" kind="effects"}}
             {{#each effects}}
               {{> "modules/pocket-foundry/systems/dnd5e/templates/partials/effect-row.hbs" this}}
             {{/each}}

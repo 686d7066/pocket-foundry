@@ -16,7 +16,7 @@ import {
   toTitleCaseWords,
   uniqueStrings
 } from "./view-model-helpers.ts";
-import { canToggleDnd5eFavorites, hasDnd5eFavoriteReference, setDnd5eFavoriteEntry } from "./favorites-storage.ts";
+import { buildDnd5eFavoriteToggleState, hasDnd5eFavoriteReference, setDnd5eFavoriteEntry } from "./favorites-storage.ts";
 
 export type Dnd5eEffectsActor = PermissionCheckedDocument
   & FoundryDocumentMutationApi
@@ -375,6 +375,8 @@ async function buildEffectRow(
 
   if (!id) return null;
 
+  const favoriteState = buildDnd5eFavoriteToggleState(actor, canUpdate, isFavorite(actor, effect));
+
   return {
     id,
     uuid: effect.uuid ?? (actor.uuid ? `${actor.uuid}.ActiveEffect.${id}` : id),
@@ -393,7 +395,7 @@ async function buildEffectRow(
     active: !disabled,
     toggleable,
     concentrating,
-    favorite: isFavorite(actor, effect),
+    favorite: favoriteState.favorite,
     favoriteId: getEffectFavoriteId(actor, effect),
     description,
     changes,
@@ -405,7 +407,7 @@ async function buildEffectRow(
     ],
     actions: {
       canToggle: canUpdate && toggleable && typeof effect.update === "function",
-      canToggleFavorite: canUpdate && canToggleDnd5eFavorites(actor),
+      canToggleFavorite: favoriteState.canToggleFavorite,
       canEndConcentration: canUpdateActor && concentrating && typeof actor.endConcentration === "function",
       canDelete: canUpdate && effect.isTemporary === true && typeof effect.delete === "function"
     }

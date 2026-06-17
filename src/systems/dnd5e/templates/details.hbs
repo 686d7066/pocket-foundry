@@ -186,9 +186,7 @@
           <h2>{{localize 'DND5E.Skills'}}</h2>
         </div>
         <div class="detail-table skills-table">
-          <div class="sheet-list-head dnd5e-table-head dnd5e-detail-schema dnd5e-detail-schema--skill" aria-hidden="true">
-            <span>{{localize 'DND5E.Ability'}}</span><span>{{localize 'DND5E.Skill'}}</span><span>{{localize 'DND5E.PropertyTotal'}}</span><span>{{localize 'DND5E.Passive'}}</span>
-          </div>
+          {{> "modules/pocket-foundry/systems/dnd5e/templates/partials/table-head.hbs" kind="skill"}}
           {{#each skills}}
             {{> "modules/pocket-foundry/systems/dnd5e/templates/partials/details-skill-row.hbs" this}}
           {{/each}}
@@ -200,9 +198,7 @@
           <h2>{{localize 'DND5E.TraitToolProf'}}</h2>
         </div>
         <div class="detail-table tool-table">
-          <div class="sheet-list-head dnd5e-table-head dnd5e-detail-schema dnd5e-detail-schema--tool" aria-hidden="true">
-            <span>{{localize 'DND5E.Ability'}}</span><span>{{localize 'TYPES.Item.tool'}}</span><span>{{localize 'DND5E.PropertyTotal'}}</span>
-          </div>
+          {{> "modules/pocket-foundry/systems/dnd5e/templates/partials/table-head.hbs" kind="tool"}}
           {{#each tools}}
             {{> "modules/pocket-foundry/systems/dnd5e/templates/partials/details-tool-row.hbs" this}}
           {{else}}

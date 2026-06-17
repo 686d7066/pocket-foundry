@@ -51,11 +51,7 @@
             <span class="chip inventory-section-summary"><span>{{localize 'DND5E.Weight'}}</span><strong>{{weight}}</strong></span>
           </div>
           <div class="sheet-table sheet-list inventory-list">
-            <div class="sheet-list-head inventory-list-head inventory-list-head-{{id}} dnd5e-table-head pf-list-schema pf-list-schema--icon-title-3meta-actions" aria-hidden="true">
-              <span>{{localize 'POCKETFOUNDRY.Table.Name'}}</span>
-              {{#each listColumns}}<span class="inventory-list-head-cell inventory-list-head-cell-{{id}}">{{label}}</span>{{/each}}
-              <span></span>
-            </div>
+            {{> "modules/pocket-foundry/systems/dnd5e/templates/partials/table-head.hbs" kind="inventory"}}
             {{#each items}}
               {{> "modules/pocket-foundry/systems/dnd5e/templates/partials/inventory-list-row.hbs" this}}
             {{/each}}

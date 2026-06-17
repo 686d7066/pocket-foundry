@@ -1,8 +1,6 @@
 {{#if (eq kind "skills")}}
   <div class="detail-table skills-table favorites-source-table">
-    <div class="sheet-list-head dnd5e-table-head dnd5e-detail-schema dnd5e-detail-schema--skill" aria-hidden="true">
-      <span>{{localize 'DND5E.Ability'}}</span><span>{{localize 'DND5E.Skill'}}</span><span>{{localize 'DND5E.PropertyTotal'}}</span><span>{{localize 'DND5E.Passive'}}</span>
-    </div>
+    {{> "modules/pocket-foundry/systems/dnd5e/templates/partials/table-head.hbs" kind="skill"}}
     {{#each skills}}
       {{> "modules/pocket-foundry/systems/dnd5e/templates/partials/details-skill-row.hbs" this}}
     {{/each}}
@@ -11,9 +9,7 @@
 
 {{#if (eq kind "tools")}}
   <div class="detail-table tool-table favorites-source-table">
-    <div class="sheet-list-head dnd5e-table-head dnd5e-detail-schema dnd5e-detail-schema--tool" aria-hidden="true">
-      <span>{{localize 'DND5E.Ability'}}</span><span>{{localize 'TYPES.Item.tool'}}</span><span>{{localize 'DND5E.PropertyTotal'}}</span>
-    </div>
+    {{> "modules/pocket-foundry/systems/dnd5e/templates/partials/table-head.hbs" kind="tool"}}
     {{#each tools}}
       {{> "modules/pocket-foundry/systems/dnd5e/templates/partials/details-tool-row.hbs" this}}
     {{/each}}
@@ -22,13 +18,7 @@
 
 {{#if (eq kind "inventory")}}
   <div class="sheet-table sheet-list inventory-list favorites-source-list">
-    <div class="sheet-list-head inventory-list-head inventory-list-head-favorites dnd5e-table-head pf-list-schema pf-list-schema--icon-title-3meta-actions" aria-hidden="true">
-      <span>{{localize 'POCKETFOUNDRY.Table.Name'}}</span>
-      <span class="inventory-list-head-cell inventory-list-head-cell-roll">{{localize 'DND5E.Roll'}}</span>
-      <span class="inventory-list-head-cell inventory-list-head-cell-formula">{{localize 'DND5E.Formula'}}</span>
-      <span class="inventory-list-head-cell inventory-list-head-cell-charges">{{localize 'DND5E.Charges'}}</span>
-      <span></span>
-    </div>
+    {{> "modules/pocket-foundry/systems/dnd5e/templates/partials/table-head.hbs" kind="inventory" headId="favorites"}}
     {{#each items}}
       {{> "modules/pocket-foundry/systems/dnd5e/templates/partials/inventory-list-row.hbs" this}}
     {{/each}}
@@ -37,14 +27,7 @@
 
 {{#if (eq kind "spells")}}
   <div class="sheet-table sheet-list spells-table favorites-source-list">
-    <div class="sheet-list-head spells-list-head dnd5e-table-head pf-list-schema pf-list-schema--icon-title-4meta-actions" aria-hidden="true">
-      <span>{{localize 'POCKETFOUNDRY.Table.Name'}}</span>
-      <span>{{localize 'DND5E.DurationTime'}}</span>
-      <span>{{localize 'DND5E.Range'}}</span>
-      <span>{{localize 'DND5E.Target'}}</span>
-      <span>{{localize 'DND5E.Roll'}}</span>
-      <span></span>
-    </div>
+    {{> "modules/pocket-foundry/systems/dnd5e/templates/partials/table-head.hbs" kind="spells" timeLabel=(localize 'DND5E.DurationTime')}}
     {{#each spells}}
       {{> "modules/pocket-foundry/systems/dnd5e/templates/partials/spell-row.hbs" this}}
     {{/each}}
@@ -91,12 +74,7 @@
 
 {{#if (eq kind "features")}}
   <div class="sheet-table sheet-list features-list favorites-source-list">
-    <div class="sheet-list-head features-list-head dnd5e-table-head pf-list-schema pf-list-schema--icon-title-2meta-actions" aria-hidden="true">
-      <span>{{localize 'POCKETFOUNDRY.Table.Name'}}</span>
-      <span>{{localize 'DND5E.Uses'}}</span>
-      <span>{{localize 'DND5E.Recovery'}}</span>
-      <span></span>
-    </div>
+    {{> "modules/pocket-foundry/systems/dnd5e/templates/partials/table-head.hbs" kind="features"}}
     {{#each features}}
       {{> "modules/pocket-foundry/systems/dnd5e/templates/partials/feature-row.hbs" this}}
     {{/each}}
@@ -105,11 +83,7 @@
 
 {{#if (eq kind "effects")}}
   <div class="sheet-table sheet-list effects-list favorites-source-list">
-    <div class="sheet-list-head effects-list-head dnd5e-table-head pf-list-schema pf-list-schema--icon-title-source-actions" aria-hidden="true">
-      <span>{{localize 'POCKETFOUNDRY.Table.Name'}}</span>
-      <span>{{localize 'DND5E.SOURCE.FIELDS.source.label'}}</span>
-      <span></span>
-    </div>
+    {{> "modules/pocket-foundry/systems/dnd5e/templates/partials/table-head.hbs" kind="effects"}}
     {{#each effects}}
       {{> "modules/pocket-foundry/systems/dnd5e/templates/partials/effect-row.hbs" this}}
     {{/each}}

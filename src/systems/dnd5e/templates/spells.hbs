@@ -68,14 +68,7 @@
             {{/if}}
           </div>
           <div class="sheet-table sheet-list spells-table">
-            <div class="sheet-list-head spells-list-head dnd5e-table-head pf-list-schema pf-list-schema--icon-title-4meta-actions" aria-hidden="true">
-              <span>{{localize 'POCKETFOUNDRY.Table.Name'}}</span>
-              <span>{{localize 'DND5E.SpellHeader.Time'}}</span>
-              <span>{{localize 'DND5E.Range'}}</span>
-              <span>{{localize 'DND5E.Target'}}</span>
-              <span>{{localize 'DND5E.Roll'}}</span>
-              <span></span>
-            </div>
+            {{> "modules/pocket-foundry/systems/dnd5e/templates/partials/table-head.hbs" kind="spells" timeLabel=(localize 'DND5E.SpellHeader.Time')}}
             {{#each spells}}
               {{> "modules/pocket-foundry/systems/dnd5e/templates/partials/spell-row.hbs" this}}
             {{else}}

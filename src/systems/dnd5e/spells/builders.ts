@@ -1,6 +1,6 @@
 import { localize, localizeSystemKey } from "../../../core/localization.ts";
 import { getInitials, getNumber, getObject, getString } from "../../../core/utils.ts";
-import { canToggleDnd5eFavorites, hasDnd5eFavoriteReference } from "../favorites-storage.ts";
+import { buildDnd5eFavoriteToggleState, hasDnd5eFavoriteReference } from "../favorites-storage.ts";
 import { toSearchTerms } from "../view-model-helpers.ts";
 import type {
   Dnd5eSpellActivity,
@@ -236,6 +236,8 @@ function buildSlotTrack(
   const displayMax = Math.max(max, value);
   const label = methodConfig?.key === "pact" ? localizeSystemKey("DND5E.PactMagic", "Pact") : methodConfig?.getLabel?.({ level }) ?? getFallbackSectionLabel(slotId, level);
 
+  const favoriteState = buildDnd5eFavoriteToggleState(actor, canUpdate, isSlotFavorite(actor, slotId));
+
   return {
     id: slotId,
     label,
@@ -245,8 +247,8 @@ function buildSlotTrack(
     displayMax,
     prop: `system.spells.${slotId}.value`,
     canUpdate,
-    favorite: isSlotFavorite(actor, slotId),
-    canToggleFavorite: canUpdate && canToggleDnd5eFavorites(actor),
+    favorite: favoriteState.favorite,
+    canToggleFavorite: favoriteState.canToggleFavorite,
     pips: Array.from({ length: displayMax }, (_unused, index) => {
       const n = index + 1;
       const temporary = n > max;
@@ -297,6 +299,8 @@ function buildSpellRow(
   const ritual = hasSetValue(system.properties, "ritual") || system.ritual === true;
   const adjustment = canUpdate && maxUses !== null && currentUses !== null ? buildAdjustment(currentUses, maxUses, usesLabel) : null;
 
+  const favoriteState = buildDnd5eFavoriteToggleState(actor, canUpdate, isFavorite(actor, item));
+
   return {
     id: getItemId(item),
     uuid: getItemUuid(item),
@@ -342,9 +346,9 @@ function buildSpellRow(
       canPrepare: canPrepareSpell(item, config, canUpdate),
       canRecharge: canUpdate && item.hasRecharge === true && typeof uses?.rollRecharge === "function",
       canAdjustUses: adjustment !== null,
-      canToggleFavorite: canUpdate && canToggleDnd5eFavorites(actor)
+      canToggleFavorite: favoriteState.canToggleFavorite
     },
-    favorite: isFavorite(actor, item)
+    favorite: favoriteState.favorite
   };
 }
 

@@ -279,6 +279,7 @@ test("inventory controls require update permission and use embedded document upd
 test("inventory template and styles preserve required regions without a local category rail", () => {
   const template = readFileSync(new URL("../src/systems/dnd5e/templates/inventory.hbs", import.meta.url), "utf8");
   const rowTemplate = readFileSync(new URL("../src/systems/dnd5e/templates/partials/inventory-list-row.hbs", import.meta.url), "utf8");
+  const tableHeadTemplate = readFileSync(new URL("../src/systems/dnd5e/templates/partials/table-head.hbs", import.meta.url), "utf8");
   const actorShellTemplate = readFileSync(new URL("../src/templates/actor-sheet-shell.hbs", import.meta.url), "utf8");
   const css = [
     readFileSync(new URL("../src/styles/pocket-foundry.css", import.meta.url), "utf8"),
@@ -299,7 +300,8 @@ test("inventory template and styles preserve required regions without a local ca
   assert.doesNotMatch(template, /\{\{count\}\}|>items</);
   assert.match(template, /sheet-table/);
   assert.match(template, /class="sheet-table sheet-list inventory-list"/);
-  assert.match(template, /class="sheet-list-head inventory-list-head inventory-list-head-\{\{id\}\}[^"]*pf-list-schema[^"]*pf-list-schema--icon-title-3meta-actions/);
+  assert.match(template, /partials\/table-head\.hbs/);
+  assert.match(tableHeadTemplate, /class="sheet-list-head inventory-list-head inventory-list-head-\{\{#if headId\}\}\{\{headId\}\}\{\{else\}\}\{\{id\}\}\{\{\/if\}\}[^"]*pf-list-schema[^"]*pf-list-schema--icon-title-3meta-actions/);
   assert.match(template, /partials\/inventory-list-row\.hbs/);
   assert.match(rowTemplate, /partials\/expandable-detail-row\.hbs/);
   assert.match(rowTemplate, /class="row inventory-list-row inventory-list-row-\{\{sectionId\}\} inventory-list-row-\{\{type\}\}"/);
@@ -312,7 +314,7 @@ test("inventory template and styles preserve required regions without a local ca
   assert.match(rowTemplate, /class="inventory-icon-toggle inventory-summary-equip equipped/);
   assert.match(rowTemplate, /class="inventory-icon-toggle inventory-summary-attuned attuned/);
   assert.doesNotMatch(rowTemplate, /inventory-expand-indicator/);
-  assert.match(template, /\{\{#each listColumns\}\}<span class="inventory-list-head-cell inventory-list-head-cell-\{\{id\}\}">\{\{label\}\}<\/span>\{\{\/each\}\}/);
+  assert.match(tableHeadTemplate, /\{\{#each listColumns\}\}<span class="inventory-list-head-cell inventory-list-head-cell-\{\{id\}\}">\{\{label\}\}<\/span>\{\{\/each\}\}/);
   assert.match(rowTemplate, /\{\{#each adjustments\}\}/);
   assert.match(rowTemplate, /data-action="inventory-open-number-dialog"/);
   assert.match(rowTemplate, /partials\/number-adjust-dialog\.hbs/);

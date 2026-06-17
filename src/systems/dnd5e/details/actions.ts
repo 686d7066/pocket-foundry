@@ -3,7 +3,7 @@ import { localize, localizeSystemKey, localizeSystemLabel } from "../../../core/
 import { getCollectionContents, getNumber, getObject, getString } from "../../../core/utils.ts";
 import { canUpdateDocument, canViewDocument, type FoundryUserLike } from "../../../services/permissions.ts";
 import { summarizeRichTextWithReferences, type RichTextReference } from "../../../services/rich-text-links.ts";
-import { canToggleDnd5eFavorites, hasDnd5eFavoriteReference } from "../favorites-storage.ts";
+import { buildOptionalDnd5eFavoriteToggleState, hasDnd5eFavoriteReference } from "../favorites-storage.ts";
 import { clampNumber, formatPair, getConfigLabel, uniqueStrings } from "../view-model-helpers.ts";
 import { Dnd5eProficiencyIndicator } from "./types.ts";
 import type {
@@ -543,7 +543,6 @@ async function buildSkills(actor: Dnd5eDetailsActor, system: Record<string, unkn
       const skillConfig = getObject(config.skills?.[id]);
       const ability = getString(skill.ability) || "wis";
       const reference = getString(skill.reference) || getString(skillConfig?.reference);
-      const canToggleFavorite = canUpdate && canToggleDnd5eFavorites(actor);
       const proficiencyMultiplier = getProficiencyMultiplier(skill);
       return {
         id,
@@ -558,7 +557,7 @@ async function buildSkills(actor: Dnd5eDetailsActor, system: Record<string, unkn
         ...(reference ? { reference } : {}),
         __rawSkill: skill,
         __skillConfig: skillConfig,
-        ...(canToggleFavorite ? { favorite: isFavorite(actor, "skill", id), canToggleFavorite } : {})
+        ...buildOptionalDnd5eFavoriteToggleState(actor, canUpdate, isFavorite(actor, "skill", id))
       };
     })
     .sort((a, b) => a.label.localeCompare(b.label));
@@ -603,7 +602,6 @@ async function buildTools(actor: Dnd5eDetailsActor, system: Record<string, unkno
       const total = getNumber(tool.total);
       const reference = getString(tool.reference) || getString(toolConfig?.reference);
       const baseItemUuid = getToolBaseItemUuid(toolConfig);
-      const canToggleFavorite = canUpdate && canToggleDnd5eFavorites(actor);
       const proficiencyMultiplier = getProficiencyMultiplier(tool);
       return {
         id,
@@ -619,7 +617,7 @@ async function buildTools(actor: Dnd5eDetailsActor, system: Record<string, unkno
         __toolConfig: toolConfig,
         __reference: reference,
         __baseItemUuid: baseItemUuid,
-        ...(canToggleFavorite ? { favorite: isFavorite(actor, "tool", id), canToggleFavorite } : {})
+        ...buildOptionalDnd5eFavoriteToggleState(actor, canUpdate, isFavorite(actor, "tool", id))
       };
     })
     .sort((a, b) => a.label.localeCompare(b.label));

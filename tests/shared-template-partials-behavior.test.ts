@@ -31,14 +31,16 @@ test("fillable blips partial wires all parameters into update and read-only bran
 
 test("number adjust dialog partial supports id, aria, description, and confirm action fallback branches", () => {
   const template = readTemplate("src/templates/partials/number-adjust-dialog.hbs");
+  const wheelTemplate = readTemplate("src/templates/partials/number-wheel.hbs");
 
   assert.match(template, /id="\{\{#if dialogId\}\}\{\{dialogId\}\}\{\{else\}\}\{\{dialogIdPrefix\}\}\{\{dialogItemId\}\}\{\{dialogIdMiddle\}\}\{\{dialogAdjustmentId\}\}\{\{dialogIdSuffix\}\}\{\{\/if\}\}"/);
   assert.match(template, /aria-label="\{\{#if dialogAriaLabel\}\}\{\{dialogAriaLabel\}\}\{\{else\}\}\{\{#if dialogAriaLabelName\}\}\{\{localize 'POCKETFOUNDRY\.Dialog\.TitleForName' title=title name=dialogAriaLabelName\}\}\{\{else\}\}\{\{title\}\}\{\{\/if\}\}\{\{\/if\}\}"/);
   assert.match(template, /aria-label="\{\{#if closeAriaLabel\}\}\{\{closeAriaLabel\}\}\{\{else\}\}\{\{localize 'POCKETFOUNDRY\.Action\.Close'\}\}\{\{\/if\}\}"/);
   assert.match(template, /\{\{#if description\}\}\s*\{\{description\}\}\s*\{\{else\}\}\s*\{\{#if descriptionName\}\}\{\{descriptionName\}\}\{\{\/if\}\}\{\{#if descriptionLabel\}\}: \{\{descriptionLabel\}\}\{\{\/if\}\}\s*\{\{\/if\}\}/);
-  assert.match(template, /aria-label="\{\{#if wheelAriaLabel\}\}\{\{wheelAriaLabel\}\}\{\{else\}\}\{\{localize 'POCKETFOUNDRY\.Dialog\.Amount' title=title\}\}\{\{\/if\}\}"/);
+  assert.match(template, /partials\/number-wheel\.hbs/);
+  assert.match(wheelTemplate, /aria-label="\{\{#if wheelAriaLabel\}\}\{\{wheelAriaLabel\}\}\{\{else\}\}\{\{localize 'POCKETFOUNDRY\.Dialog\.Amount' title=title\}\}\{\{\/if\}\}"/);
 
-  assert.match(template, /\{\{#if \.\.\/centerZeroLabel\}\}\s*\{\{#if center\}\}0\{\{else\}\}\{\{label\}\}\{\{\/if\}\}\s*\{\{else\}\}\s*\{\{label\}\}\s*\{\{\/if\}\}/);
+  assert.match(wheelTemplate, /\{\{#if \.\.\/centerZeroLabel\}\}\s*\{\{#if center\}\}0\{\{else\}\}\{\{label\}\}\{\{\/if\}\}\s*\{\{else\}\}\s*\{\{label\}\}\s*\{\{\/if\}\}/);
   assert.match(template, /\{\{#if cancelLabel\}\}\{\{cancelLabel\}\}\{\{else\}\}\{\{localize 'POCKETFOUNDRY\.Action\.Cancel'\}\}\{\{\/if\}\}/);
   assert.match(template, /\{\{#if confirmLabel\}\}\{\{confirmLabel\}\}\{\{else\}\}\{\{localize 'POCKETFOUNDRY\.Action\.OK'\}\}\{\{\/if\}\}/);
 

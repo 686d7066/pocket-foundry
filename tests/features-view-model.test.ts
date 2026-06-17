@@ -165,6 +165,7 @@ test("feature controls require update permission and call dnd5e document APIs", 
 test("features template and styles preserve required regions without create or delete controls", () => {
   const template = readFileSync(new URL("../src/systems/dnd5e/templates/features.hbs", import.meta.url), "utf8");
   const rowTemplate = readFileSync(new URL("../src/systems/dnd5e/templates/partials/feature-row.hbs", import.meta.url), "utf8");
+  const tableHeadTemplate = readFileSync(new URL("../src/systems/dnd5e/templates/partials/table-head.hbs", import.meta.url), "utf8");
   const actorShellTemplate = readFileSync(new URL("../src/templates/actor-sheet-shell.hbs", import.meta.url), "utf8");
   const css = [
     readFileSync(new URL("../src/styles/pocket-foundry.css", import.meta.url), "utf8"),
@@ -186,7 +187,8 @@ test("features template and styles preserve required regions without create or d
   assert.match(template, /class="features-sections"/);
   assert.match(template, /class="section sheet-group features-section features-section-\{\{id\}\}"/);
   assert.match(template, /class="section-heading sheet-group-heading features-section-heading"/);
-  assert.match(template, /class="sheet-list-head features-list-head[^"]*pf-list-schema[^"]*pf-list-schema--icon-title-2meta-actions/);
+  assert.match(template, /partials\/table-head\.hbs/);
+  assert.match(tableHeadTemplate, /class="sheet-list-head features-list-head[^"]*pf-list-schema[^"]*pf-list-schema--icon-title-2meta-actions/);
   assert.match(template, /partials\/feature-row\.hbs/);
   assert.match(rowTemplate, /partials\/expandable-detail-row\.hbs/);
   assert.match(rowTemplate, /class="row sheet-list-row features-list-row feature-row"/);

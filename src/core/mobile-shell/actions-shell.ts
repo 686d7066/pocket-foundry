@@ -7,7 +7,8 @@ import { navigateShellDestination } from "../shell-navigation.ts";
 import { createFoundryRecentsService, isShellDestination, navigateCharacterPane, normalizeSearchTypeFilter, rememberCurrentRouteScroll, setCharacterPickerRouteFavorite, updateCharacterPickerFolderExpansion, updateCharacterPickerSearch } from "./controller-helpers-navigation.ts";
 import { openRecentRoute, openSearchResult, runSearchImmediately } from "./controller-helpers-search.ts";
 import { renderShell } from "./controller-helpers-shell.ts";
-import { awaitHandledShellTask, browserHistoryActive, closeFavoriteContextMenu, closeShellActionErrorDialog, consumeShellActionEvent, recordHistoryDebug } from "./controller-helpers-ui.ts";
+import { browserHistoryActive, recordHistoryDebug } from "./controller-helpers-browser-history.ts";
+import { awaitHandledShellTask, closeFavoriteContextMenu, closeShellActionErrorDialog, consumeShellActionEvent } from "./controller-helpers-ui.ts";
 import type { MobileShellActionContext } from "./event-context.ts";
 
 /**

@@ -8,7 +8,7 @@ import { createViewportOwnershipController } from "../viewport-ownership.ts";
 import { createFoundryRoutePermissionResolver, getStoredSelectedCharacterRoute, rememberCurrentRouteScroll } from "./controller-helpers-navigation.ts";
 import { clearSearchDebounce, createInitialSearchUiState, runSearchImmediately } from "./controller-helpers-search.ts";
 import { normalizeCharacterRoutePanes, renderShell } from "./controller-helpers-shell.ts";
-import { activateBrowserHistory, bindBrowserBack, uninstallLeaveGameConfirmGuard, writeBrowserHistory } from "./controller-helpers-ui.ts";
+import { activateBrowserHistory, bindBrowserBack, uninstallLeaveGameConfirmGuard, writeBrowserHistory } from "./controller-helpers-browser-history.ts";
 import { bindMobileShellEvents } from "./events.ts";
 import type { MobileShellController } from "./types.ts";
 

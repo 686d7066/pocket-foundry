@@ -33,12 +33,7 @@
             <h2>{{label}}</h2>
           </div>
           <div class="sheet-table sheet-list features-list">
-            <div class="sheet-list-head features-list-head dnd5e-table-head pf-list-schema pf-list-schema--icon-title-2meta-actions" aria-hidden="true">
-              <span>{{localize 'POCKETFOUNDRY.Table.Name'}}</span>
-              <span>{{localize 'DND5E.Uses'}}</span>
-              <span>{{localize 'DND5E.Recovery'}}</span>
-              <span></span>
-            </div>
+            {{> "modules/pocket-foundry/systems/dnd5e/templates/partials/table-head.hbs" kind="features"}}
             {{#each items}}
               {{> "modules/pocket-foundry/systems/dnd5e/templates/partials/feature-row.hbs" this}}
             {{else}}

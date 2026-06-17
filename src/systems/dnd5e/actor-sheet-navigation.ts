@@ -130,7 +130,8 @@ export const DND5E_PANE_PARTIAL_PATHS = [
   "modules/pocket-foundry/systems/dnd5e/templates/partials/feature-row.hbs",
   DND5E_FAVORITES_GROUP_PARTIAL,
   "modules/pocket-foundry/systems/dnd5e/templates/partials/inventory-list-row.hbs",
-  "modules/pocket-foundry/systems/dnd5e/templates/partials/spell-row.hbs"
+  "modules/pocket-foundry/systems/dnd5e/templates/partials/spell-row.hbs",
+  "modules/pocket-foundry/systems/dnd5e/templates/partials/table-head.hbs"
 ] as const;
 export const DND5E_STYLE_PATHS = ["modules/pocket-foundry/systems/dnd5e/styles/pocket-foundry-dnd5e.css"] as const;
 

@@ -20,7 +20,7 @@ import {
   toSearchTerms,
   uniqueStrings
 } from "./view-model-helpers.ts";
-import { canToggleDnd5eFavorites, hasDnd5eFavoriteReference, setDnd5eFavoriteEntry } from "./favorites-storage.ts";
+import { buildDnd5eFavoriteToggleState, hasDnd5eFavoriteReference, setDnd5eFavoriteEntry } from "./favorites-storage.ts";
 
 export type Dnd5eFeaturesActor = PermissionCheckedDocument
   & FoundryDocumentMutationApi
@@ -412,7 +412,8 @@ function buildFeatureItemViewModel(
   const origin = getFeatureOrigin(actor, item, allItems);
   const source = origin.source;
   const subtitle = [getString(getObject(system.type)?.label) || getFeatureTypeLabel(item), activation].filter(Boolean).join(" - ");
-  const favorite = isFavorite(actor, item);
+  const favoriteState = buildDnd5eFavoriteToggleState(actor, canUpdate, isFavorite(actor, item));
+  const favorite = favoriteState.favorite;
   const concentrating = isConcentrating(actor, item);
   const adjustment = canUpdate && max !== null && current !== null ? buildAdjustment(current, max, usesLabel) : null;
 
@@ -443,7 +444,7 @@ function buildFeatureItemViewModel(
       canUse: canUpdate && !isPassiveFeature(item) && typeof item.use === "function" && activities.length <= 1,
       canRecharge: canUpdate && item.hasRecharge === true && typeof uses?.rollRecharge === "function",
       canAdjustUses: adjustment !== null,
-      canToggleFavorite: canUpdate && canToggleDnd5eFavorites(actor),
+      canToggleFavorite: favoriteState.canToggleFavorite,
       canEndConcentration: canUpdate && concentrating && typeof actor.endConcentration === "function"
     },
     favorite,

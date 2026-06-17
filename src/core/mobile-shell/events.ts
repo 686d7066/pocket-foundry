@@ -7,7 +7,8 @@ import { handleJournalClickAction } from "./actions-journal.ts";
 import { handleShellClickAction } from "./actions-shell.ts";
 import { navigateCharacterPane, rememberCurrentRouteScroll, updateCharacterPickerSearch, updateNumberWheelSelection, updatePaneSearch } from "./controller-helpers-navigation.ts";
 import { handleEnrichedDocumentLinkClick, scheduleSearch } from "./controller-helpers-search.ts";
-import { openFavoriteContextMenu, reportShellActionError, runHandledShellTask, updateJournalPageDraftFields } from "./controller-helpers-ui.ts";
+import { updateJournalPageDraftFields } from "./controller-helpers-journal-dialogs.ts";
+import { openFavoriteContextMenu, reportShellActionError, runHandledShellTask } from "./controller-helpers-ui.ts";
 import type { SearchUiState } from "./types.ts";
 
 type SwipeStart = { x: number; y: number; route: CharacterRoute };

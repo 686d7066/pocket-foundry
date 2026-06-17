@@ -215,6 +215,7 @@ test("favorite play actions check permissions and call dnd5e document APIs", asy
 test("favorites template, styles, and shell wiring preserve required regions", () => {
   const template = readFileSync(new URL("../src/templates/favorites.hbs", import.meta.url), "utf8");
   const dnd5eGroupTemplate = readFileSync(new URL("../src/systems/dnd5e/templates/partials/favorites-group.hbs", import.meta.url), "utf8");
+  const dnd5eTableHeadTemplate = readFileSync(new URL("../src/systems/dnd5e/templates/partials/table-head.hbs", import.meta.url), "utf8");
   const fallbackGroupTemplate = readFileSync(new URL("../src/templates/partials/favorite-basic-group.hbs", import.meta.url), "utf8");
   const favoriteContextMenuTemplate = readFileSync(new URL("../src/templates/partials/favorite-context-menu.hbs", import.meta.url), "utf8");
   const actorShellTemplate = readFileSync(new URL("../src/templates/actor-sheet-shell.hbs", import.meta.url), "utf8");
@@ -246,10 +247,11 @@ test("favorites template, styles, and shell wiring preserve required regions", (
   assert.match(dnd5eGroupTemplate, /partials\/spell-row\.hbs/);
   assert.match(dnd5eGroupTemplate, /partials\/feature-row\.hbs/);
   assert.match(dnd5eGroupTemplate, /partials\/effect-row\.hbs/);
-  assert.match(dnd5eGroupTemplate, /pf-list-schema--icon-title-3meta-actions/);
-  assert.match(dnd5eGroupTemplate, /pf-list-schema--icon-title-4meta-actions/);
-  assert.match(dnd5eGroupTemplate, /pf-list-schema--icon-title-2meta-actions/);
-  assert.match(dnd5eGroupTemplate, /pf-list-schema--icon-title-source-actions/);
+  assert.match(dnd5eGroupTemplate, /partials\/table-head\.hbs/);
+  assert.match(dnd5eTableHeadTemplate, /pf-list-schema--icon-title-3meta-actions/);
+  assert.match(dnd5eTableHeadTemplate, /pf-list-schema--icon-title-4meta-actions/);
+  assert.match(dnd5eTableHeadTemplate, /pf-list-schema--icon-title-2meta-actions/);
+  assert.match(dnd5eTableHeadTemplate, /pf-list-schema--icon-title-source-actions/);
   assert.match(dnd5eGroupTemplate, /partials\/favorite-context-menu\.hbs/);
   assert.match(fallbackGroupTemplate, /class="item-icon"/);
   assert.match(dnd5eGroupTemplate, /removeAction="favorites-remove-context"/);

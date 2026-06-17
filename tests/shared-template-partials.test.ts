@@ -30,6 +30,7 @@ test("shared partials are preloaded and used by core and dnd5e templates", () =>
   assert.match(moduleSource, /partials\/favorite-basic-group\.hbs/);
   assert.match(moduleSource, /partials\/favorite-context-menu\.hbs/);
   assert.match(moduleSource, /partials\/number-adjust-dialog\.hbs/);
+  assert.match(moduleSource, /partials\/number-wheel\.hbs/);
   assert.match(moduleSource, /partials\/pane-search-toolbar\.hbs/);
   assert.match(moduleSource, /partials\/pane-unavailable\.hbs/);
   assert.match(moduleSource, /partials\/settings-toggle-row\.hbs/);
@@ -79,6 +80,7 @@ test("shared partials expose reusable parameterized hooks", () => {
   const favoriteContextMenuTemplate = readFileSync(new URL("../src/templates/partials/favorite-context-menu.hbs", import.meta.url), "utf8");
   const favoriteBasicGroupTemplate = readFileSync(new URL("../src/templates/partials/favorite-basic-group.hbs", import.meta.url), "utf8");
   const numberAdjustDialogTemplate = readFileSync(new URL("../src/templates/partials/number-adjust-dialog.hbs", import.meta.url), "utf8");
+  const numberWheelTemplate = readFileSync(new URL("../src/templates/partials/number-wheel.hbs", import.meta.url), "utf8");
   const paneSearchTemplate = readFileSync(new URL("../src/templates/partials/pane-search-toolbar.hbs", import.meta.url), "utf8");
   const paneUnavailableTemplate = readFileSync(new URL("../src/templates/partials/pane-unavailable.hbs", import.meta.url), "utf8");
   const settingsToggleTemplate = readFileSync(new URL("../src/templates/partials/settings-toggle-row.hbs", import.meta.url), "utf8");
@@ -112,7 +114,8 @@ test("shared partials expose reusable parameterized hooks", () => {
   assert.match(numberAdjustDialogTemplate, /confirmActionPrefix/);
   assert.match(numberAdjustDialogTemplate, /confirmActionMiddle/);
   assert.match(numberAdjustDialogTemplate, /confirmItemId/);
-  assert.match(numberAdjustDialogTemplate, /centerZeroLabel/);
+  assert.match(numberAdjustDialogTemplate, /partials\/number-wheel\.hbs/);
+  assert.match(numberWheelTemplate, /centerZeroLabel/);
   assert.match(numberAdjustDialogTemplate, /closeAriaLabel/);
   assert.match(numberAdjustDialogTemplate, /cancelLabel/);
   assert.match(numberAdjustDialogTemplate, /confirmLabel/);

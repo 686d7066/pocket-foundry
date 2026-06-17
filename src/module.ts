@@ -33,6 +33,7 @@ const BASE_TEMPLATE_PATHS = [
   `${TEMPLATE_ROOT}/partials/fillable-blips.hbs`,
   `${TEMPLATE_ROOT}/partials/meter.hbs`,
   `${TEMPLATE_ROOT}/partials/number-adjust-dialog.hbs`,
+  `${TEMPLATE_ROOT}/partials/number-wheel.hbs`,
   `${TEMPLATE_ROOT}/partials/pane-search-toolbar.hbs`,
   `${TEMPLATE_ROOT}/partials/pane-unavailable.hbs`,
   `${TEMPLATE_ROOT}/partials/pane-rail.hbs`,

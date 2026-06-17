@@ -22,7 +22,7 @@ import {
   toSearchTerms,
   uniqueStrings
 } from "./view-model-helpers.ts";
-import { canToggleDnd5eFavorites, hasDnd5eFavoriteReference, setDnd5eFavoriteEntry } from "./favorites-storage.ts";
+import { buildOptionalDnd5eFavoriteToggleState, hasDnd5eFavoriteReference, setDnd5eFavoriteEntry } from "./favorites-storage.ts";
 
 export type Dnd5eInventoryActor = PermissionCheckedDocument
   & FoundryDocumentMutationApi
@@ -577,7 +577,7 @@ function buildItemViewModel(item: Dnd5eInventoryItem, sectionId: InventorySectio
   const usesCurrent = usesMax === null ? null : getNumber(uses?.value) ?? getRemainingUses(uses) ?? usesMax;
   const quantityAdjustment = canUpdate && quantity !== null ? buildAdjustment("quantity", quantity, null, formatNullableQuantity(quantity)) : null;
   const chargesAdjustment = canUpdate && usesMax !== null && usesCurrent !== null ? buildAdjustment("charges", usesCurrent, usesMax, usesLabel) : null;
-  const canToggleFavorite = canUpdate && canToggleDnd5eFavorites(item.parent);
+  const favoriteToggleState = buildOptionalDnd5eFavoriteToggleState(item.parent, canUpdate, isFavorite(item));
 
   const itemViewModel: Dnd5eInventoryItemViewModel = {
     id: getItemId(item),
@@ -618,9 +618,9 @@ function buildItemViewModel(item: Dnd5eInventoryItem, sectionId: InventorySectio
       canTogglePrepared: canUpdate && typeof prepared === "boolean",
       canMoveContainer: canUpdate && item.type !== "container",
       canRemoveContainer: canUpdate && Boolean(getContainerId(item)),
-      ...(canToggleFavorite ? { canToggleFavorite } : {})
+      ...(favoriteToggleState.canToggleFavorite ? { canToggleFavorite: favoriteToggleState.canToggleFavorite } : {})
     },
-    ...(canToggleFavorite ? { favorite: isFavorite(item) } : {}),
+    ...(favoriteToggleState.canToggleFavorite ? { favorite: favoriteToggleState.favorite } : {}),
     states: { equipped, attuned, prepared, identified }
   };
 

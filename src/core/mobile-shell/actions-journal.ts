@@ -1,8 +1,9 @@
 import { RouteView } from "../../router/routes.ts";
 import type { MobileJournalService } from "../../services/journal.ts";
+import { awaitHandledShellTask, consumeShellActionEvent } from "./controller-helpers-ui.ts";
+import { closeJournalPageDeleteDialog, closeJournalPageDraftDialog, getJournalPageDraftFromForm, openJournalPageDeleteDialog, openJournalPageDraftDialog } from "./controller-helpers-journal-dialogs.ts";
 import { notifyJournalMutationUnavailable, rememberCurrentRouteScroll, runJournalControl } from "./controller-helpers-navigation.ts";
 import { getJournalParentRoute, renderShell } from "./controller-helpers-shell.ts";
-import { awaitHandledShellTask, closeJournalPageDeleteDialog, closeJournalPageDraftDialog, consumeShellActionEvent, getJournalPageDraftFromForm, openJournalPageDeleteDialog, openJournalPageDraftDialog } from "./controller-helpers-ui.ts";
 import type { MobileShellActionContext } from "./event-context.ts";
 
 /**
