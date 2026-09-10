@@ -1,7 +1,7 @@
 import { getPocketFoundryRouteFromHash } from "../../router/browser-history.ts";
 import { createMobileRouter } from "../../router/mobile-router.ts";
 import { createReactiveRefreshController, type ReactiveRefreshController, type ReactiveRefreshHooks } from "../../services/reactive-refresh.ts";
-import { getCharacterSheetAdapter, hasCharacterSheetAdapterForSystem } from "../../systems/character-sheet-adapter-registry.ts";
+import { getCharacterSheetAdapter } from "../../systems/character-sheet-adapter-registry.ts";
 import { MODULE_ID } from "../constants.ts";
 import { getFoundryRuntime } from "../foundry-globals.ts";
 import { createViewportOwnershipController } from "../viewport-ownership.ts";
@@ -107,17 +107,9 @@ export function createMobileShellController(): MobileShellController {
     viewportOwnership.release();
   }
 
+  /** Enables shared Foundry views regardless of character-sheet adapter support. */
   async function setEnabled(enabled: boolean): Promise<void> {
     if (enabled) {
-      if (!hasCharacterSheetAdapterForSystem()) {
-        const runtime = getFoundryRuntime();
-        const system = runtime.game?.system;
-        const systemName = (system as { title?: string } | undefined)?.title ?? system?.id ?? "Unknown";
-        globalThis.console?.error?.(MODULE_ID + " cannot enable mobile shell: " + systemName + " character sheets are not supported.");
-        unmount();
-        return;
-      }
-
       await mount();
       return;
     }

@@ -2,6 +2,7 @@ import { execFileSync } from "node:child_process";
 import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { basename, dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { isRuntimeAsset, normalizeGeneratedLineEndings } from "./build-assets.ts";
 
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const addonRoot = resolve(projectRoot, "src");
@@ -66,6 +67,7 @@ async function bundleModule(): Promise<void> {
   });
 }
 
+/** Discovers system entry points and writes deterministic CRLF registration glue. */
 function generateCharacterSheetAdapterManifest(): void {
   const systemsRoot = resolve(projectRoot, "src", "systems");
   const generatedPath = resolve(systemsRoot, "character-sheet-adapters.generated.ts");
@@ -102,7 +104,7 @@ export const BUILT_IN_CHARACTER_SHEET_ADAPTERS: ReadonlyArray<{ systemId: string
 ];
 `;
 
-  writeFileSync(generatedPath, payload, "utf8");
+  writeFileSync(generatedPath, normalizeGeneratedLineEndings(payload), "utf8");
 }
 
 /**
@@ -117,12 +119,12 @@ function copyStaticFiles(): void {
 }
 
 /**
- * Excludes source language folders from raw static copying because they are
- * merged into Foundry's module-level language directory separately.
+ * Copies only runtime assets, excluding source language folders because they
+ * are merged into Foundry's module-level language directory separately.
  */
 function shouldCopyStaticAsset(sourcePath: string): boolean {
   const relativePath = relative(addonRoot, sourcePath);
-  return !relativePath.split(/[\\/]/).includes("lang");
+  return !relativePath.split(/[\\/]/).includes("lang") && isRuntimeAsset(sourcePath);
 }
 
 /**

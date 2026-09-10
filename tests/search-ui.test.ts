@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { afterEach, test } from "vitest";
 import { createMobileShellController } from "../src/core/mobile-shell/controller.ts";
+import { createFoundrySearchService, getCharacterSheetSearchAdapters } from "../src/core/mobile-shell/controller-helpers-search.ts";
 import { RouteView } from "../src/router/routes.ts";
 
 const user = { id: "player" };
@@ -10,6 +11,7 @@ afterEach(() => {
   Reflect.deleteProperty(globalThis, "document");
   Reflect.deleteProperty(globalThis, "Element");
   Reflect.deleteProperty(globalThis, "addEventListener");
+  Reflect.deleteProperty(globalThis, "removeEventListener");
   Reflect.deleteProperty(globalThis, "game");
   Reflect.deleteProperty(globalThis, "history");
   Reflect.deleteProperty(globalThis, "location");
@@ -302,6 +304,7 @@ function installShellFixtureRuntime(options: {
 }): void {
   Object.defineProperty(globalThis, "Element", { configurable: true, value: Object });
   Object.defineProperty(globalThis, "addEventListener", { configurable: true, value: () => undefined });
+  Object.defineProperty(globalThis, "removeEventListener", { configurable: true, value: () => undefined });
   Object.defineProperty(globalThis, "document", {
     configurable: true,
     value: {
@@ -500,3 +503,45 @@ function wait(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+test("unsupported systems can enable the shell and navigate shared Foundry sections", async () => {
+  const root = createElement();
+  const models: object[] = [];
+  installShellFixtureRuntime({
+    root, searchInput: createInput(), systemId: "unsupported-system",
+    renderTemplate: async (_path, data) => { models.push(data); return ""; }
+  });
+  const shell = createMobileShellController();
+  try {
+    await shell.setMobileViewEnabled(true);
+    assert.equal(shell.isMounted(), true);
+    for (const route of ["journal", "search", "recents", "settings"]) {
+      root.dispatch("click", createActionEvent({ action: "navigate", route }));
+      await settle();
+      assert.equal((models.at(-1) as ShellTemplateData).activeDestination, route);
+    }
+  } finally {
+    shell.unmount();
+  }
+});
+
+test("shared search works with journal-only worlds and includes other available documents without system support", async () => {
+  const journal = createDocument({ uuid: "JournalEntry.clue", name: "Clue Journal", documentName: "JournalEntry" });
+  const hidden = createDocument({ uuid: "JournalEntry.secret", name: "Clue Secret", documentName: "JournalEntry", visible: false });
+  const page = { ...createDocument({ uuid: "JournalEntry.clue.JournalEntryPage.page", name: "Page", documentName: "JournalEntryPage" }), text: { content: "A clue within the text" }, parent: journal };
+  for (const includeOtherDocuments of [false, true]) {
+    installShellFixtureRuntime({
+      root: createElement(), searchInput: createInput(), systemId: "unsupported-system",
+      journals: [{ ...journal, pages: [page] }, hidden],
+      items: includeOtherDocuments ? [createDocument({ uuid: "Item.clue", name: "Clue Item", documentName: "Item" })] : [],
+      actors: includeOtherDocuments ? [createDocument({ uuid: "Actor.clue", name: "Clue Actor", documentName: "Actor" })] : [],
+      packs: includeOtherDocuments ? [{ collection: "world.clues", documentName: "JournalEntry", visible: true, index: [{ _id: "clue", name: "Clue Compendium" }] }] : [],
+      renderTemplate: async () => ""
+    });
+    assert.deepEqual(getCharacterSheetSearchAdapters(), []);
+    const service = createFoundrySearchService({ parentPaneForOwnedItems: "" });
+    const results = await service.search({ query: "clue" });
+    const expected = [journal.uuid, page.uuid];
+    if (includeOtherDocuments) expected.push("Item.clue", "Actor.clue", "Compendium.world.clues.JournalEntry.clue");
+    assert.deepEqual(results.map(result => result.uuid).sort(), expected.sort());
+  }
+});

@@ -1,0 +1,3 @@
+# Normalize text in Git and use CRLF in working-tree files.
+# Automatically detected binary files are left unchanged.
+* text=auto eol=crlf

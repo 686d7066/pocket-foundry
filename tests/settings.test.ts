@@ -211,3 +211,24 @@ test("bottom navigation renders Search and Settings as compact icons", () => {
   assert.match(css, /\.bottom-nav button\[data-route="settings"\]/);
 });
 
+test("startup honors mobile view settings without a supported system", async () => {
+  Object.defineProperty(globalThis, "matchMedia", { configurable: true, value: () => ({ matches: false }) });
+  const states: boolean[] = [];
+  const shell = {
+    isMounted: () => false,
+    mount: async () => undefined,
+    unmount: () => undefined,
+    setMobileViewEnabled: async (enabled: boolean) => { states.push(enabled); },
+    refresh: async () => undefined
+  };
+  for (const system of [undefined, { id: "unsupported-system" }]) {
+    for (const enabled of [true, false]) {
+      Object.defineProperty(globalThis, "game", {
+        configurable: true,
+        value: { user: { id: "player" }, system, settings: { get: () => enabled } }
+      });
+      await handleReadyMobileLifecycle(shell);
+    }
+  }
+  assert.deepEqual(states, [true, false, true, false]);
+});

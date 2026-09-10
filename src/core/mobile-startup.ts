@@ -1,5 +1,4 @@
 import { booleanLocalStorageCodec, createLocalStorageKey, readLocalStorage, writeLocalStorage, type LocalStorageKey } from "../services/local-storage.ts";
-import { hasCharacterSheetAdapterForSystem } from "../systems/character-sheet-adapter-registry.ts";
 import { getFoundryRuntime } from "./foundry-globals.ts";
 import { localize } from "./localization.ts";
 import { isProbablyMobileClient } from "./mobile-detection.ts";
@@ -10,18 +9,9 @@ const PROMPT_STORAGE_NAMESPACE = "mobileViewPrompted";
 const MOBILE_VIEW_PROMPT_MODAL_ID = "pocket-foundry-mobile-view-prompt";
 
 /**
- * Handles ready-time mobile prompt behavior and mounts/unmounts the shell to match settings.
+ * Handles ready-time mobile prompts and settings independently of character-sheet support.
  */
 export async function handleReadyMobileLifecycle(shell: MobileShellController): Promise<void> {
-  if (!hasCharacterSheetAdapterForSystem()) {
-    const runtime = getFoundryRuntime();
-    const system = runtime.game?.system;
-    const systemName = (system as { title?: string } | undefined)?.title ?? system?.id ?? "this";
-    globalThis.console?.error?.(localize("POCKETFOUNDRY.MobileView.UnsupportedSystemLog", "Pocket Foundry mobile shell is disabled: {systemName} character sheets are not supported.", { systemName }));
-    await shell.setMobileViewEnabled(false);
-    return;
-  }
-
   if (isProbablyMobileClient() && !hasPromptedForMobileView()) {
     const wantsMobileView = await requestMobileViewPreference();
     markPromptedForMobileView();
