@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [14.10.1] - dev
+
+- Shared views work without a supported system.
+- Existing search scope is preserved.
+- Builds exclude source files.
+- Generated adapter code uses CRLF.
+
 ## [14.10.0] - Using generated Foundry VTT types for type safety
 
 - Module now uses generated Foundry VTT types.

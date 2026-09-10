@@ -2,6 +2,7 @@ import { execFileSync } from "node:child_process";
 import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { isRuntimeAsset, normalizeGeneratedLineEndings } from "./build-assets.ts";
 
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const addonRoot = resolve(projectRoot, "src");
@@ -65,6 +66,7 @@ async function bundleModule(): Promise<void> {
   });
 }
 
+/** Discovers system entry points and writes deterministic CRLF registration glue. */
 function generateCharacterSheetAdapterManifest(): void {
   const systemsRoot = resolve(projectRoot, "src", "systems");
   const generatedPath = resolve(systemsRoot, "character-sheet-adapters.generated.ts");
@@ -101,14 +103,15 @@ export const BUILT_IN_CHARACTER_SHEET_ADAPTERS: ReadonlyArray<{ systemId: string
 ];
 `;
 
-  writeFileSync(generatedPath, payload, "utf8");
+  writeFileSync(generatedPath, normalizeGeneratedLineEndings(payload), "utf8");
 }
 
+/** Copies runtime assets only; TypeScript and raw CSS never enter the release through this path. */
 function copyStaticFiles(): void {
   for (const entry of staticEntries) {
     const source = resolve(addonRoot, entry);
     if (!existsSync(source)) throw new Error(`Required module asset is missing: ${entry}`);
-    cpSync(source, resolve(tempModule, entry), { recursive: true });
+    cpSync(source, resolve(tempModule, entry), { recursive: true, filter: isRuntimeAsset });
   }
 }
 
