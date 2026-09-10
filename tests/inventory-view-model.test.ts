@@ -508,3 +508,16 @@ function getItem(actor: TestInventoryActor, itemId: string): TestInventoryItem |
   return actor.items.find(item => item.id === itemId);
 }
 
+
+
+test("zero-stock rows remain visible and retain quantity controls", async () => {
+  const actor=createInventoryActor();
+  const item=getItem(actor,"dagger");
+  assert.ok(item?.system); item.system.quantity=0;
+  const model=await buildDnd5eInventoryViewModel({actor,user});
+  assert.equal(model.unavailable,false); if(model.unavailable)return;
+  const row=model.sections.flatMap(section=>section.items).find(candidate=>candidate.id==="dagger");
+  assert.equal(row?.outOfStock,true);
+  assert.equal(row?.actions.canAdjustQuantity,true);
+  assert.equal(row?.quantityAdjustment?.current,0);
+});

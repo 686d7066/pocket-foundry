@@ -1,3 +1,4 @@
+import { handleInventoryManagement } from "./inventory-management-ui.ts";
 import { getCollectionContents, getInitials, getNumber, getObject, getString } from "../../core/utils.ts";
 import { localizeSystemKey } from "../../core/localization.ts";
 import {
@@ -408,6 +409,7 @@ export function runCharacterSheetPaneAction(options: CharacterSheetActionContext
   const data = options.data ?? {};
 
   switch (options.action) {
+    case "inventory-management-refresh": return { ok: true };
     case "details-toggle-inspiration":
       return toggleDetailsInspiration(actor, user);
     case "details-confirm-hp-delta":
@@ -527,6 +529,7 @@ export function runCharacterSheetPaneAction(options: CharacterSheetActionContext
  * action execution.
  */
 export async function handleDnd5eShellAction(options: CharacterSheetShellActionContext): Promise<boolean> {
+  if (await handleInventoryManagement(options)) return true;
   const { element, target, event, action, helpers } = options;
 
   if (action === "inventory-open-currency-dialog") {

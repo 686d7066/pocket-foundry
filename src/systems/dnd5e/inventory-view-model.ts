@@ -107,6 +107,8 @@ export type Dnd5eInventoryCurrencyOptionViewModel = {
 };
 
 export type Dnd5eInventoryItemViewModel = {
+  outOfStock: boolean;
+  isContainer: boolean;
   id: string;
   sectionId: string;
   uuid: string;
@@ -157,6 +159,7 @@ export type Dnd5eInventoryItemViewModel = {
 };
 
 export type Dnd5eInventoryChildViewModel = {
+  outOfStock: boolean;
   id: string;
   uuid: string;
   name: string;
@@ -575,11 +578,13 @@ function buildItemViewModel(item: Dnd5eInventoryItem, sectionId: InventorySectio
   const usesLabel = getUsesLabel(uses);
   const usesMax = getNumber(uses?.max);
   const usesCurrent = usesMax === null ? null : getNumber(uses?.value) ?? getRemainingUses(uses) ?? usesMax;
-  const quantityAdjustment = canUpdate && quantity !== null ? buildAdjustment("quantity", quantity, null, formatNullableQuantity(quantity)) : null;
+  const quantityAdjustment = canUpdate && item.type !== "container" && quantity !== null ? buildAdjustment("quantity", quantity, null, formatNullableQuantity(quantity)) : null;
   const chargesAdjustment = canUpdate && usesMax !== null && usesCurrent !== null ? buildAdjustment("charges", usesCurrent, usesMax, usesLabel) : null;
   const favoriteToggleState = buildOptionalDnd5eFavoriteToggleState(item.parent, canUpdate, isFavorite(item));
 
   const itemViewModel: Dnd5eInventoryItemViewModel = {
+    outOfStock: quantity === 0,
+    isContainer: item.type === "container",
     id: getItemId(item),
     sectionId,
     uuid: getItemUuid(item),
@@ -611,12 +616,12 @@ function buildItemViewModel(item: Dnd5eInventoryItem, sectionId: InventorySectio
     adjustments: [quantityAdjustment, chargesAdjustment].filter((adjustment): adjustment is Dnd5eInventoryAdjustmentViewModel => adjustment !== null),
     actions: {
       canUpdate,
-      canAdjustQuantity: canUpdate && quantity !== null,
+      canAdjustQuantity: canUpdate && item.type !== "container" && quantity !== null,
       canRecharge: canUpdate && item.hasRecharge === true && typeof uses?.rollRecharge === "function",
       canToggleEquipped: canUpdate && typeof equipped === "boolean",
       canToggleAttuned: canUpdate && attuned !== null,
       canTogglePrepared: canUpdate && typeof prepared === "boolean",
-      canMoveContainer: canUpdate && item.type !== "container",
+      canMoveContainer: canUpdate,
       canRemoveContainer: canUpdate && Boolean(getContainerId(item)),
       ...(favoriteToggleState.canToggleFavorite ? { canToggleFavorite: favoriteToggleState.canToggleFavorite } : {})
     },
@@ -806,6 +811,7 @@ function buildChildViewModel(item: Dnd5eInventoryItem): Dnd5eInventoryChildViewM
   const quantity = getNumber(system.quantity);
   const weight = formatWeight(getNumber(system.totalWeight) ?? getNumber(system.weight));
   return {
+    outOfStock: quantity === 0,
     id: getItemId(item),
     uuid: getItemUuid(item),
     name: item.name?.trim() || localize("POCKETFOUNDRY.Document.UnnamedItem", "Unnamed Item"),

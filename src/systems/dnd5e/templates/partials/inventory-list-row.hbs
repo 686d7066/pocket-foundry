@@ -1,10 +1,11 @@
-<article class="row inventory-list-row inventory-list-row-{{sectionId}} inventory-list-row-{{type}}" data-item-id="{{id}}" data-favorite-context data-state-key="inventory:{{id}}">
+<article class="row inventory-list-row inventory-list-row-{{sectionId}} inventory-list-row-{{type}}" data-out-of-stock="{{outOfStock}}" data-item-id="{{id}}" data-favorite-context data-state-key="inventory:{{id}}">
   {{#*inline "summary"}}
       <span class="item-icon" aria-hidden="true">
         {{#if icon}}<img src="{{icon}}" alt="">{{else}}{{iconText}}{{/if}}
       </span>
       <span class="row-title sheet-row-title">
         <strong>{{name}}</strong>
+        {{#if outOfStock}}<span class="pf-out-of-stock">{{localize 'POCKETFOUNDRY.DND5E.Inventory.Manage.OutOfStock'}}</span>{{/if}}
         <span>{{subtitle}}</span>
       </span>
       {{#each listCells}}
@@ -54,20 +55,34 @@
         <div class="inventory-children">
           <h3>{{localize 'DND5E.Contents'}}</h3>
           {{#each children}}
-            <button class="inventory-child-row" type="button" data-action="inventory-open-item" data-item-uuid="{{uuid}}" data-swipe-ignore>
+            <div class="pf-inventory-child-entry">
+            <button data-out-of-stock="{{outOfStock}}" class="inventory-child-row" type="button" data-action="inventory-open-item" data-item-uuid="{{uuid}}" data-swipe-ignore>
               <span class="inventory-child-name">{{name}}</span>
+              {{#if outOfStock}}<span class="pf-out-of-stock">{{localize 'POCKETFOUNDRY.DND5E.Inventory.Manage.OutOfStock'}}</span>{{/if}}
               <span class="inventory-child-subtitle">{{subtitle}}</span>
               <span class="inventory-child-value">{{localize 'DND5E.Quantity'}} {{quantityLabel}}</span>
               <span class="inventory-child-value">{{localize 'DND5E.Weight'}} {{weightLabel}}</span>
               <span class="inventory-child-value">{{usesLabel}}</span>
             </button>
+            {{#if ../actions.canUpdate}}
+              <div class="pf-inventory-child-actions">
+                <button type="button" data-action="inventory-manage-quantity" data-item-id="{{id}}" data-swipe-ignore>{{localize 'POCKETFOUNDRY.DND5E.Inventory.Manage.StockQuantity'}}</button>
+                <button type="button" data-action="inventory-manage-move" data-item-id="{{id}}" data-swipe-ignore>{{localize 'POCKETFOUNDRY.DND5E.Inventory.Manage.MoveTo'}}</button>
+                <button type="button" data-action="inventory-manage-delete" data-item-id="{{id}}" data-swipe-ignore>{{localize 'POCKETFOUNDRY.DND5E.Inventory.Manage.Delete'}}</button>
+              </div>
+            {{/if}}
+            </div>
           {{/each}}
         </div>
       {{/if}}
       <div class="inventory-detail-actions pf-detail-actions" aria-label="{{localize 'POCKETFOUNDRY.DND5E.Row.Controls' name=name}}">
         {{#if actions.canTogglePrepared}}<button class="inventory-toggle {{#if states.prepared}}active{{/if}}" type="button" data-action="inventory-toggle-prepared" data-item-id="{{id}}" aria-pressed="{{#if states.prepared}}true{{else}}false{{/if}}" data-swipe-ignore>{{localize 'DND5E.Prepared'}}</button>{{/if}}
         {{#if actions.canRecharge}}<button class="inventory-icon-toggle recharge" type="button" data-action="inventory-recharge" data-item-id="{{id}}" aria-label="{{localize 'POCKETFOUNDRY.DND5E.RechargeNamed' name=name}}" title="{{localize 'DND5E.Recharge'}}" data-swipe-ignore><i class="fa-solid fa-bolt" aria-hidden="true"></i></button>{{/if}}
-        {{#if actions.canRemoveContainer}}<button type="button" data-action="inventory-remove-container" data-item-id="{{id}}" data-swipe-ignore>{{localize 'POCKETFOUNDRY.Action.Remove'}}</button>{{/if}}
+        {{#if actions.canUpdate}}
+          <button type="button" data-action="inventory-manage-move" data-item-id="{{id}}" data-swipe-ignore>{{localize 'POCKETFOUNDRY.DND5E.Inventory.Manage.MoveTo'}}</button>
+          {{#if isContainer}}<button type="button" data-action="inventory-manage-edit-bag" data-item-id="{{id}}" data-swipe-ignore>{{localize 'POCKETFOUNDRY.DND5E.Inventory.Manage.EditBag'}}</button>{{/if}}
+          <button type="button" data-action="inventory-manage-delete" data-item-id="{{id}}" data-swipe-ignore>{{localize 'POCKETFOUNDRY.DND5E.Inventory.Manage.Delete'}}</button>
+        {{/if}}
       </div>
   {{/inline}}
   {{> "modules/pocket-foundry/templates/partials/expandable-detail-row.hbs"

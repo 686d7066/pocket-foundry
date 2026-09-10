@@ -43,6 +43,12 @@
     canClear=canClearSearch
     }}
 
+    {{#if canUpdate}}
+      <div class="pf-inventory-management-toolbar">
+        <button type="button" data-action="inventory-manage-add" data-swipe-ignore>{{localize 'POCKETFOUNDRY.DND5E.Inventory.Manage.Add'}}</button>
+        <button type="button" data-action="inventory-manage-new-bag" data-swipe-ignore>{{localize 'POCKETFOUNDRY.DND5E.Inventory.Manage.NewBag'}}</button>
+      </div>
+    {{/if}}
     <div class="inventory-list-view compact-panels" data-region="inventory-list-view">
       {{#each sections}}
         <section class="section sheet-group inventory-section" data-section="{{id}}">
