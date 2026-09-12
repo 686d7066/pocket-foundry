@@ -5,7 +5,7 @@
     <div class="sheet-status" data-region="inventory-status">
       <span>
         <b>{{status.encumbrance.label}}</b>
-        <em>Encumbrance</em>
+        <em>{{localize 'DND5E.Encumbrance'}}</em>
         <div class="meter"><span style="width:{{status.encumbrance.pct}}%"></span></div>
       </span>
       <button
@@ -14,8 +14,8 @@
         {{#if canUpdate}}data-action="inventory-open-currency-dialog" data-dialog-id="inventory-currency-dialog"{{else}}aria-disabled="true"{{/if}}
         data-swipe-ignore
       >
-        <b>Currency</b>
-        <span class="inventory-currency-values" aria-label="Currency totals">
+        <b>{{localize 'DND5E.Currency'}}</b>
+        <span class="inventory-currency-values" aria-label="{{localize 'POCKETFOUNDRY.DND5E.Inventory.CurrencyTotals'}}">
           {{#each status.currency.values}}
             <span class="inventory-currency-value" data-currency-id="{{id}}">
               <img src="{{icon}}" alt="{{name}}">
@@ -26,35 +26,38 @@
       </button>
       <span>
         <b>{{status.attunement.label}}</b>
-        <em>Attunement</em>
+        <em>{{localize 'DND5E.Attunement'}}</em>
       </span>
     </div>
 
     {{> "modules/pocket-foundry/templates/partials/pane-search-toolbar.hbs"
-    toolbarClass="inventory-toolbar"
-    searchClass="inventory-search"
+    toolbarClass="pane-search-toolbar inventory-toolbar"
+    searchClass="pane-search-field inventory-search"
     region="inventory-toolbar"
-    placeholder="Search inventory"
-    ariaLabel="Search inventory"
+    placeholder=(localize 'DND5E.InventorySearch')
+    ariaLabel=(localize 'DND5E.InventorySearch')
+    clearAriaLabel=(localize 'POCKETFOUNDRY.DND5E.Inventory.ClearSearch')
     clearAriaLabel="Clear inventory search"
     value=searchQuery
     pane="Inventory"
     canClear=canClearSearch
     }}
 
+    {{#if canUpdate}}
+      <div class="pf-inventory-management-toolbar">
+        <button type="button" data-action="inventory-manage-add" data-swipe-ignore>{{localize 'POCKETFOUNDRY.DND5E.Inventory.Manage.Add'}}</button>
+        <button type="button" data-action="inventory-manage-new-bag" data-swipe-ignore>{{localize 'POCKETFOUNDRY.DND5E.Inventory.Manage.NewBag'}}</button>
+      </div>
+    {{/if}}
     <div class="inventory-list-view compact-panels" data-region="inventory-list-view">
       {{#each sections}}
         <section class="section sheet-group inventory-section" data-section="{{id}}">
           <div class="section-heading sheet-group-heading inventory-section-heading">
             <h2>{{label}}</h2>
-            <span class="chip inventory-section-summary"><span>Weight</span><strong>{{weight}}</strong></span>
+            <span class="chip inventory-section-summary"><span>{{localize 'DND5E.Weight'}}</span><strong>{{weight}}</strong></span>
           </div>
-          <div class="sheet-table sheet-list inventory-list">
-            <div class="sheet-list-head inventory-list-head inventory-list-head-{{id}} dnd5e-table-head pf-list-schema pf-list-schema--icon-title-3meta-actions" aria-hidden="true">
-              <span>Name</span>
-              {{#each listColumns}}<span class="inventory-list-head-cell inventory-list-head-cell-{{id}}">{{label}}</span>{{/each}}
-              <span></span>
-            </div>
+          <div class="sheet-table sheet-list inventory-list" data-table-layout="icon-title-3meta-actions">
+            {{> "modules/pocket-foundry/systems/dnd5e/templates/partials/table-head.hbs" kind="inventory"}}
             {{#each items}}
               {{> "modules/pocket-foundry/systems/dnd5e/templates/partials/inventory-list-row.hbs" this}}
             {{/each}}
@@ -63,11 +66,11 @@
       {{/each}}
     </div>
 
-    <section id="inventory-currency-dialog" class="mock-dialog inventory-currency-dialog" aria-label="Adjust currency">
-      <button class="dialog-backdrop" type="button" data-action="inventory-close-number-dialog" aria-label="Close currency dialog"></button>
+    <section id="inventory-currency-dialog" class="mock-dialog inventory-currency-dialog" aria-label="{{localize 'POCKETFOUNDRY.DND5E.Inventory.AdjustCurrency'}}">
+      <button class="dialog-backdrop" type="button" data-action="inventory-close-number-dialog" aria-label="{{localize 'POCKETFOUNDRY.DND5E.Inventory.CloseCurrencyDialog'}}"></button>
       <div class="number-spinner inventory-currency-selector-panel" role="dialog" aria-modal="true">
-        <h2>Adjust Currency</h2>
-        <p>Choose new values for each coin type. Changes apply when you confirm.</p>
+        <h2>{{localize 'POCKETFOUNDRY.DND5E.Inventory.AdjustCurrencyTitle'}}</h2>
+        <p>{{localize 'POCKETFOUNDRY.DND5E.Inventory.AdjustCurrencyBody'}}</p>
         <div class="inventory-currency-grid" data-region="inventory-currency-grid">
           {{#each status.currency.values}}
             <section
@@ -81,7 +84,7 @@
               {{> "modules/pocket-foundry/templates/partials/number-adjust-dialog.hbs"
                 embeddedWheel=true
                 embeddedWheelClass="inventory-currency-wheel"
-                title="Adjust currency"
+                title="{{localize 'POCKETFOUNDRY.DND5E.Inventory.AdjustCurrency'}}"
                 wheelAriaLabel="Currency value"
                 selectAction="inventory-select-currency"
                 wheelSelectScope="wheel"
@@ -95,8 +98,8 @@
           {{/each}}
         </div>
         <div class="dialog-actions">
-          <button type="button" data-action="inventory-close-number-dialog">Cancel</button>
-          <button class="primary-action" type="button" data-action="inventory-apply-currency" data-swipe-ignore>Apply</button>
+          <button type="button" data-action="inventory-close-number-dialog">{{localize 'POCKETFOUNDRY.Action.Cancel'}}</button>
+          <button class="primary-action" type="button" data-action="inventory-apply-currency" data-swipe-ignore>{{localize 'POCKETFOUNDRY.Action.Apply'}}</button>
         </div>
       </div>
     </section>

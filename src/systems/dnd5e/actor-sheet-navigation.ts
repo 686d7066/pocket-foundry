@@ -1,4 +1,6 @@
+import { handleInventoryManagement } from "./inventory-management-ui.ts";
 import { getCollectionContents, getInitials, getNumber, getObject, getString } from "../../core/utils.ts";
+import { localizeSystemKey } from "../../core/localization.ts";
 import {
     createCharacterRoute,
     RouteView,
@@ -11,8 +13,9 @@ import { canViewDocument, canViewLimitedDocument, type FoundryUserLike } from ".
 import type {
     CharacterSheetActionContext,
     CharacterSheetActionResult,
+    CharacterSheetHeaderContent,
     CharacterSheetHeaderStat, CharacterSheetNavigationActor, CharacterSheetNavigationViewModel, CharacterSheetPaneItem, CharacterSheetPaneSpec,
-    CharacterSheetPaneTemplatePaths, CharacterSheetPaneViewModel, CharacterSheetVisualMetadata, PaneSwipeGesture, UnavailableCharacterSheetNavigationViewModel
+    CharacterSheetPaneViewModel, CharacterSheetVisualMetadata, CharacterSheetShellActionContext, PaneSwipeGesture, UnavailableCharacterSheetNavigationViewModel
 } from "../character-sheet-adapter.ts";
 import {
     buildDnd5eBiographyViewModel,
@@ -72,8 +75,10 @@ import {
     removeInventoryItemFromContainer,
     setInventoryCurrency,
     setInventoryFavorite,
+    setInventoryQuantity,
     toggleInventoryAttuned,
     toggleInventoryEquipped,
+    useInventoryItem,
     toggleInventoryPrepared,
     type Dnd5eInventoryModel
 } from "./inventory-view-model.ts";
@@ -108,22 +113,28 @@ const MAX_VERTICAL_DOMINANCE_RATIO = 0.72;
 const DND5E_SHEET_BANNER_IMAGE = "/systems/dnd5e/ui/official/banner-character-dark.webp";
 const DND5E_SHORT_REST_ROLLS_BY_ACTOR = new Map<string, unknown>();
 
-export const DND5E_PANE_TEMPLATE_PATHS: CharacterSheetPaneTemplatePaths = {
-  details: "modules/pocket-foundry/systems/dnd5e/templates/details.hbs",
-  inventory: "modules/pocket-foundry/systems/dnd5e/templates/inventory.hbs",
-  features: "modules/pocket-foundry/systems/dnd5e/templates/features.hbs",
-  spells: "modules/pocket-foundry/systems/dnd5e/templates/spells.hbs",
-  effects: "modules/pocket-foundry/systems/dnd5e/templates/effects.hbs",
-  biography: "modules/pocket-foundry/systems/dnd5e/templates/biography.hbs"
+export const DND5E_PANE_TEMPLATE_PATHS: Record<Dnd5eCharacterPane, string> = {
+  Favorites: "modules/pocket-foundry/templates/favorites.hbs",
+  Details: "modules/pocket-foundry/systems/dnd5e/templates/details.hbs",
+  Inventory: "modules/pocket-foundry/systems/dnd5e/templates/inventory.hbs",
+  Features: "modules/pocket-foundry/systems/dnd5e/templates/features.hbs",
+  Spells: "modules/pocket-foundry/systems/dnd5e/templates/spells.hbs",
+  Effects: "modules/pocket-foundry/systems/dnd5e/templates/effects.hbs",
+  Biography: "modules/pocket-foundry/systems/dnd5e/templates/biography.hbs"
 };
+export const DND5E_HEADER_DETAILS_PARTIAL = "modules/pocket-foundry/systems/dnd5e/templates/partials/header-details.hbs";
+export const DND5E_HEADER_DETAILS_DIALOGS_PARTIAL = "modules/pocket-foundry/systems/dnd5e/templates/partials/header-details-dialogs.hbs";
 export const DND5E_PANE_PARTIAL_PATHS = [
+  DND5E_HEADER_DETAILS_PARTIAL,
+  DND5E_HEADER_DETAILS_DIALOGS_PARTIAL,
   "modules/pocket-foundry/systems/dnd5e/templates/partials/details-skill-row.hbs",
   "modules/pocket-foundry/systems/dnd5e/templates/partials/details-tool-row.hbs",
   "modules/pocket-foundry/systems/dnd5e/templates/partials/effect-row.hbs",
   "modules/pocket-foundry/systems/dnd5e/templates/partials/feature-row.hbs",
   DND5E_FAVORITES_GROUP_PARTIAL,
   "modules/pocket-foundry/systems/dnd5e/templates/partials/inventory-list-row.hbs",
-  "modules/pocket-foundry/systems/dnd5e/templates/partials/spell-row.hbs"
+  "modules/pocket-foundry/systems/dnd5e/templates/partials/spell-row.hbs",
+  "modules/pocket-foundry/systems/dnd5e/templates/partials/table-head.hbs"
 ] as const;
 export const DND5E_STYLE_PATHS = ["modules/pocket-foundry/systems/dnd5e/styles/pocket-foundry-dnd5e.css"] as const;
 
@@ -343,7 +354,7 @@ function getCharacterSummary(actor: ActorSheetNavigationActor): string {
   const classSummary = getClassSummary(actor);
   const level = getNumber(details?.level);
 
-  const parts = [species, classSummary || (level !== null ? `Level ${level}` : "")].filter(Boolean);
+  const parts = [species, classSummary || (level !== null ? localizeSystemKey("DND5E.LevelNumber", "Level {level}", { level }) : "")].filter(Boolean);
   return parts.join(" ");
 }
 
@@ -357,7 +368,7 @@ function getClassSummary(actor: ActorSheetNavigationActor): string {
   return classItems
     .map(item => {
       const levels = getNumber(getObject(item.system)?.levels);
-      return `${item.name?.trim() || "Class"}${levels === null ? "" : ` ${levels}`}`;
+      return `${item.name?.trim() || localizeSystemKey("TYPES.Item.class", "Class")}${levels === null ? "" : ` ${levels}`}`;
     })
     .join(" / ");
 }
@@ -373,15 +384,15 @@ function getHeaderStats(actor: ActorSheetNavigationActor): ActorSheetHeaderStat[
   const stats: ActorSheetHeaderStat[] = [];
 
   const acValue = getNumber(ac?.value);
-  if (acValue !== null) stats.push({ id: "ac", label: "AC", value: String(acValue) });
+  if (acValue !== null) stats.push({ id: "ac", label: localizeSystemKey("DND5E.ArmorClass", "AC"), value: String(acValue) });
 
   const hpValue = getNumber(hp?.value);
   const hpMax = getNumber(hp?.max);
   if (hpValue !== null || hpMax !== null) {
-    stats.push({ id: "hp", label: "HP", value: String(hpValue ?? "-"), suffix: hpMax === null ? undefined : `/${hpMax}` });
+    stats.push({ id: "hp", label: localizeSystemKey("DND5E.HitPoints", "HP"), value: String(hpValue ?? "-"), suffix: hpMax === null ? undefined : `/${hpMax}` });
   }
 
-  stats.push({ id: "temp", label: "Temp", value: String(tempHp) });
+  stats.push({ id: "temp", label: localizeSystemKey("DND5E.HitPointsTempShort", "Temp"), value: String(tempHp) });
 
   return stats;
 }
@@ -390,12 +401,17 @@ function getActorItems(actor: ActorSheetNavigationActor): Array<{ name?: string;
   return getCollectionContents(actor.items) as Array<{ name?: string; type?: string; system?: Record<string, unknown> }>;
 }
 
+/**
+ * Dispatches dnd5e pane actions to the owning pane service while keeping the
+ * adapter boundary as the only place that knows concrete dnd5e action ids.
+ */
 export function runCharacterSheetPaneAction(options: CharacterSheetActionContext): CharacterSheetActionResult | Promise<CharacterSheetActionResult> {
   const actor = options.actor;
   const user = options.user;
   const data = options.data ?? {};
 
   switch (options.action) {
+    case "inventory-management-refresh": return { ok: true };
     case "details-toggle-inspiration":
       return toggleDetailsInspiration(actor, user);
     case "details-confirm-hp-delta":
@@ -427,6 +443,8 @@ export function runCharacterSheetPaneAction(options: CharacterSheetActionContext
       });
     case "inventory-confirm-quantity-delta":
       return adjustInventoryQuantity(actor, user, data.itemId ?? "", toNumber(data.delta));
+    case "inventory-confirm-set-quantity-delta":
+      return setInventoryQuantity(actor, user, data.itemId ?? "", toNumber(data.delta));
     case "inventory-confirm-charges-delta":
       return adjustInventoryRemainingUses(actor, user, data.itemId ?? "", toNumber(data.delta));
     case "inventory-confirm-currency":
@@ -439,6 +457,8 @@ export function runCharacterSheetPaneAction(options: CharacterSheetActionContext
       });
     case "inventory-toggle-equipped":
       return toggleInventoryEquipped(actor, user, data.itemId ?? "");
+    case "inventory-use":
+      return useInventoryItem(actor, user, data.itemId ?? "");
     case "inventory-toggle-attuned":
       return toggleInventoryAttuned(actor, user, data.itemId ?? "");
     case "inventory-toggle-prepared":
@@ -510,9 +530,205 @@ export function runCharacterSheetPaneAction(options: CharacterSheetActionContext
   }
 }
 
+/**
+ * Handles dnd5e-specific shell interactions that need UI state before adapter
+ * action execution.
+ */
+export async function handleDnd5eShellAction(options: CharacterSheetShellActionContext): Promise<boolean> {
+  if (await handleInventoryManagement(options)) return true;
+  const { element, target, event, action, helpers } = options;
+
+  if (action === "inventory-open-currency-dialog") {
+    consumeEvent(event);
+    const dialogId = target.dataset.dialogId || "inventory-currency-dialog";
+    helpers.setDialogOpen(dialogId, true);
+
+    const alignCurrencyWheels = (): void => {
+      const dialog = element.querySelector<HTMLElement>(`#${CSS.escape(dialogId)}`);
+      dialog?.querySelectorAll<HTMLElement>(".inventory-currency-trigger").forEach(trigger => {
+        const initial = Number(trigger.dataset.currencyInitialValue ?? "0");
+        const initialValue = Number.isFinite(initial) ? Math.max(0, Math.trunc(initial)) : 0;
+        const normalized = 0;
+        trigger.dataset.currencyValue = String(normalized);
+        const valueLabel = trigger.querySelector<HTMLElement>("strong");
+        if (valueLabel) valueLabel.textContent = String(initialValue);
+
+        const wheel = trigger.querySelector<HTMLElement>(".spinner-wheel");
+        if (!wheel) return;
+        wheel.dataset.wheelMin = String(-initialValue);
+        helpers.setNumberWheelValue(wheel, normalized);
+      });
+    };
+
+    if (typeof globalThis.requestAnimationFrame === "function") {
+      globalThis.requestAnimationFrame(() => {
+        globalThis.requestAnimationFrame(() => alignCurrencyWheels());
+      });
+    } else {
+      alignCurrencyWheels();
+    }
+    return true;
+  }
+
+  if (action === "inventory-select-currency") {
+    consumeEvent(event);
+    const wheel = target.closest<HTMLElement>(".spinner-wheel");
+    if (!wheel) return true;
+
+    wheel.querySelectorAll<HTMLElement>("button.selected").forEach(option => option.classList.remove("selected"));
+    target.classList.add("selected");
+
+    const trigger = wheel.closest<HTMLElement>(".inventory-currency-trigger");
+    if (!trigger) return true;
+
+    const selectedValue = Number(target.dataset.delta);
+    if (!Number.isFinite(selectedValue)) return true;
+    const normalized = Math.trunc(selectedValue);
+    wheel.dataset.wheelValue = String(normalized);
+    trigger.dataset.currencyValue = String(normalized);
+    return true;
+  }
+
+  if (action === "inventory-apply-currency") {
+    consumeEvent(event);
+    const dialog = element.querySelector<HTMLElement>("#inventory-currency-dialog");
+    if (!dialog) return true;
+
+    const data: Record<string, string> = {};
+    dialog.querySelectorAll<HTMLElement>(".inventory-currency-trigger[data-currency-id]").forEach(trigger => {
+      const currencyId = trigger.dataset.currencyId;
+      if (!currencyId) return;
+
+      const wheel = trigger.querySelector<HTMLElement>(".spinner-wheel");
+      const centered = wheel ? helpers.getCenteredNumberWheelOption(wheel) : null;
+      const selected = centered ?? wheel?.querySelector<HTMLElement>("button.selected");
+      if (!selected) return;
+
+      const selectedValue = Number(selected.dataset.delta);
+      if (!Number.isFinite(selectedValue)) return;
+      const normalized = Math.trunc(selectedValue);
+      const initial = Number(trigger.dataset.currencyInitialValue ?? "0");
+      const initialValue = Number.isFinite(initial) ? Math.max(0, Math.trunc(initial)) : 0;
+      const nextValue = Math.max(0, initialValue + normalized);
+
+      if (wheel) {
+        wheel.querySelectorAll<HTMLElement>("button.selected").forEach(option => option.classList.remove("selected"));
+        selected.classList.add("selected");
+      }
+
+      trigger.dataset.currencyValue = String(normalized);
+      data[currencyId] = String(nextValue);
+    });
+
+    await helpers.runAction("inventory-confirm-currency", {
+      data,
+      closeDialogs: true
+    });
+    return true;
+  }
+
+  if (action === "details-open-dialog") {
+    consumeEvent(event);
+    const dialogId = target.dataset.dialog === "hp" ? "hp-spinner" : target.dataset.dialog === "temp" ? "temp-spinner" : undefined;
+    helpers.setDialogOpen(dialogId, true);
+    return true;
+  }
+
+  if (action.endsWith("-confirm-rest")) {
+    consumeEvent(event);
+    const data = getDnd5eRestActionData(target);
+    await helpers.runAction(action, {
+      data,
+      closeDialogs: true,
+      onSuccess: () => {
+        if (data.restType === "short") helpers.clearTransientState();
+      }
+    });
+    return true;
+  }
+
+  if (action.endsWith("-roll-hit-die")) {
+    consumeEvent(event);
+    const data = getActionDataset(target);
+    if (!data.denomination) return true;
+
+    await helpers.runAction(action, {
+      data,
+      onSuccess: result => {
+        if (result.data?.["shortRestRoll"] !== undefined) helpers.setDialogOpen(`${getActionPrefix(action)}-short-rest-dialog`, true);
+      }
+    });
+    return true;
+  }
+
+  if (action.endsWith("-rest") && target.dataset.restType) {
+    consumeEvent(event);
+    const restType = target.dataset.restType === "long" ? "long" : "short";
+    if (restType === "short") helpers.clearTransientState();
+    helpers.setDialogOpen(`${getActionPrefix(action)}-${restType}-rest-dialog`, true);
+    return true;
+  }
+
+  if (action.includes("favorite") || action.includes("context")) {
+    helpers.closeFavoriteContextMenu();
+  }
+
+  return false;
+}
+
+export function shouldCloseDnd5eDialogsAfterAction(action: string): boolean {
+  return action.includes("-confirm-")
+    || action.includes("-use-")
+    || action.endsWith("-use")
+    || action.endsWith("-recharge")
+    || action.includes("-favorite")
+    || action.includes("-toggle-")
+    || action.endsWith("-end-concentration");
+}
+
 function toNumber(value: string | undefined): number {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function consumeEvent(event: Event): void {
+  event.preventDefault();
+  event.stopPropagation();
+}
+
+function getActionDataset(target: HTMLElement): Record<string, string> {
+  return Object.fromEntries(Object.entries(target.dataset).filter((entry): entry is [string, string] => typeof entry[1] === "string"));
+}
+
+function getActionPrefix(action: string): string {
+  return action.split("-", 1)[0] || "character";
+}
+
+function getDnd5eRestActionData(target: HTMLElement): Record<string, string> {
+  const dialog = target.closest<HTMLElement>(".mock-dialog");
+  const type = target.dataset.restType === "long" ? "long" : "short";
+  const getChecked = (name: string): boolean | undefined => {
+    const input = dialog?.querySelector<HTMLInputElement>(`input[name="${CSS.escape(name)}"]`);
+    return input ? input.checked : undefined;
+  };
+
+  if (type === "short") {
+    return {
+      restType: "short",
+      type,
+      dialog: "false",
+      autoHD: getChecked("autoHD") === true ? "true" : "false"
+    };
+  }
+
+  return {
+    restType: "long",
+    type,
+    dialog: "false",
+    newDay: getChecked("newDay") === false ? "false" : "true",
+    recoverTemp: getChecked("recoverTemp") === false ? "false" : "true",
+    recoverTempMax: getChecked("recoverTempMax") === false ? "false" : "true"
+  };
 }
 
 function buildDetailsRestConfig(data: Readonly<Record<string, string>>): Dnd5eDetailsRestConfig {
@@ -534,6 +750,9 @@ function buildDetailsRestConfig(data: Readonly<Record<string, string>>): Dnd5eDe
   };
 }
 
+/**
+ * Builds the active dnd5e pane view model and applies pane-specific template state.
+ */
 export async function buildCharacterSheetPaneViewModel(options: {
   pane: ActorSheetPaneId;
   actor: ActorSheetNavigationActor | null | undefined;
@@ -543,7 +762,12 @@ export async function buildCharacterSheetPaneViewModel(options: {
   const normalized = normalizeCharacterPane(options.pane);
   const actor = options.actor;
   const actorUuid = options.route.view === RouteView.Character || options.route.view === RouteView.OwnedDocument ? options.route.actorUuid : undefined;
-  const routeModel: CharacterSheetPaneViewModel = { pane: normalized, context: getDnd5ePaneContext(normalized), data: undefined };
+  const routeModel: CharacterSheetPaneViewModel = {
+    pane: normalized,
+    context: getDnd5ePaneContext(normalized),
+    templatePath: DND5E_PANE_TEMPLATE_PATHS[normalized],
+    data: undefined
+  };
   const searchQuery = getCharacterPaneSearchQuery(options.route, normalized);
 
   switch (normalized) {
@@ -582,6 +806,24 @@ export async function buildCharacterSheetPaneViewModel(options: {
   }
 
   return routeModel;
+}
+
+/**
+ * Builds dnd5e-owned persistent header chrome for the generic actor shell.
+ */
+export async function buildDnd5eHeaderViewModel(options: {
+  actor: ActorSheetNavigationActor | null | undefined;
+  user: FoundryUserLike;
+  route: CharacterRoute | OwnedDocumentRoute | MobileRoute;
+}): Promise<CharacterSheetHeaderContent> {
+  const actorUuid = options.route.view === RouteView.Character || options.route.view === RouteView.OwnedDocument ? options.route.actorUuid : undefined;
+  const data = addDnd5eDetailsTemplateState(await buildDnd5eDetailsViewModel({ actor: options.actor, user: options.user }), actorUuid);
+  return {
+    templatePath: DND5E_HEADER_DETAILS_PARTIAL,
+    dialogsTemplatePath: DND5E_HEADER_DETAILS_DIALOGS_PARTIAL,
+    headerClass: "header-stats-priority",
+    data
+  };
 }
 
 export function getDnd5ePaneContext(pane: ActorSheetPaneId): string {

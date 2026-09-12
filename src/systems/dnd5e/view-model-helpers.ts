@@ -1,4 +1,5 @@
 import { getCollectionContents, getNumber, getObject, getString } from "../../core/utils.ts";
+import { localizeSystemLabel } from "../../core/localization.ts";
 import { canUpdateDocument, canViewDocument, type FoundryUserLike, type PermissionCheckedDocument } from "../../services/permissions.ts";
 
 export function formatNumber(value: number): string {
@@ -169,10 +170,11 @@ export function toTitleCaseWords(value: string): string {
 
 export function getConfigLabel(labels: Dnd5eConfigLabelDictionary | undefined, key: string, fallback: string): string {
   const value = labels?.[key];
-  if (typeof value === "string") return getString(value) || fallback;
+  if (typeof value === "string") return localizeSystemLabel(getString(value), fallback);
 
   const labelObject = getObject(value);
-  return getString(labelObject?.label) || getString(labelObject?.name) || fallback;
+  const label = getString(labelObject?.label) || getString(labelObject?.name);
+  return label ? localizeSystemLabel(label, fallback) : fallback;
 }
 
 export function mapLabeledValueList(value: string, labels: Dnd5eConfigLabelDictionary | undefined): string {

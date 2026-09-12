@@ -3,12 +3,12 @@
 {{else}}
   <section class="content sheet-dense effects-pane" data-region="effects-pane" data-swipe-region="character-pane">
     {{> "modules/pocket-foundry/templates/partials/pane-search-toolbar.hbs"
-      toolbarClass="effects-toolbar"
-      searchClass="effects-search"
+      toolbarClass="pane-search-toolbar effects-toolbar"
+      searchClass="pane-search-field effects-search"
       region="effects-toolbar"
-      placeholder="Search effects"
-      ariaLabel="Search effects"
-      clearAriaLabel="Clear effect search"
+      placeholder=(localize 'DND5E.EffectsSearch')
+      ariaLabel=(localize 'DND5E.EffectsSearch')
+      clearAriaLabel=(localize 'POCKETFOUNDRY.DND5E.Effects.ClearSearch')
       value=searchQuery
       pane="Effects"
       canClear=canClearSearch
@@ -21,12 +21,8 @@
             <h2>{{label}}</h2>
             {{#if info}}<span class="chip warn">{{info}}</span>{{/if}}
           </div>
-          <div class="sheet-table sheet-list effects-list">
-            <div class="sheet-list-head effects-list-head dnd5e-table-head pf-list-schema pf-list-schema--icon-title-source-actions" aria-hidden="true">
-              <span>Name</span>
-              <span>Source</span>
-              <span></span>
-            </div>
+          <div class="sheet-table sheet-list effects-list" data-table-layout="icon-title-source-actions">
+            {{> "modules/pocket-foundry/systems/dnd5e/templates/partials/table-head.hbs" kind="effects"}}
             {{#each effects}}
               {{> "modules/pocket-foundry/systems/dnd5e/templates/partials/effect-row.hbs" this}}
             {{/each}}
@@ -37,7 +33,7 @@
       {{#if showConditions}}
         <section class="section sheet-group effects-section effects-conditions-section" data-section="conditions" data-system-category="conditions">
           <div class="section-heading sheet-group-heading effects-section-heading">
-            <h2>Conditions</h2>
+            <h2>{{localize 'DND5E.Conditions'}}</h2>
           </div>
           {{#if hasConditions}}
             <div class="condition-grid effects-condition-grid">
@@ -64,7 +60,7 @@
               {{/each}}
             </div>
           {{else}}
-            {{> "modules/pocket-foundry/templates/partials/empty-state.hbs" title="No Conditions" body="Condition types appear here when the dnd5e system exposes them."}}
+            {{> "modules/pocket-foundry/templates/partials/empty-state.hbs" title=(localize 'POCKETFOUNDRY.DND5E.Effects.NoConditions.Title') body=(localize 'POCKETFOUNDRY.DND5E.Effects.NoConditions.Body')}}
           {{/if}}
         </section>
       {{/if}}

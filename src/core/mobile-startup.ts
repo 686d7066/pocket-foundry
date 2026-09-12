@@ -1,5 +1,6 @@
 import { booleanLocalStorageCodec, createLocalStorageKey, readLocalStorage, writeLocalStorage, type LocalStorageKey } from "../services/local-storage.ts";
 import { getFoundryRuntime } from "./foundry-globals.ts";
+import { localize } from "./localization.ts";
 import { isProbablyMobileClient } from "./mobile-detection.ts";
 import type { MobileShellController } from "./mobile-shell/controller.ts";
 import { getMobileViewEnabled, setMobileViewEnabled } from "./settings.ts";
@@ -36,7 +37,7 @@ function markPromptedForMobileView(): void {
  * intentionally suppressed.
  */
 async function requestMobileViewPreference(): Promise<boolean> {
-  const promptMessage = "Use Pocket Foundry's mobile view for this user?";
+  const promptMessage = localize("POCKETFOUNDRY.MobileView.Prompt.Body", "Use Pocket Foundry's mobile view for this user?");
   return showInAppMobileViewPrompt(promptMessage);
 }
 
@@ -62,14 +63,14 @@ function showInAppMobileViewPrompt(message: string): Promise<boolean> {
 
     const dialog = globalThis.document.createElement("section");
     dialog.className = "mock-dialog confirm-dialog open";
-    dialog.setAttribute("aria-label", "Pocket Foundry mobile view");
+    dialog.setAttribute("aria-label", localize("POCKETFOUNDRY.MobileView.Prompt.AriaLabel", "Pocket Foundry mobile view"));
     dialog.dataset.prompt = "mobile-view";
 
     const backdrop = globalThis.document.createElement("button");
     backdrop.className = "dialog-backdrop";
     backdrop.type = "button";
     backdrop.dataset.action = "mobile-view-cancel";
-    backdrop.setAttribute("aria-label", "Keep desktop mode");
+    backdrop.setAttribute("aria-label", localize("POCKETFOUNDRY.MobileView.Prompt.KeepDesktopAriaLabel", "Keep desktop mode"));
     dialog.append(backdrop);
 
     const panel = globalThis.document.createElement("div");
@@ -78,7 +79,7 @@ function showInAppMobileViewPrompt(message: string): Promise<boolean> {
     panel.setAttribute("aria-modal", "true");
 
     const title = globalThis.document.createElement("h2");
-    title.textContent = "Mobile View";
+    title.textContent = localize("POCKETFOUNDRY.Settings.MobileView.Label", "Mobile View");
     const body = globalThis.document.createElement("p");
     body.textContent = message;
 
@@ -88,13 +89,13 @@ function showInAppMobileViewPrompt(message: string): Promise<boolean> {
     const cancel = globalThis.document.createElement("button");
     cancel.type = "button";
     cancel.dataset.action = "mobile-view-cancel";
-    cancel.textContent = "Keep Desktop";
+    cancel.textContent = localize("POCKETFOUNDRY.MobileView.Prompt.KeepDesktop", "Keep Desktop");
 
     const confirm = globalThis.document.createElement("button");
     confirm.type = "button";
     confirm.className = "primary-action";
     confirm.dataset.action = "mobile-view-confirm";
-    confirm.textContent = "Use Mobile View";
+    confirm.textContent = localize("POCKETFOUNDRY.MobileView.Prompt.UseMobileView", "Use Mobile View");
 
     actions.append(cancel, confirm);
     panel.append(title, body, actions);

@@ -2,12 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
-## [14.10.1] - dev
+## [14.11.0] - 18-enable-users-managing-their-inventory
 
-- Shared views work without a supported system.
-- Existing search scope is preserved.
-- Builds exclude source files.
-- Generated adapter code uses CRLF.
+- Create, rename and delete bags.
+- Move items between bags and main inventory, with nesting safeguards.
+- Add world/compendium items with an initial quantity.
+- Explicit deletion confirmation with choices for contained items.
+- Muted zero-quantity items with “Out of stock” and usable quantity controls.
 
 ## [14.10.0] - Using generated Foundry VTT types for type safety
 

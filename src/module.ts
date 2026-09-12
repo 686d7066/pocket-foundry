@@ -1,4 +1,4 @@
-import { getFoundryRuntime } from "./core/foundry-globals.ts";
+import { getFoundryHandlebars, getFoundryRuntime } from "./core/foundry-globals.ts";
 import { createMobileShellController } from "./core/mobile-shell/controller.ts";
 import { handleReadyMobileLifecycle } from "./core/mobile-startup.ts";
 import { registerMobileViewSetting } from "./core/settings.ts";
@@ -33,6 +33,7 @@ const BASE_TEMPLATE_PATHS = [
   `${TEMPLATE_ROOT}/partials/fillable-blips.hbs`,
   `${TEMPLATE_ROOT}/partials/meter.hbs`,
   `${TEMPLATE_ROOT}/partials/number-adjust-dialog.hbs`,
+  `${TEMPLATE_ROOT}/partials/number-wheel.hbs`,
   `${TEMPLATE_ROOT}/partials/pane-search-toolbar.hbs`,
   `${TEMPLATE_ROOT}/partials/pane-unavailable.hbs`,
   `${TEMPLATE_ROOT}/partials/pane-rail.hbs`,
@@ -80,12 +81,12 @@ const mobileShell = createMobileShellController();
  * Loads all Pocket Foundry Handlebars templates and partials through Foundry.
  */
 export async function loadPocketFoundryTemplates(): Promise<void> {
-  const runtime = getFoundryRuntime();
-  if (!runtime.loadTemplates) {
+  const handlebars = getFoundryHandlebars();
+  if (!handlebars.loadTemplates) {
     throw new Error(`${MODULE_ID} cannot load templates before Foundry's template loader is available.`);
   }
 
-  await runtime.loadTemplates(resolveTemplatePaths());
+  await handlebars.loadTemplates(resolveTemplatePaths());
 }
 
 function ensureAdapterStylesLoaded(): void {

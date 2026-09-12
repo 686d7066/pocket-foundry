@@ -12,7 +12,7 @@ root:
 technology:
   typescript:
     file: technology/typescript.md
-    description: TypeScript source, strict typing, imports, and JSDoc standards.
+    description: TypeScript source, strict typing, imports, JSDoc, and maintainability standards.
   foundryvtt:
     file: technology/foundryvtt.md
     description: FoundryVTT v14 API, document, permission, and system integration standards.
@@ -28,6 +28,12 @@ technology:
   npm-build:
     file: technology/npm-build.md
     description: npm, tsx, esbuild, and generated build output standards.
+  error-handling:
+    file: technology/error-handling.md
+    description: Failure handling, notifications, logging, async handlers, and graceful degradation.
+  security:
+    file: technology/security.md
+    description: Data validation, safe rendering, storage, route, logging, and permission standards.
 
 architecture:
   system-boundary:
@@ -45,6 +51,9 @@ architecture:
   system-adapters:
     file: architecture/system-adapters.md
     description: Rules for src/systems adapter contracts and concrete system folders.
+  lifecycle:
+    file: architecture/lifecycle.md
+    description: Foundry hook, DOM listener, controller, async update, and teardown standards.
 
 systems:
   dnd5e:
@@ -63,3 +72,6 @@ repository:
   references:
     file: repository/references.md
     description: Rules for the read-only references directory.
+  assets:
+    file: repository/assets.md
+    description: Static asset placement, ownership, generated output, optimization, and review rules.

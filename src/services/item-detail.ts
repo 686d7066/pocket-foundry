@@ -1,8 +1,10 @@
 import type { foundry } from "fvtt-types";
-import { getFoundryRuntime, type FoundryDataShape } from "../core/foundry-globals.ts";
+import { getFoundryTextEditor, getFoundryRuntime, type FoundryDataShape } from "../core/foundry-globals.ts";
+import { localize } from "../core/localization.ts";
 import { getObject, getString } from "../core/utils.ts";
 import { enrichHtml } from "./rich-text-enrichment.ts";
 import { canViewDocument, type FoundryDocumentMutationApi, type FoundryUserLike, type PermissionCheckedDocument } from "./permissions.ts";
+import { getSystemTermLabel } from "../systems/character-sheet-adapter-registry.ts";
 
 /**
  * Minimal resolved item document shape used by mobile search detail routes.
@@ -22,8 +24,8 @@ export type ItemDetailDocumentLike = PermissionCheckedDocument
  */
 export type ItemDetailUnavailableViewModel = {
   available: false;
-  title: "Unavailable document";
-  description: "This document is no longer available or you do not have permission to view it.";
+  title: string;
+  description: string;
 };
 
 /**
@@ -79,7 +81,7 @@ export async function buildItemDetailViewModel(
   return {
     available: true,
     uuid: document.uuid ?? documentUuid,
-    name: getString(document.name) || "Item",
+    name: getString(document.name) || localize("POCKETFOUNDRY.Document.Item", "Item"),
     typeLabel: getItemTypeLabel(document.type),
     source,
     icon: document.img ?? null,
@@ -97,18 +99,19 @@ function canViewItemDetailDocument(document: ItemDetailDocumentLike, user: Found
 
 function createFoundryItemDetailEnvironment(): ItemDetailEnvironment {
   const runtime = getFoundryRuntime();
+  const textEditor = getFoundryTextEditor();
   return {
     user: runtime.game?.user,
     fromUuid: runtime.foundry?.utils?.fromUuid,
-    enrichHTML: runtime.TextEditor?.enrichHTML?.bind(runtime.TextEditor)
+    enrichHTML: textEditor?.enrichHTML?.bind(textEditor)
   };
 }
 
 function createUnavailableItemDetailViewModel(): ItemDetailUnavailableViewModel {
   return {
     available: false,
-    title: "Unavailable document",
-    description: "This document is no longer available or you do not have permission to view it."
+    title: localize("POCKETFOUNDRY.Document.Unavailable.Title", "Unavailable document"),
+    description: localize("POCKETFOUNDRY.Document.Unavailable.Body", "This document is no longer available or you do not have permission to view it.")
   };
 }
 
@@ -147,35 +150,44 @@ function getItemDescription(system: Record<string, unknown> | null): string {
   );
 }
 
+/**
+ * Builds high-level item metadata chips using active-system terminology.
+ */
 function buildItemChips(document: ItemDetailDocumentLike, source: string | null): Array<{ id: string; label: string; value: string }> {
   const chips = [
-    { id: "type", label: "Type", value: getItemTypeLabel(document.type) },
-    source ? { id: "source", label: isCompendiumUuid(document.uuid) ? "Pack" : "Source", value: source } : null
+    { id: "type", label: getSystemTermLabel("itemType"), value: getItemTypeLabel(document.type) },
+    source ? { id: "source", label: isCompendiumUuid(document.uuid) ? localize("POCKETFOUNDRY.ItemDetail.Pack", "Pack") : getSystemTermLabel("source"), value: source } : null
   ];
 
   return chips.filter((chip): chip is { id: string; label: string; value: string } => Boolean(chip?.value));
 }
 
+/**
+ * Builds generic item system-data fields using active-system terminology.
+ */
 function buildItemFields(system: Record<string, unknown> | null): Array<{ label: string; value: string }> {
   const fields = [
-    { label: "Level", value: getSpellLevelLabel(getPath(system, ["level"])) },
-    { label: "School", value: getString(getPath(system, ["school"])) },
-    { label: "Activation", value: getActivityLabel(getPath(system, ["activation"])) },
-    { label: "Range", value: getActivityLabel(getPath(system, ["range"])) },
-    { label: "Target", value: getActivityLabel(getPath(system, ["target"])) },
-    { label: "Duration", value: getActivityLabel(getPath(system, ["duration"])) },
-    { label: "Uses", value: getUsesLabel(getPath(system, ["uses"])) },
-    { label: "Quantity", value: getDisplayValue(getPath(system, ["quantity"])) },
-    { label: "Weight", value: getDisplayValue(getPath(system, ["weight"])) },
-    { label: "Price", value: getPriceLabel(getPath(system, ["price"])) }
+    { label: getSystemTermLabel("level"), value: getSpellLevelLabel(getPath(system, ["level"])) },
+    { label: getSystemTermLabel("school"), value: getString(getPath(system, ["school"])) },
+    { label: getSystemTermLabel("activation"), value: getActivityLabel(getPath(system, ["activation"])) },
+    { label: getSystemTermLabel("range"), value: getActivityLabel(getPath(system, ["range"])) },
+    { label: getSystemTermLabel("target"), value: getActivityLabel(getPath(system, ["target"])) },
+    { label: getSystemTermLabel("duration"), value: getActivityLabel(getPath(system, ["duration"])) },
+    { label: getSystemTermLabel("uses"), value: getUsesLabel(getPath(system, ["uses"])) },
+    { label: getSystemTermLabel("quantity"), value: getDisplayValue(getPath(system, ["quantity"])) },
+    { label: getSystemTermLabel("weight"), value: getDisplayValue(getPath(system, ["weight"])) },
+    { label: getSystemTermLabel("price"), value: getPriceLabel(getPath(system, ["price"])) }
   ];
 
   return fields.filter(field => Boolean(field.value));
 }
 
+/**
+ * Formats spell level data with the active system's cantrip label.
+ */
 function getSpellLevelLabel(value: unknown): string {
   if (typeof value !== "number" || !Number.isFinite(value)) return "";
-  return value === 0 ? "Cantrip" : String(value);
+  return value === 0 ? getSystemTermLabel("cantrip") : String(value);
 }
 
 function getActivityLabel(value: unknown): string {
@@ -213,13 +225,13 @@ function getPriceLabel(value: unknown): string {
 
 function getDisplayValue(value: unknown): string {
   if (typeof value === "number" && Number.isFinite(value)) return String(value);
-  if (typeof value === "boolean") return value ? "Yes" : "No";
+  if (typeof value === "boolean") return value ? localize("POCKETFOUNDRY.Common.Yes", "Yes") : localize("POCKETFOUNDRY.Common.No", "No");
   return getString(value);
 }
 
 function getItemTypeLabel(type: string | undefined): string {
   const value = getString(type);
-  if (!value) return "Item";
+  if (!value) return localize("POCKETFOUNDRY.Document.Item", "Item");
   return value
     .split(/[-_\s]+/)
     .filter(Boolean)

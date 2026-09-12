@@ -1,4 +1,5 @@
 import { getInitials } from "../core/utils.ts";
+import { localize } from "../core/localization.ts";
 import { cloneRoute, RouteView, type MobileRoute } from "../router/routes.ts";
 import { createDocumentLookupService, type DocumentLookupEnvironment, type DocumentLookupService } from "./document-lookup.ts";
 import { RECENT_ROUTES_SETTING } from "../core/settings.ts";
@@ -20,7 +21,7 @@ export type RecentRouteRowViewModel = {
   subtitle: string;
   icon: string | null;
   iconText: string;
-  actionLabel: "Open" | "Read" | "Search";
+  actionLabel: string;
   lastOpenedLabel: string;
   route: MobileRoute;
 };
@@ -175,8 +176,8 @@ async function buildRecentRouteRow(record: RecentRouteRecord, lookup: DocumentLo
         documentUuid: record.route.actorUuid,
         expectedType: "character",
         kind: "character",
-        subtitle: "Character",
-        actionLabel: "Open"
+        subtitle: localize("POCKETFOUNDRY.Document.Character", "Character"),
+        actionLabel: localize("POCKETFOUNDRY.Action.Open", "Open")
       });
     case RouteView.OwnedDocument:
       return buildOwnedDocumentRow(record.route, record.lastOpened, lookup);
@@ -191,7 +192,7 @@ async function buildRecentRouteRow(record: RecentRouteRecord, lookup: DocumentLo
         expectedType: record.route.documentType === "unknown" ? undefined : record.route.documentType,
         kind: getRecentKindForDocumentType(record.route.documentType),
         subtitle: record.route.source ? `${getDocumentTypeLabel(record.route.documentType)} - ${record.route.source}` : getDocumentTypeLabel(record.route.documentType),
-        actionLabel: record.route.documentType === "journal-page" ? "Read" : "Open"
+        actionLabel: record.route.documentType === "journal-page" ? localize("POCKETFOUNDRY.Action.Read", "Read") : localize("POCKETFOUNDRY.Action.Open", "Open")
       });
     default:
       return null;
@@ -199,7 +200,7 @@ async function buildRecentRouteRow(record: RecentRouteRecord, lookup: DocumentLo
 }
 
 async function buildOwnedDocumentRow(route: Extract<MobileRoute, { view: RouteView.OwnedDocument }>, lastOpened: number, lookup: DocumentLookupService | null): Promise<RecentRouteRowViewModel | null> {
-  if (!lookup) return createFallbackRow(route, lastOpened, "Character Item", "Character Item", "Open");
+  if (!lookup) return createFallbackRow(route, lastOpened, localize("POCKETFOUNDRY.Route.CharacterItem", "Character Item"), localize("POCKETFOUNDRY.Route.CharacterItem", "Character Item"), localize("POCKETFOUNDRY.Action.Open", "Open"), "item");
 
   const [actor, document] = await Promise.all([
     lookup.lookupByUuid(route.actorUuid),
@@ -212,10 +213,10 @@ async function buildOwnedDocumentRow(route: Extract<MobileRoute, { view: RouteVi
     kind: "item",
     rowClass: getRecentRowClass("item"),
     title: document.name,
-    subtitle: `${document.displayType} - ${actor.name}`,
+    subtitle: localize("POCKETFOUNDRY.Format.TypeSource", "{type} - {source}", { type: document.displayType, source: actor.name }),
     icon: document.icon,
     iconText: getInitials(document.name, "I"),
-    actionLabel: "Open",
+    actionLabel: localize("POCKETFOUNDRY.Action.Open", "Open"),
     lastOpenedLabel: formatLastOpened(lastOpened),
     route: cloneRoute(route)
   };
@@ -223,7 +224,14 @@ async function buildOwnedDocumentRow(route: Extract<MobileRoute, { view: RouteVi
 
 async function buildJournalRow(route: Extract<MobileRoute, { view: RouteView.Journal }>, lastOpened: number, lookup: DocumentLookupService | null): Promise<RecentRouteRowViewModel | null> {
   if (!route.entryUuid) return null;
-  if (!lookup) return createFallbackRow(route, lastOpened, route.pageUuid ? "Journal Page" : "Journal Entry", route.pageUuid ? "Journal Page" : "Journal Entry", route.pageUuid ? "Read" : "Open");
+  if (!lookup) return createFallbackRow(
+    route,
+    lastOpened,
+    route.pageUuid ? localize("POCKETFOUNDRY.Document.JournalPage", "Journal Page") : localize("POCKETFOUNDRY.Document.JournalEntry", "Journal Entry"),
+    route.pageUuid ? localize("POCKETFOUNDRY.Document.JournalPage", "Journal Page") : localize("POCKETFOUNDRY.Document.JournalEntry", "Journal Entry"),
+    route.pageUuid ? localize("POCKETFOUNDRY.Action.Read", "Read") : localize("POCKETFOUNDRY.Action.Open", "Open"),
+    route.pageUuid ? "journal-page" : "journal-entry"
+  );
 
   const entry = await lookup.lookupByUuid(route.entryUuid);
   if (!entry.available || entry.documentType !== "journal-entry") return null;
@@ -234,10 +242,10 @@ async function buildJournalRow(route: Extract<MobileRoute, { view: RouteView.Jou
       kind: "journal-entry",
       rowClass: getRecentRowClass("journal-entry"),
       title: entry.name,
-      subtitle: "Journal Entry",
+      subtitle: localize("POCKETFOUNDRY.Document.JournalEntry", "Journal Entry"),
       icon: entry.icon,
       iconText: getInitials(entry.name, "J"),
-      actionLabel: "Open",
+      actionLabel: localize("POCKETFOUNDRY.Action.Open", "Open"),
       lastOpenedLabel: formatLastOpened(lastOpened),
       route: cloneRoute(route)
     };
@@ -251,10 +259,10 @@ async function buildJournalRow(route: Extract<MobileRoute, { view: RouteView.Jou
     kind: "journal-page",
     rowClass: getRecentRowClass("journal-page"),
     title: page.name,
-    subtitle: `Journal Page - ${entry.name}`,
+    subtitle: localize("POCKETFOUNDRY.Format.TypeSource", "{type} - {source}", { type: localize("POCKETFOUNDRY.Document.JournalPage", "Journal Page"), source: entry.name }),
     icon: page.icon,
     iconText: getInitials(page.name, "P"),
-    actionLabel: "Read",
+    actionLabel: localize("POCKETFOUNDRY.Action.Read", "Read"),
     lastOpenedLabel: formatLastOpened(lastOpened),
     route: cloneRoute(route)
   };
@@ -268,7 +276,7 @@ async function buildDocumentBackedRow(options: {
   expectedType?: string;
   kind: RecentRouteRowViewModel["kind"];
   subtitle: string;
-  actionLabel: "Open" | "Read";
+  actionLabel: string;
 }): Promise<RecentRouteRowViewModel | null> {
   if (!options.lookup) return createFallbackRow(options.route, options.lastOpened, options.subtitle, options.subtitle, options.actionLabel);
 
@@ -295,12 +303,14 @@ function createFallbackRow(
   lastOpened: number,
   title: string,
   subtitle: string,
-  actionLabel: "Open" | "Read" | "Search"
+  actionLabel: string,
+  kind?: RecentRouteRowViewModel["kind"]
 ): RecentRouteRowViewModel {
+  const rowKind = kind ?? getRecentKindFromSubtitle(subtitle);
   return {
     id: getRecentRouteId(route),
-    kind: getRecentKindFromSubtitle(subtitle),
-    rowClass: getRecentRowClass(getRecentKindFromSubtitle(subtitle)),
+    kind: rowKind,
+    rowClass: getRecentRowClass(rowKind),
     title,
     subtitle,
     icon: null,
@@ -440,15 +450,15 @@ function isMobileRoute(value: unknown): value is MobileRoute {
 function getDocumentTypeLabel(documentType: Extract<MobileRoute, { view: RouteView.DocumentDetail }>["documentType"]): string {
   switch (documentType) {
     case "character":
-      return "Character";
+      return localize("POCKETFOUNDRY.Document.Character", "Character");
     case "item":
-      return "Item";
+      return localize("POCKETFOUNDRY.Document.Item", "Item");
     case "journal-entry":
-      return "Journal Entry";
+      return localize("POCKETFOUNDRY.Document.JournalEntry", "Journal Entry");
     case "journal-page":
-      return "Journal Page";
+      return localize("POCKETFOUNDRY.Document.JournalPage", "Journal Page");
     case "unknown":
-      return "Document";
+      return localize("POCKETFOUNDRY.Document.Generic", "Document");
   }
 }
 

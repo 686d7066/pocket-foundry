@@ -1,0 +1,29 @@
+{{#unless unavailable}}
+  {{> "modules/pocket-foundry/templates/partials/number-adjust-dialog.hbs"
+    dialogId="hp-spinner"
+    dialogAriaLabel="Adjust hit points"
+    closeAction="details-close-dialog"
+    title=(localize 'POCKETFOUNDRY.DND5E.Details.AdjustHP')
+    description="Choose how much to add or subtract."
+    wheelAriaLabel="HP adjustment amount"
+    options=deltaOptions
+    selectAction="details-select-delta"
+    centerZeroLabel=true
+    confirmActionPrefix="details-confirm"
+    confirmActionMiddle="hp"
+  }}
+
+  {{> "modules/pocket-foundry/templates/partials/number-adjust-dialog.hbs"
+    dialogId="temp-spinner"
+    dialogAriaLabel="Adjust temporary hit points"
+    closeAction="details-close-dialog"
+    title=(localize 'POCKETFOUNDRY.DND5E.Details.AdjustTempHP')
+    description="Choose how much to add or subtract."
+    wheelAriaLabel="Temporary HP amount"
+    options=deltaOptions
+    selectAction="details-select-delta"
+    centerZeroLabel=true
+    confirmActionPrefix="details-confirm"
+    confirmActionMiddle="temp-hp"
+  }}
+{{/unless}}

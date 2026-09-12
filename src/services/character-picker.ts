@@ -1,5 +1,6 @@
 import type { foundry } from "fvtt-types";
 import type { FoundryDataShape } from "../core/foundry-globals.ts";
+import { localize } from "../core/localization.ts";
 import {
   canUpdateDocument,
   canViewDocument,
@@ -11,6 +12,7 @@ import {
   type PermissionCheckedDocument
 } from "./permissions.ts";
 import { getCollectionContents, getInitials, getNumber, getObject, getString } from "../core/utils.ts";
+import { getSystemTermLabel } from "../systems/character-sheet-adapter-registry.ts";
 
 /**
  * Minimal actor shape needed by the character picker view model.
@@ -49,15 +51,17 @@ export type CharacterPickerChip = {
 export type CharacterPickerRow = {
   uuid: string;
   name: string;
-  typeLabel: "Character";
+  typeLabel: string;
   iconText: string;
   image: string | null;
   limited: boolean;
   subtitle: string;
   summary: string;
-  ownershipLabel: "Owner" | "Observer" | "Limited";
+  ownershipLabel: string;
   showHeaderStats: boolean;
+  acLabel: string;
   acValue: string;
+  hpLabel: string;
   hpValue: string;
   chips: CharacterPickerChip[];
   favorite: boolean;
@@ -90,10 +94,10 @@ export type CharacterPickerFolderTreeNode = {
  * View model rendered by the character picker template.
  */
 export type CharacterPickerViewModel = {
-  label: "Characters";
-  heading: "Character Picker";
-  emptyTitle: "No Characters Available";
-  emptyBody: "No observable player characters are available for this user.";
+  label: string;
+  heading: string;
+  emptyTitle: string;
+  emptyBody: string;
   searchQuery: string;
   canClearSearch: boolean;
   favorites: CharacterPickerRow[];
@@ -137,10 +141,10 @@ export function buildCharacterPickerViewModel(environment: CharacterPickerEnviro
   const ungroupedCharacters = characters.filter(character => character.folderGroupKey === "ungrouped");
 
   return {
-    label: "Characters",
-    heading: "Character Picker",
-    emptyTitle: "No Characters Available",
-    emptyBody: "No observable player characters are available for this user.",
+    label: localize("POCKETFOUNDRY.Route.Characters", "Characters"),
+    heading: localize("POCKETFOUNDRY.CharacterPicker.Heading", "Character Picker"),
+    emptyTitle: localize("POCKETFOUNDRY.CharacterPicker.Empty.Title", "No Characters Available"),
+    emptyBody: localize("POCKETFOUNDRY.CharacterPicker.Empty.Body", "No observable player characters are available for this user."),
     searchQuery,
     canClearSearch: searchQuery.length > 0,
     favorites,
@@ -160,20 +164,22 @@ function canListCharacter(actor: CharacterPickerActor, user: FoundryUserLike): b
 }
 
 function buildCharacterPickerRow(actor: CharacterPickerActor, user: FoundryUserLike, favoriteActorUuids: Set<string>): CharacterPickerRow {
-  const name = actor.name?.trim() || "Unnamed Character";
+  const name = actor.name?.trim() || localize("POCKETFOUNDRY.Character.Unnamed", "Unnamed Character");
   const canViewFullSheet = canViewDocument(actor, user);
   const summary = canViewFullSheet ? getCharacterSummary(actor) : "";
   const classSummary = canViewFullSheet ? getClassSummary(actor) : "";
-  const ownershipLabel = canViewFullSheet ? (isOwner(actor, user) ? "Owner" : "Observer") : "Limited";
+  const ownershipLabel = canViewFullSheet
+    ? (isOwner(actor, user) ? localize("POCKETFOUNDRY.Permission.Owner", "Owner") : localize("POCKETFOUNDRY.Permission.Observer", "Observer"))
+    : localize("POCKETFOUNDRY.Permission.Limited", "Limited");
   const folderInfo = getCharacterFolderInfo(actor);
   const actorUuid = actor.uuid ?? (actor.id ? `Actor.${actor.id}` : "");
   const headerStats = canViewFullSheet ? getCharacterHeaderStats(actor) : { ac: "", hp: "" };
-  const subtitle = canViewFullSheet ? (classSummary || summary || "Character") : "";
+  const subtitle = canViewFullSheet ? (classSummary || summary || localize("POCKETFOUNDRY.Document.Character", "Character")) : "";
 
   return {
     uuid: actorUuid,
     name,
-    typeLabel: "Character",
+    typeLabel: localize("POCKETFOUNDRY.Document.Character", "Character"),
     iconText: getInitials(name),
     image: actor.img || null,
     limited: !canViewFullSheet,
@@ -181,7 +187,9 @@ function buildCharacterPickerRow(actor: CharacterPickerActor, user: FoundryUserL
     summary: canViewFullSheet ? summary : "",
     ownershipLabel,
     showHeaderStats: canViewFullSheet,
+    acLabel: getSystemTermLabel("armorClass"),
     acValue: headerStats.ac,
+    hpLabel: getSystemTermLabel("hitPoints"),
     hpValue: headerStats.hp,
     chips: canViewFullSheet ? getCharacterChips(actor) : [],
     favorite: favoriteActorUuids.has(actorUuid),
@@ -190,7 +198,7 @@ function buildCharacterPickerRow(actor: CharacterPickerActor, user: FoundryUserL
     folderPathLabel: folderInfo.pathLabel,
     folderDepth: folderInfo.depth,
     sortName: name.toLocaleLowerCase(),
-    ownerPriority: ownershipLabel === "Owner" ? 0 : ownershipLabel === "Observer" ? 1 : 2,
+    ownerPriority: isOwner(actor, user) ? 0 : canViewFullSheet ? 1 : 2,
     folderSortPath: folderInfo.sortPath,
     folderSortLabel: folderInfo.pathLabel.toLocaleLowerCase(),
     folderGroupKey: folderInfo.key,
@@ -217,16 +225,22 @@ function compareCharacterRows(left: CharacterPickerRow, right: CharacterPickerRo
   return left.sortName.localeCompare(right.sortName);
 }
 
+/**
+ * Builds the picker subtitle from system-owned actor details and class data.
+ */
 function getCharacterSummary(actor: CharacterPickerActor): string {
   const details = getObject(actor.system?.details);
   const species = getString(details?.species) || getString(details?.race);
   const classSummary = getClassSummary(actor);
   const level = getNumber(details?.level);
 
-  const parts = [species, classSummary || (level !== null ? `Level ${level}` : "")].filter(Boolean);
+  const parts = [species, classSummary || (level !== null ? getSystemTermLabel("characterLevel", { level }) : "")].filter(Boolean);
   return parts.join(" ");
 }
 
+/**
+ * Formats class item names and levels for the character picker summary.
+ */
 function getClassSummary(actor: CharacterPickerActor): string {
   const classItems = getActorItems(actor).filter(item => item.type === "class");
   if (classItems.length === 0) return "";
@@ -234,7 +248,7 @@ function getClassSummary(actor: CharacterPickerActor): string {
   return classItems
     .map(item => {
       const levels = getNumber(getObject(item.system)?.levels);
-      return `${item.name?.trim() || "Class"}${levels === null ? "" : ` ${levels}`}`;
+      return `${item.name?.trim() || getSystemTermLabel("characterClass")}${levels === null ? "" : ` ${levels}`}`;
     })
     .join(" / ");
 }
@@ -243,6 +257,9 @@ function getActorItems(actor: CharacterPickerActor): CharacterPickerItem[] {
   return getCollectionContents(actor.items) as CharacterPickerItem[];
 }
 
+/**
+ * Builds compact system-owned stat chips shown on character picker rows.
+ */
 function getCharacterChips(actor: CharacterPickerActor): CharacterPickerChip[] {
   const attributes = getObject(actor.system?.attributes);
   const hp = getObject(attributes?.hp);
@@ -253,14 +270,14 @@ function getCharacterChips(actor: CharacterPickerActor): CharacterPickerChip[] {
   const hpValue = getNumber(hp?.value);
   const hpMax = getNumber(hp?.max);
   if (hpValue !== null || hpMax !== null) {
-    chips.push({ id: "hp", label: "HP", value: `${hpValue ?? "-"}${hpMax === null ? "" : `/${hpMax}`}` });
+    chips.push({ id: "hp", label: getSystemTermLabel("hitPoints"), value: `${hpValue ?? "-"}${hpMax === null ? "" : `/${hpMax}`}` });
   }
 
   const acValue = getNumber(ac?.value);
-  if (acValue !== null) chips.push({ id: "ac", label: "AC", value: String(acValue) });
+  if (acValue !== null) chips.push({ id: "ac", label: getSystemTermLabel("armorClass"), value: String(acValue) });
 
   const initiativeValue = getNumber(initiative?.total) ?? getNumber(initiative?.mod) ?? getNumber(initiative?.value);
-  if (initiativeValue !== null) chips.push({ id: "initiative", label: "Init", value: formatSignedNumber(initiativeValue) });
+  if (initiativeValue !== null) chips.push({ id: "initiative", label: getSystemTermLabel("initiativeAbbreviation"), value: formatSignedNumber(initiativeValue) });
 
   return chips;
 }
@@ -414,8 +431,8 @@ function getCharacterFolderInfo(actor: CharacterPickerActor & { folder?: Charact
   if (names.length === 0) {
     return {
       key: "ungrouped",
-      label: "Ungrouped",
-      pathLabel: "Ungrouped",
+      label: localize("POCKETFOUNDRY.CharacterPicker.Ungrouped", "Ungrouped"),
+      pathLabel: localize("POCKETFOUNDRY.CharacterPicker.Ungrouped", "Ungrouped"),
       depth: 0,
       sortPath: [],
       chain: []
@@ -423,7 +440,7 @@ function getCharacterFolderInfo(actor: CharacterPickerActor & { folder?: Charact
   }
 
   const chainNodes: CharacterPickerFolderChainNode[] = chain.map((folder, index) => {
-    const name = (folder.name ?? "").trim() || "Folder";
+    const name = (folder.name ?? "").trim() || localize("POCKETFOUNDRY.CharacterPicker.Folder", "Folder");
     const id = folder.id?.trim() || `folder:${names.slice(0, index + 1).join("/").toLocaleLowerCase()}`;
     return {
       id,
@@ -435,7 +452,7 @@ function getCharacterFolderInfo(actor: CharacterPickerActor & { folder?: Charact
   const pathLabel = names.join(" / ");
   return {
     key: actorFolderId.trim() || `folder:${pathLabel.toLocaleLowerCase()}`,
-    label: names.at(-1) ?? "Folder",
+    label: names.at(-1) ?? localize("POCKETFOUNDRY.CharacterPicker.Folder", "Folder"),
     pathLabel,
     depth: Math.max(0, names.length - 1),
     sortPath,
@@ -471,7 +488,7 @@ function getActorFolders(folders: unknown): CharacterPickerFolderEntry[] {
     const id = folder.id?.trim();
     if (!id) continue;
     const chain = getFolderChain(folder);
-    const name = (folder.name ?? "").trim() || "Folder";
+    const name = (folder.name ?? "").trim() || localize("POCKETFOUNDRY.CharacterPicker.Folder", "Folder");
     const parentFolder = folder.folder ?? folder.parent ?? null;
     const parentId = parentFolder?.id?.trim();
     entries.push({

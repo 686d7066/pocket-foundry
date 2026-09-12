@@ -1,42 +1,42 @@
 <section class="combat-view sheet-dense" data-region="combat-view">
   <section class="section sheet-group combat-list-section">
     <div class="section-heading sheet-group-heading">
-      <h2>Order</h2>
-      <div class="chip-row combat-order-heading-meta" aria-label="Encounter round and turn">
-        <span class="chip">Round {{encounter.roundLabel}}</span>
-        <span class="chip">Turn {{encounter.turnLabel}}</span>
+      <h2>{{localize 'POCKETFOUNDRY.Combat.Order'}}</h2>
+      <div class="chip-row combat-order-heading-meta" aria-label="{{localize 'POCKETFOUNDRY.Combat.RoundAndTurn'}}">
+        <span class="chip">{{localize 'POCKETFOUNDRY.Combat.Round' value=encounter.roundLabel}}</span>
+        <span class="chip">{{localize 'POCKETFOUNDRY.Combat.Turn' value=encounter.turnLabel}}</span>
       </div>
     </div>
     <div class="sheet-group-body">
       {{#if encounter.hasCombatants}}
-        <div class="combat-list" role="list" aria-label="Encounter order">
+        <div class="combat-list" role="list" aria-label="{{localize 'POCKETFOUNDRY.Combat.EncounterOrder'}}">
           {{#each combatants}}
             <article class="combat-row{{#if isActive}} is-active{{/if}}{{#if isNext}} is-next{{/if}}{{#if defeated}} is-defeated{{/if}}" role="listitem">
               <span class="item-icon combat-row-icon" aria-hidden="true">
                 {{#if icon}}<img src="{{icon}}" alt="">{{else}}{{iconText}}{{/if}}
               </span>
               {{#if isHostile}}
-                <span class="combat-row-hostile" aria-label="Hostile combatant">
+                <span class="combat-row-hostile" aria-label="{{localize 'POCKETFOUNDRY.Combat.HostileCombatant'}}">
                   <i class="fa-solid fa-skull-crossbones" aria-hidden="true"></i>
                 </span>
               {{else}}
                 <span class="row-title combat-row-title">
                   <strong>{{name}}</strong>
                   {{#unless defeated}}
-                    <span>{{#if isActive}}Active Turn{{else}}{{#if isNext}}Next Up{{else}}Ready{{/if}}{{/if}}</span>
+                    <span>{{#if isActive}}{{localize 'POCKETFOUNDRY.Combat.ActiveTurn'}}{{else}}{{#if isNext}}{{localize 'POCKETFOUNDRY.Combat.NextUp'}}{{else}}{{localize 'POCKETFOUNDRY.Combat.Ready'}}{{/if}}{{/if}}</span>
                   {{/unless}}
                 </span>
               {{/if}}
-              <span class="combat-row-initiative" aria-label="Initiative">{{initiativeLabel}}</span>
+              <span class="combat-row-initiative" aria-label="{{../labels.initiative}}">{{initiativeLabel}}</span>
               <div class="combat-row-status">
-                {{#if hidden}}<span class="chip warn">Hidden</span>{{/if}}
-                <span class="chip{{#if defeated}} warn{{/if}}">{{#if defeated}}Defeated{{else}}Active{{/if}}</span>
+                {{#if hidden}}<span class="chip warn">{{localize 'POCKETFOUNDRY.Combat.Hidden'}}</span>{{/if}}
+                <span class="chip{{#if defeated}} warn{{/if}}">{{#if defeated}}{{localize 'POCKETFOUNDRY.Combat.Defeated'}}{{else}}{{localize 'POCKETFOUNDRY.Combat.Active'}}{{/if}}</span>
               </div>
             </article>
           {{/each}}
         </div>
       {{else}}
-        {{> "modules/pocket-foundry/templates/partials/empty-state.hbs" title="No Active Encounter" body="Start or activate an encounter to track initiative order here."}}
+        {{> "modules/pocket-foundry/templates/partials/empty-state.hbs" title=(localize 'POCKETFOUNDRY.Combat.NoActiveEncounter.Title') body=(localize 'POCKETFOUNDRY.Combat.NoActiveEncounter.Body')}}
       {{/if}}
     </div>
   </section>
@@ -47,9 +47,9 @@
       class="combat-end-turn-button"
       data-action="combat-end-turn"
       {{#unless actions.canEndTurn}}disabled{{/unless}}
-      aria-label="End Turn"
+      aria-label="{{localize 'POCKETFOUNDRY.Combat.EndTurn'}}"
     >
-      End Turn
+      {{localize 'POCKETFOUNDRY.Combat.EndTurn'}}
     </button>
   </div>
 </section>

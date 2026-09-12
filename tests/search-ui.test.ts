@@ -503,8 +503,6 @@ function wait(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-
-
 test("unsupported systems can enable the shell and navigate shared Foundry sections", async () => {
   const root = createElement();
   const models: object[] = [];

@@ -1,0 +1,92 @@
+{
+  "root": true,
+  "ignorePatterns": [
+    "dist/**",
+    "node_modules/**",
+    "references/**",
+    "References/**",
+    "coverage/**"
+  ],
+  "parser": "@typescript-eslint/parser",
+  "parserOptions": {
+    "ecmaVersion": "latest",
+    "sourceType": "module"
+  },
+  "plugins": [
+    "@typescript-eslint",
+    "jsdoc"
+  ],
+  "rules": {
+    "jsdoc/check-tag-names": "error",
+    "jsdoc/valid-types": "error",
+    "jsdoc/require-jsdoc": [
+      "error",
+      {
+        "publicOnly": true,
+        "require": {
+          "ArrowFunctionExpression": false,
+          "ClassDeclaration": true,
+          "ClassExpression": false,
+          "FunctionDeclaration": true,
+          "FunctionExpression": false,
+          "MethodDefinition": false
+        },
+        "minLineCount": 30
+      }
+    ]
+  },
+  "overrides": [
+    {
+      "files": [
+        "src/**/*.ts"
+      ],
+      "excludedFiles": [
+        "src/systems/*/**/*.ts",
+        "src/systems/character-sheet-adapters.generated.ts"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "**/systems/*/**",
+                  "systems/*/**"
+                ],
+                "message": "Concrete system imports must stay inside that system folder or generated adapter registration."
+              }
+            ]
+          }
+        ],
+        "no-restricted-syntax": [
+          "error",
+          {
+            "selector": "Literal[value=/^(?!POCKETFOUNDRY\\.)(?:[A-Z][A-Z0-9_]*\\.)/]",
+            "message": "External system localization keys must stay inside a concrete system folder."
+          },
+          {
+            "selector": "Literal[value=/^POCKETFOUNDRY\\.[A-Z0-9_]+\\./]",
+            "message": "Module-owned system-specific localization keys must stay inside a concrete system folder."
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "**/*.js",
+        "**/*.cjs",
+        "**/*.mjs"
+      ],
+      "rules": {
+        "no-restricted-syntax": [
+          "error",
+          {
+            "selector": "Program",
+            "message": "JavaScript source files are not allowed in this TypeScript project."
+          }
+        ]
+      }
+    }
+  ]
+}

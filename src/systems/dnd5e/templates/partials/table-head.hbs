@@ -1,0 +1,53 @@
+{{#if (eq kind "skill")}}
+  <div class="sheet-list-head dnd5e-table-head dnd5e-detail-schema dnd5e-detail-schema--skill">
+    <span>{{localize 'DND5E.Ability'}}</span><span>{{localize 'DND5E.Skill'}}</span><span>{{localize 'DND5E.PropertyTotal'}}</span><span>{{localize 'DND5E.Passive'}}</span>
+  </div>
+{{/if}}
+
+{{#if (eq kind "tool")}}
+  <div class="sheet-list-head dnd5e-table-head dnd5e-detail-schema dnd5e-detail-schema--tool">
+    <span>{{localize 'DND5E.Ability'}}</span><span>{{localize 'TYPES.Item.tool'}}</span><span>{{localize 'DND5E.PropertyTotal'}}</span>
+  </div>
+{{/if}}
+
+{{#if (eq kind "inventory")}}
+  <div class="sheet-list-head inventory-list-head inventory-list-head-{{#if headId}}{{headId}}{{else}}{{id}}{{/if}} dnd5e-table-head pf-list-schema pf-list-schema--icon-title-3meta-actions">
+    <span>{{localize 'POCKETFOUNDRY.Table.Name'}}</span>
+    {{#if headId}}
+      <span class="inventory-list-head-cell inventory-list-head-cell-roll">{{localize 'DND5E.Roll'}}</span>
+      <span class="inventory-list-head-cell inventory-list-head-cell-formula">{{localize 'DND5E.Formula'}}</span>
+      <span class="inventory-list-head-cell inventory-list-head-cell-charges">{{localize 'DND5E.Charges'}}</span>
+    {{else}}
+      {{#each listColumns}}<span class="inventory-list-head-cell inventory-list-head-cell-{{id}}" title="{{label}}" aria-label="{{label}}">{{#if shortLabel}}{{shortLabel}}{{else}}{{label}}{{/if}}</span>{{/each}}
+    {{/if}}
+    <span></span>
+  </div>
+{{/if}}
+
+{{#if (eq kind "spells")}}
+  <div class="sheet-list-head spells-list-head dnd5e-table-head pf-list-schema pf-list-schema--icon-title-4meta-actions">
+    <span>{{localize 'POCKETFOUNDRY.Table.Name'}}</span>
+    <span>{{timeLabel}}</span>
+    <span>{{localize 'DND5E.Range'}}</span>
+    <span>{{localize 'DND5E.Target'}}</span>
+    <span>{{localize 'DND5E.Roll'}}</span>
+    <span></span>
+  </div>
+{{/if}}
+
+{{#if (eq kind "features")}}
+  <div class="sheet-list-head features-list-head dnd5e-table-head pf-list-schema pf-list-schema--icon-title-2meta-actions">
+    <span>{{localize 'POCKETFOUNDRY.Table.Name'}}</span>
+    <span>{{localize 'DND5E.Uses'}}</span>
+    <span>{{localize 'DND5E.Recovery'}}</span>
+    <span></span>
+  </div>
+{{/if}}
+
+{{#if (eq kind "effects")}}
+  <div class="sheet-list-head effects-list-head dnd5e-table-head pf-list-schema pf-list-schema--icon-title-source-actions">
+    <span>{{localize 'POCKETFOUNDRY.Table.Name'}}</span>
+    <span>{{localize 'DND5E.SOURCE.FIELDS.source.label'}}</span>
+    <span></span>
+  </div>
+{{/if}}

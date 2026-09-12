@@ -15,16 +15,16 @@
         </span>
         {{#if showHeaderStats}}
           <span class="header-stats character-picker-header-stats" aria-hidden="true">
-            <span class="header-stat header-stat-ac"><b>AC</b><strong>{{acValue}}</strong></span>
-            <span class="header-stat header-stat-hp"><b>HP</b><strong>{{hpValue}}</strong></span>
+            <span class="header-stat header-stat-ac"><b>{{acLabel}}</b><strong>{{acValue}}</strong></span>
+            <span class="header-stat header-stat-hp"><b>{{hpLabel}}</b><strong>{{hpValue}}</strong></span>
           </span>
         {{/if}}
         {{> "modules/pocket-foundry/templates/partials/favorite-context-menu.hbs"
           canToggleFavorite=canToggleFavorite
           favorite=favorite
-          ariaLabel="Character favorite actions"
-          addLabel="Add to Favorites"
-          removeLabel="Remove from Favorites"
+          ariaLabel=(localize 'POCKETFOUNDRY.CharacterPicker.FavoriteActions')
+          addLabel=(localize 'POCKETFOUNDRY.Favorites.Add')
+          removeLabel=(localize 'POCKETFOUNDRY.Favorites.Remove')
           addAction="character-picker-add-favorite"
           removeAction="character-picker-remove-favorite"
           favoriteType="character"
@@ -68,9 +68,9 @@
     toolbarClass="pane-search-toolbar character-picker-toolbar"
     searchClass="pane-search-field"
     region="character-picker-toolbar"
-    placeholder="Search characters"
-    ariaLabel="Search characters"
-    clearAriaLabel="Clear character search"
+    placeholder=(localize 'POCKETFOUNDRY.CharacterPicker.Search')
+    ariaLabel=(localize 'POCKETFOUNDRY.CharacterPicker.Search')
+    clearAriaLabel=(localize 'POCKETFOUNDRY.CharacterPicker.ClearSearch')
     value=searchQuery
     canClear=canClearSearch
     characterPickerSearch=true
@@ -86,18 +86,18 @@
         {{#if hasFavorites}}
           <section class="character-picker-favorites" data-region="character-picker-favorites">
             <header class="character-picker-block-heading character-picker-block-heading-help">
-              <h3>Favorites</h3>
+              <h3>{{localize 'POCKETFOUNDRY.Favorites.Title'}}</h3>
               <button
                 class="character-picker-help-toggle"
                 type="button"
                 data-action="character-picker-toggle-favorite-help"
-                aria-label="Favorite help"
+                aria-label="{{localize 'POCKETFOUNDRY.CharacterPicker.FavoriteHelp'}}"
                 aria-expanded="{{#if favoriteHelpOpen}}true{{else}}false{{/if}}"
-                title="Favorite help"
+                title="{{localize 'POCKETFOUNDRY.CharacterPicker.FavoriteHelp'}}"
               ><i class="fa-solid fa-circle-info" aria-hidden="true"></i></button>
             </header>
             {{#if favoriteHelpOpen}}
-              <p class="character-picker-help-text">Long-press or right-click a character row to add or remove favorites.</p>
+              <p class="character-picker-help-text">{{localize 'POCKETFOUNDRY.CharacterPicker.FavoriteHelpText'}}</p>
             {{/if}}
             <div class="character-picker-list">
               {{> characterPickerRows rows=favorites}}
@@ -108,7 +108,7 @@
         {{#if hasFolderTree}}
           <section class="character-picker-folders" data-region="character-picker-folders">
             <header class="character-picker-block-heading">
-              <h3>Folders</h3>
+              <h3>{{localize 'POCKETFOUNDRY.CharacterPicker.Folders'}}</h3>
             </header>
             <div class="character-folder-tree">
               {{#each folderTree}}
@@ -121,7 +121,7 @@
         {{#if hasUngroupedCharacters}}
           <section class="character-picker-ungrouped" data-region="character-picker-ungrouped">
             <header class="character-picker-block-heading">
-              <h3>Ungrouped</h3>
+              <h3>{{localize 'POCKETFOUNDRY.CharacterPicker.Ungrouped'}}</h3>
             </header>
             <div class="character-picker-list">
               {{> characterPickerRows rows=ungroupedCharacters}}

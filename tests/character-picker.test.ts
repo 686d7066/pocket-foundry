@@ -209,7 +209,7 @@ test("character picker template preserves regions and Character terminology", ()
   assert.match(template, /class="character-picker-help-toggle"/);
   assert.match(template, /data-action="character-picker-toggle-favorite-help"/);
   assert.match(template, /fa-circle-info/);
-  assert.match(template, /Long-press or right-click a character row to add or remove favorites\./);
+  assert.match(template, /POCKETFOUNDRY\.CharacterPicker\.FavoriteHelpText/);
   assert.match(template, /characterPickerSearch=true/);
   assert.match(template, /addAction="character-picker-add-favorite"/);
   assert.match(template, /removeAction="character-picker-remove-favorite"/);

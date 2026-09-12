@@ -1,6 +1,6 @@
 <article class="section pf-view-section item-detail-view">
   <div class="section-heading content-group-heading pf-view-section-heading item-detail-heading">
-    <h2>{{#if available}}Details{{else}}{{title}}{{/if}}</h2>
+    <h2>{{#if available}}{{localize 'POCKETFOUNDRY.ItemDetail.Details'}}{{else}}{{title}}{{/if}}</h2>
   </div>
   {{#if available}}
     {{#if chips.length}}
@@ -26,7 +26,7 @@
         {{{descriptionHtml}}}
       </section>
     {{else}}
-      {{> "modules/pocket-foundry/templates/partials/empty-state.hbs" title="No Description" body="This item has no visible description."}}
+      {{> "modules/pocket-foundry/templates/partials/empty-state.hbs" title=(localize 'POCKETFOUNDRY.ItemDetail.NoDescription.Title') body=(localize 'POCKETFOUNDRY.ItemDetail.NoDescription.Body')}}
     {{/if}}
   {{else}}
     {{> "modules/pocket-foundry/templates/partials/empty-state.hbs" title=title body=description}}

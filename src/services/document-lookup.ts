@@ -10,6 +10,7 @@ import {
   type PermissionCheckedDocument
 } from "./permissions.ts";
 import { getFoundryRuntime } from "../core/foundry-globals.ts";
+import { localize } from "../core/localization.ts";
 
 /**
  * User-facing document categories supported by the mobile shell.
@@ -78,7 +79,7 @@ export type UnavailableDocumentLookupResult = {
   uuid: string;
   reason: UnavailableDocumentReason;
   documentType: "unknown";
-  displayType: "Document";
+  displayType: string;
   permissions: NormalizedDocumentPermissions;
 };
 
@@ -105,8 +106,8 @@ export type NonLeakingUnavailableState = {
   available: false;
   uuid: string;
   reason: UnavailableDocumentReason;
-  title: "Unavailable document";
-  description: "This document is no longer available or you do not have permission to view it.";
+  title: string;
+  description: string;
 };
 
 /**
@@ -164,8 +165,8 @@ export function createUnavailableDocumentState(result: UnavailableDocumentLookup
     available: false,
     uuid: result.uuid,
     reason: result.reason,
-    title: "Unavailable document",
-    description: "This document is no longer available or you do not have permission to view it."
+    title: localize("POCKETFOUNDRY.Document.Unavailable.Title", "Unavailable document"),
+    description: localize("POCKETFOUNDRY.Document.Unavailable.Body", "This document is no longer available or you do not have permission to view it.")
   };
 }
 
@@ -193,15 +194,15 @@ export function getMobileDocumentType(document: FoundryDocumentLike | null | und
 export function getDocumentDisplayType(documentType: MobileDocumentType): string {
   switch (documentType) {
     case "character":
-      return "Character";
+      return localize("POCKETFOUNDRY.Document.Character", "Character");
     case "item":
-      return "Item";
+      return localize("POCKETFOUNDRY.Document.Item", "Item");
     case "journal-entry":
-      return "Journal Entry";
+      return localize("POCKETFOUNDRY.Document.JournalEntry", "Journal Entry");
     case "journal-page":
-      return "Journal Page";
+      return localize("POCKETFOUNDRY.Document.JournalPage", "Journal Page");
     case "unknown":
-      return "Document";
+      return localize("POCKETFOUNDRY.Document.Generic", "Document");
   }
 }
 
@@ -248,7 +249,7 @@ function createUnavailableDocumentLookupResult(uuid: string, reason: Unavailable
     uuid,
     reason,
     documentType: "unknown",
-    displayType: "Document",
+    displayType: localize("POCKETFOUNDRY.Document.Generic", "Document"),
     permissions: {
       canView: false,
       canUpdate: false,

@@ -1,8 +1,6 @@
 {{#if (eq kind "skills")}}
-  <div class="detail-table skills-table favorites-source-table">
-    <div class="sheet-list-head dnd5e-table-head dnd5e-detail-schema dnd5e-detail-schema--skill" aria-hidden="true">
-      <span>Ability</span><span>Skill</span><span>Total</span><span>Passive</span>
-    </div>
+  <div class="detail-table skills-table favorites-source-table" data-table-layout="indicator-meta-title-2meta">
+    {{> "modules/pocket-foundry/systems/dnd5e/templates/partials/table-head.hbs" kind="skill"}}
     {{#each skills}}
       {{> "modules/pocket-foundry/systems/dnd5e/templates/partials/details-skill-row.hbs" this}}
     {{/each}}
@@ -10,10 +8,8 @@
 {{/if}}
 
 {{#if (eq kind "tools")}}
-  <div class="detail-table tool-table favorites-source-table">
-    <div class="sheet-list-head dnd5e-table-head dnd5e-detail-schema dnd5e-detail-schema--tool" aria-hidden="true">
-      <span>Ability</span><span>Tool</span><span>Total</span>
-    </div>
+  <div class="detail-table tool-table favorites-source-table" data-table-layout="indicator-meta-title-meta">
+    {{> "modules/pocket-foundry/systems/dnd5e/templates/partials/table-head.hbs" kind="tool"}}
     {{#each tools}}
       {{> "modules/pocket-foundry/systems/dnd5e/templates/partials/details-tool-row.hbs" this}}
     {{/each}}
@@ -21,14 +17,8 @@
 {{/if}}
 
 {{#if (eq kind "inventory")}}
-  <div class="sheet-table sheet-list inventory-list favorites-source-list">
-    <div class="sheet-list-head inventory-list-head inventory-list-head-favorites dnd5e-table-head pf-list-schema pf-list-schema--icon-title-3meta-actions" aria-hidden="true">
-      <span>Name</span>
-      <span class="inventory-list-head-cell inventory-list-head-cell-roll">Roll</span>
-      <span class="inventory-list-head-cell inventory-list-head-cell-formula">Formula</span>
-      <span class="inventory-list-head-cell inventory-list-head-cell-charges">Charges</span>
-      <span></span>
-    </div>
+  <div class="sheet-table sheet-list inventory-list favorites-source-list" data-table-layout="icon-title-3meta-actions">
+    {{> "modules/pocket-foundry/systems/dnd5e/templates/partials/table-head.hbs" kind="inventory" headId="favorites"}}
     {{#each items}}
       {{> "modules/pocket-foundry/systems/dnd5e/templates/partials/inventory-list-row.hbs" this}}
     {{/each}}
@@ -36,15 +26,8 @@
 {{/if}}
 
 {{#if (eq kind "spells")}}
-  <div class="sheet-table sheet-list spells-table favorites-source-list">
-    <div class="sheet-list-head spells-list-head dnd5e-table-head pf-list-schema pf-list-schema--icon-title-4meta-actions" aria-hidden="true">
-      <span>Name</span>
-      <span>Time</span>
-      <span>Range</span>
-      <span>Target</span>
-      <span>Roll</span>
-      <span></span>
-    </div>
+  <div class="sheet-table sheet-list spells-table favorites-source-list" data-table-layout="icon-title-4meta-actions">
+    {{> "modules/pocket-foundry/systems/dnd5e/templates/partials/table-head.hbs" kind="spells" timeLabel=(localize 'DND5E.DurationTime')}}
     {{#each spells}}
       {{> "modules/pocket-foundry/systems/dnd5e/templates/partials/spell-row.hbs" this}}
     {{/each}}
@@ -54,7 +37,7 @@
 {{#if (eq kind "spell-slots")}}
   <div class="favorites-slot-tracks">
     {{#each slotTracks}}
-      <div class="slot-tracks spell-section-slots" aria-label="{{label}} slot controls" data-region="slot-tracks" data-favorite-context>
+      <div class="slot-tracks spell-section-slots" aria-label="{{localize 'POCKETFOUNDRY.DND5E.Spells.SlotControls' label=label}}" data-region="slot-tracks" data-favorite-context>
         <strong>{{label}}</strong>
         {{#each pips}}
           <button
@@ -78,8 +61,8 @@
             ariaLabel=label
             addAction="context-add-favorite"
             removeAction="context-remove-favorite"
-            addLabel="Add to Favorites"
-            removeLabel="Remove from Favorites"
+            addLabel=(localize 'POCKETFOUNDRY.Favorites.Add')
+            removeLabel=(localize 'POCKETFOUNDRY.Favorites.Remove')
             favoriteType="slots"
             favoriteId=id
           }}
@@ -90,13 +73,8 @@
 {{/if}}
 
 {{#if (eq kind "features")}}
-  <div class="sheet-table sheet-list features-list favorites-source-list">
-    <div class="sheet-list-head features-list-head dnd5e-table-head pf-list-schema pf-list-schema--icon-title-2meta-actions" aria-hidden="true">
-      <span>Name</span>
-      <span>Uses</span>
-      <span>Recovery</span>
-      <span></span>
-    </div>
+  <div class="sheet-table sheet-list features-list favorites-source-list" data-table-layout="icon-title-2meta-actions">
+    {{> "modules/pocket-foundry/systems/dnd5e/templates/partials/table-head.hbs" kind="features"}}
     {{#each features}}
       {{> "modules/pocket-foundry/systems/dnd5e/templates/partials/feature-row.hbs" this}}
     {{/each}}
@@ -104,12 +82,8 @@
 {{/if}}
 
 {{#if (eq kind "effects")}}
-  <div class="sheet-table sheet-list effects-list favorites-source-list">
-    <div class="sheet-list-head effects-list-head dnd5e-table-head pf-list-schema pf-list-schema--icon-title-source-actions" aria-hidden="true">
-      <span>Name</span>
-      <span>Source</span>
-      <span></span>
-    </div>
+  <div class="sheet-table sheet-list effects-list favorites-source-list" data-table-layout="icon-title-source-actions">
+    {{> "modules/pocket-foundry/systems/dnd5e/templates/partials/table-head.hbs" kind="effects"}}
     {{#each effects}}
       {{> "modules/pocket-foundry/systems/dnd5e/templates/partials/effect-row.hbs" this}}
     {{/each}}

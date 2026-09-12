@@ -1,8 +1,9 @@
-import { getFoundryRuntime } from "../../../core/foundry-globals.ts";
+import { getFoundryTextEditor, getFoundryRuntime } from "../../../core/foundry-globals.ts";
+import { localize, localizeSystemKey, localizeSystemLabel } from "../../../core/localization.ts";
 import { getCollectionContents, getNumber, getObject, getString } from "../../../core/utils.ts";
 import { canUpdateDocument, canViewDocument, type FoundryUserLike } from "../../../services/permissions.ts";
 import { summarizeRichTextWithReferences, type RichTextReference } from "../../../services/rich-text-links.ts";
-import { canToggleDnd5eFavorites, hasDnd5eFavoriteReference } from "../favorites-storage.ts";
+import { buildOptionalDnd5eFavoriteToggleState, hasDnd5eFavoriteReference } from "../favorites-storage.ts";
 import { clampNumber, formatPair, getConfigLabel, uniqueStrings } from "../view-model-helpers.ts";
 import { Dnd5eProficiencyIndicator } from "./types.ts";
 import type {
@@ -37,6 +38,10 @@ import type {
 
 const ABILITY_ORDER = ["str", "dex", "con", "int", "wis", "cha"] as const;
 
+/**
+ * Builds the dnd5e details pane from actor attributes, abilities, traits,
+ * proficiencies, health state, and rest controls.
+ */
 export async function buildDnd5eDetailsViewModel(options: {
   actor: Dnd5eDetailsActor | null | undefined;
   user: FoundryUserLike;
@@ -47,8 +52,8 @@ export async function buildDnd5eDetailsViewModel(options: {
   if (!actor || actor.type !== "character" || !canViewDocument(actor, options.user)) {
     return {
       unavailable: true,
-      title: "Character Unavailable",
-      body: "This character is not available to the current user."
+      title: localize("POCKETFOUNDRY.Character.Unavailable.Title", "Character Unavailable"),
+      body: localize("POCKETFOUNDRY.Character.Unavailable.Body", "This character is not available to the current user.")
     };
   }
 
@@ -76,10 +81,10 @@ export async function buildDnd5eDetailsViewModel(options: {
     canUpdate,
     header: {
       actorUuid: actor.uuid ?? (actor.id ? `Actor.${actor.id}` : ""),
-      characterLabel: "Character",
-      name: actor.name?.trim() || "Unnamed Character",
+      characterLabel: localize("POCKETFOUNDRY.Document.Character", "Character"),
+      name: actor.name?.trim() || localize("POCKETFOUNDRY.Character.Unnamed", "Unnamed Character"),
       portraitImage: actor.img || null,
-      classSummary: getClassSummary(actor) || (level === null ? "Character" : `Level ${level}`),
+      classSummary: getClassSummary(actor) || (level === null ? localize("POCKETFOUNDRY.Document.Character", "Character") : localizeSystemKey("DND5E.LevelNumber", "Level {level}", { level })),
       level,
       ac: getNumber(getObject(attributes.ac)?.value),
       hp: hpModel,
@@ -408,7 +413,7 @@ function getRestTypeLabel(type: Dnd5eDetailsRestType, fallback: string): string 
   const label = getRuntimeRestType(type)?.label;
   if (typeof label !== "string" || !label.trim()) return fallback;
 
-  return getFoundryRuntime().game?.i18n?.localize?.(label) ?? fallback;
+  return localizeSystemLabel(label, fallback);
 }
 
 function getRestTypeIcon(type: Dnd5eDetailsRestType, fallback: string): string {
@@ -472,26 +477,26 @@ function buildDashboard(attributes: Record<string, unknown>, hp: Dnd5eDetailsHpV
   const death = getObject(attributes.death) ?? {};
   const exhaustion = getNumber(attributes.exhaustion) ?? 0;
   const stats: Dnd5eDetailsDashboardStat[] = [
-    { id: "hp", label: "HP", value: formatPair(hp.value, hp.effectiveMax), interactive: canUpdate },
-    { id: "ac", label: "AC", value: ac === null ? "-" : String(ac), interactive: false },
-    { id: "initiative", label: "Init", value: formatSigned(init), interactive: true },
-    { id: "speed", label: "Speed", value: getPrimaryMovement(movement), interactive: false },
-    { id: "proficiency", label: "Prof", value: formatSigned(prof), interactive: false },
-    { id: "temp", label: "Temp", value: String(hp.temp), interactive: canUpdate },
-    { id: "hit-dice", label: "Hit Dice", value: formatPair(getNumber(hd.value), getNumber(hd.max)), interactive: false }
+    { id: "hp", label: localizeSystemKey("DND5E.HitPoints", "HP"), value: formatPair(hp.value, hp.effectiveMax), interactive: canUpdate },
+    { id: "ac", label: localizeSystemKey("DND5E.ArmorClass", "AC"), value: ac === null ? "-" : String(ac), interactive: false },
+    { id: "initiative", label: localizeSystemKey("DND5E.InitiativeAbbr", "Init"), value: formatSigned(init), interactive: true },
+    { id: "speed", label: localizeSystemKey("DND5E.Speed", "Speed"), value: getPrimaryMovement(movement), interactive: false },
+    { id: "proficiency", label: localizeSystemKey("DND5E.ProficiencyBonusAbbr", "Prof"), value: formatSigned(prof), interactive: false },
+    { id: "temp", label: localizeSystemKey("DND5E.HitPointsTempShort", "Temp"), value: String(hp.temp), interactive: canUpdate },
+    { id: "hit-dice", label: localizeSystemKey("DND5E.HitDice", "Hit Dice"), value: formatPair(getNumber(hd.value), getNumber(hd.max)), interactive: false }
   ];
 
   if (getNumber(death.success) || getNumber(death.failure)) {
     stats.push({
       id: "death-saves",
-      label: "Death",
+      label: localizeSystemKey("DND5E.DeathSave", "Death"),
       value: `${clampPipValue(getNumber(death.success) ?? 0)}S/${clampPipValue(getNumber(death.failure) ?? 0)}F`,
       interactive: canUpdate
     });
   }
 
-  if (exhaustion > 0) stats.push({ id: "exhaustion", label: "Exhaustion", value: String(exhaustion), interactive: canUpdate });
-  if (hp.tempMax > 0) stats.push({ id: "max-hp-mod", label: "Max HP Mod", value: formatSigned(hp.tempMax), interactive: canUpdate });
+  if (exhaustion > 0) stats.push({ id: "exhaustion", label: localizeSystemKey("DND5E.Exhaustion", "Exhaustion"), value: String(exhaustion), interactive: canUpdate });
+  if (hp.tempMax > 0) stats.push({ id: "max-hp-mod", label: localizeSystemKey("DND5E.HitPointsTempMaxShort", "Max HP Mod"), value: formatSigned(hp.tempMax), interactive: canUpdate });
 
   return stats;
 }
@@ -538,7 +543,6 @@ async function buildSkills(actor: Dnd5eDetailsActor, system: Record<string, unkn
       const skillConfig = getObject(config.skills?.[id]);
       const ability = getString(skill.ability) || "wis";
       const reference = getString(skill.reference) || getString(skillConfig?.reference);
-      const canToggleFavorite = canUpdate && canToggleDnd5eFavorites(actor);
       const proficiencyMultiplier = getProficiencyMultiplier(skill);
       return {
         id,
@@ -553,7 +557,7 @@ async function buildSkills(actor: Dnd5eDetailsActor, system: Record<string, unkn
         ...(reference ? { reference } : {}),
         __rawSkill: skill,
         __skillConfig: skillConfig,
-        ...(canToggleFavorite ? { favorite: isFavorite(actor, "skill", id), canToggleFavorite } : {})
+        ...buildOptionalDnd5eFavoriteToggleState(actor, canUpdate, isFavorite(actor, "skill", id))
       };
     })
     .sort((a, b) => a.label.localeCompare(b.label));
@@ -598,7 +602,6 @@ async function buildTools(actor: Dnd5eDetailsActor, system: Record<string, unkno
       const total = getNumber(tool.total);
       const reference = getString(tool.reference) || getString(toolConfig?.reference);
       const baseItemUuid = getToolBaseItemUuid(toolConfig);
-      const canToggleFavorite = canUpdate && canToggleDnd5eFavorites(actor);
       const proficiencyMultiplier = getProficiencyMultiplier(tool);
       return {
         id,
@@ -614,7 +617,7 @@ async function buildTools(actor: Dnd5eDetailsActor, system: Record<string, unkno
         __toolConfig: toolConfig,
         __reference: reference,
         __baseItemUuid: baseItemUuid,
-        ...(canToggleFavorite ? { favorite: isFavorite(actor, "tool", id), canToggleFavorite } : {})
+        ...buildOptionalDnd5eFavoriteToggleState(actor, canUpdate, isFavorite(actor, "tool", id))
       };
     })
     .sort((a, b) => a.label.localeCompare(b.label));
@@ -672,21 +675,21 @@ async function buildTraitGroups(actor: Dnd5eDetailsActor, system: Record<string,
   const speciesReferenceUuid = await getTraitReferenceUuid(speciesItem);
   const backgroundReferenceUuid = await getTraitReferenceUuid(backgroundItem);
 
-  addGroup(groups, "origin", "Origin", [
+  addGroup(groups, "origin", localize("POCKETFOUNDRY.DND5E.Details.Origin", "Origin"), [
     toTraitPill(getCreatureType(details, config)),
     toTraitPill(speciesItem?.name?.trim() || getString(details.race) || getString(details.species), speciesReferenceUuid),
     toTraitPill(backgroundItem?.name?.trim() || getString(details.background), backgroundReferenceUuid),
     toTraitPill(getConfigLabel(config.actorSizes, getString(traits.size), getString(traits.size)))
   ]);
-  addGroup(groups, "senses", "Senses", getSenses(attributes, config).map(value => toTraitPill(value)));
-  addGroup(groups, "damage-resistances", "Resistances", getTraitValues(getObject(traits.dr), config.damageTypes).map(value => toTraitPill(value)));
-  addGroup(groups, "damage-immunities", "Damage Immunities", getTraitValues(getObject(traits.di), config.damageTypes).map(value => toTraitPill(value)));
-  addGroup(groups, "condition-immunities", "Condition Immunities", getTraitValues(getObject(traits.ci), config.conditionTypes).map(value => toTraitPill(value)));
-  addGroup(groups, "vulnerabilities", "Vulnerabilities", getTraitValues(getObject(traits.dv), config.damageTypes).map(value => toTraitPill(value)), "warning");
-  addGroup(groups, "damage-modifications", "Damage Modifications", getTraitValues(getObject(traits.dm), undefined, actor).map(value => toTraitPill(value)));
-  addGroup(groups, "armor", "Armor Proficiency", getTraitValues(armorTrait, config.armorProficiencies).map(value => toTraitPill(value)));
-  addGroup(groups, "weapons", "Weapon Proficiency", getWeaponTraits(weaponTrait, config).map(value => toTraitPill(value)));
-  addGroup(groups, "languages", "Languages", getTraitValues(getObject(traits.languages), config.languages).map(value => toTraitPill(value)));
+  addGroup(groups, "senses", localizeSystemKey("DND5E.Senses", "Senses"), getSenses(attributes, config).map(value => toTraitPill(value)));
+  addGroup(groups, "damage-resistances", localizeSystemKey("DND5E.Resistances", "Resistances"), getTraitValues(getObject(traits.dr), config.damageTypes).map(value => toTraitPill(value)));
+  addGroup(groups, "damage-immunities", localizeSystemKey("DND5E.TraitDIPlural.other", "Damage Immunities"), getTraitValues(getObject(traits.di), config.damageTypes).map(value => toTraitPill(value)));
+  addGroup(groups, "condition-immunities", localizeSystemKey("DND5E.TraitCIPlural.other", "Condition Immunities"), getTraitValues(getObject(traits.ci), config.conditionTypes).map(value => toTraitPill(value)));
+  addGroup(groups, "vulnerabilities", localizeSystemKey("DND5E.Vulnerabilities", "Vulnerabilities"), getTraitValues(getObject(traits.dv), config.damageTypes).map(value => toTraitPill(value)), "warning");
+  addGroup(groups, "damage-modifications", localizeSystemKey("DND5E.TraitDMPlural.other", "Damage Modifications"), getTraitValues(getObject(traits.dm), undefined, actor).map(value => toTraitPill(value)));
+  addGroup(groups, "armor", localizeSystemKey("DND5E.TraitArmorLegacyPlural.one", "Armor Proficiency"), getTraitValues(armorTrait, config.armorProficiencies).map(value => toTraitPill(value)));
+  addGroup(groups, "weapons", localizeSystemKey("DND5E.TraitWeaponPlural.one", "Weapon Proficiency"), getWeaponTraits(weaponTrait, config).map(value => toTraitPill(value)));
+  addGroup(groups, "languages", localizeSystemKey("DND5E.Languages", "Languages"), getTraitValues(getObject(traits.languages), config.languages).map(value => toTraitPill(value)));
 
   return groups;
 }
@@ -744,7 +747,7 @@ function getClassSummary(actor: Dnd5eDetailsActor): string {
   return classes
     .map(item => {
       const levels = getNumber(getObject(item.system)?.levels);
-      return `${item.name?.trim() || "Class"}${levels === null ? "" : ` ${levels}`}`;
+      return `${item.name?.trim() || localizeSystemKey("TYPES.Item.class", "Class")}${levels === null ? "" : ` ${levels}`}`;
     })
     .join(" / ");
 }
@@ -1048,7 +1051,7 @@ async function summarizeDetailText(value: string, relativeTo?: unknown): Promise
 }
 
 function getTextEnricher(): ((content: string, options?: Record<string, unknown>) => Promise<string> | string) | undefined {
-  const textEditor = getFoundryRuntime().TextEditor;
+  const textEditor = getFoundryTextEditor();
   return typeof textEditor?.enrichHTML === "function" ? textEditor.enrichHTML.bind(textEditor) : undefined;
 }
 

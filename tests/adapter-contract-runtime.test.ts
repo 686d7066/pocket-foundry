@@ -49,14 +49,6 @@ async function assertAdapterContract(label: string, adapter: CharacterSheetAdapt
   assert.equal(ownedDocumentRoute.actorUuid, "Actor.contract", `${label}: createOwnedDocumentRoute() must preserve actorUuid.`);
   assert.equal(ownedDocumentRoute.parentPane, normalizedPane, `${label}: createOwnedDocumentRoute() must preserve normalized parent pane.`);
 
-  const paneTemplatePaths = adapter.getPaneTemplatePaths();
-  assert.ok(paneTemplatePaths.details !== undefined, `${label}: getPaneTemplatePaths().details is required.`);
-  assert.ok(paneTemplatePaths.inventory !== undefined, `${label}: getPaneTemplatePaths().inventory is required.`);
-  assert.ok(paneTemplatePaths.features !== undefined, `${label}: getPaneTemplatePaths().features is required.`);
-  assert.ok(paneTemplatePaths.spells !== undefined, `${label}: getPaneTemplatePaths().spells is required.`);
-  assert.ok(paneTemplatePaths.effects !== undefined, `${label}: getPaneTemplatePaths().effects is required.`);
-  assert.ok(paneTemplatePaths.biography !== undefined, `${label}: getPaneTemplatePaths().biography is required.`);
-
   const templatePaths = adapter.getTemplatePaths();
   assert.ok(Array.isArray(templatePaths), `${label}: getTemplatePaths() must return an array.`);
   assert.equal(templatePaths.includes(undefined as unknown as string), false, `${label}: getTemplatePaths() must not include undefined optional templates.`);
@@ -84,6 +76,9 @@ async function assertAdapterContract(label: string, adapter: CharacterSheetAdapt
   });
   assert.equal(typeof paneViewModel.context, "string", `${label}: buildPaneViewModel() must return a context key.`);
   assert.equal(typeof paneViewModel.pane, "string", `${label}: buildPaneViewModel() must return a pane id.`);
+  assert.equal(typeof paneViewModel.templatePath, "string", `${label}: buildPaneViewModel() must return a template path.`);
+  assert.notEqual(paneViewModel.templatePath.trim(), "", `${label}: buildPaneViewModel() template path must not be empty.`);
+  assert.ok(templatePaths.includes(paneViewModel.templatePath), `${label}: pane template path must be included in getTemplatePaths().`);
 
   const actionContext: CharacterSheetActionContext = {
     actor: null,

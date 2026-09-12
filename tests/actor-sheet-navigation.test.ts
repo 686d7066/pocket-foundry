@@ -241,18 +241,21 @@ test("actor sheet template preserves required regions and Character terminology"
   const template = readFileSync(new URL("../src/templates/actor-sheet-shell.hbs", import.meta.url), "utf8");
   const shellTemplate = readFileSync(new URL("../src/templates/shell.hbs", import.meta.url), "utf8");
   const css = readFileSync(new URL("../src/styles/pocket-foundry.css", import.meta.url), "utf8");
+  const dnd5eHeaderTemplate = readFileSync(new URL("../src/systems/dnd5e/templates/partials/header-details.hbs", import.meta.url), "utf8");
+  const dnd5eCss = readFileSync(new URL("../src/systems/dnd5e/styles/pocket-foundry-dnd5e.css", import.meta.url), "utf8");
 
   assert.match(template, /class="mf-header actor-sheet-header"/);
   assert.match(template, /class="portrait"/);
   assert.match(template, /class="title-block"/);
   assert.match(template, /class="header-stats/);
-  assert.match(template, /class="header-inspiration-button .*inspiration-toggle/);
-  assert.match(template, /aria-label="Heroic Inspiration"/);
-  assert.match(template, /\{\{#if headerDetails\}\}/);
+  assert.match(template, /\{\{#if headerContent\}\}/);
+  assert.match(template, /\{\{> \(lookup headerContent "templatePath"\) headerContent\.data\}\}/);
   assert.match(template, /\{\{#unless limited\}\}[\s\S]*class="header-stats/);
   assert.match(template, /\{\{#unless limited\}\}[\s\S]*railClass="pane-rail"/);
   assert.match(template, /class="content actor-pane-content limited-character-view"/);
-  assert.match(template, /headerDetails\.header\.hp\.value/);
+  assert.match(dnd5eHeaderTemplate, /header\.hp\.value/);
+  assert.match(dnd5eHeaderTemplate, /class="header-inspiration-button .*inspiration-toggle/);
+  assert.match(dnd5eHeaderTemplate, /aria-label="\{\{localize 'POCKETFOUNDRY\.DND5E\.Details\.HeroicInspiration'\}\}"/);
   assert.match(template, /railClass="pane-rail"/);
   const paneRailTemplate = readFileSync(new URL("../src/templates/partials/pane-rail.hbs", import.meta.url), "utf8");
   assert.match(paneRailTemplate, /aria-label="\{\{label\}\}"/);
@@ -270,7 +273,8 @@ test("actor sheet template preserves required regions and Character terminology"
   assert.match(css, /@import "tailwindcss\/utilities"/);
   assert.match(css, /\.pocket-foundry-root \.rail button\.icon-only[\s\S]*@apply min-w-11/);
   assert.match(css, /--pf-header-height: 72px/);
-  assert.match(css, /\.pocket-foundry-root \.header-inspiration-button/);
+  assert.doesNotMatch(css, /\.pocket-foundry-root \.header-inspiration-button/);
+  assert.match(dnd5eCss, /\.pocket-foundry-root \.header-inspiration-button/);
   assert.match(css, /\.pocket-foundry-root \.header-stats \{ @apply flex min-w-0 flex-nowrap items-center justify-end gap-1 overflow-visible/);
   assert.match(css, /\.pocket-foundry-root \.actor-sheet-shell\.character-banner-enabled \.actor-top-chrome \{ @apply bg-mf-surface\/70; \}/);
   assert.match(css, /\.pocket-foundry-root \.limited-character-view/);
@@ -288,7 +292,7 @@ test("mobile shell hydrates the initial character route from the browser hash be
   const root = createRootElement();
   const actor = createCharacter();
   const writtenUrls: string[] = [];
-  let renderedData: { contentType?: string; actorSheet?: { unavailable: boolean; actorName?: string; activePane?: string; headerDetails?: { unavailable: boolean; header?: { name: string } }; details?: unknown } } | undefined;
+  let renderedData: { contentType?: string; actorSheet?: { unavailable: boolean; actorName?: string; activePane?: string; headerContent?: { data?: { unavailable?: boolean; header?: { name: string } } }; activePaneContent?: { context?: string; templatePath?: string; data?: unknown }; details?: unknown } } | undefined;
 
   Object.defineProperty(globalThis, "Element", { configurable: true, value: Object });
   Object.defineProperty(globalThis, "addEventListener", { configurable: true, value: () => undefined });
@@ -363,7 +367,9 @@ test("mobile shell hydrates the initial character route from the browser hash be
   assert.equal(renderedData?.actorSheet?.unavailable, false);
   assert.equal(renderedData?.actorSheet?.actorName, "Arlen Mire");
   assert.equal(renderedData?.actorSheet?.activePane, "Inventory");
-  assert.equal(renderedData?.actorSheet?.headerDetails?.unavailable, false);
+  assert.equal(renderedData?.actorSheet?.headerContent?.data?.unavailable, false);
+  assert.equal(renderedData?.actorSheet?.activePaneContent?.context, "inventory");
+  assert.equal(renderedData?.actorSheet?.activePaneContent?.templatePath, "modules/pocket-foundry/systems/dnd5e/templates/inventory.hbs");
   assert.equal(renderedData?.actorSheet?.details, undefined);
   assert.equal(writtenUrls.at(-1), `http://localhost/game#${RouteHashKey.Character}=Actor.arlen&pane=Inventory`);
   assert.ok(!writtenUrls.includes(`http://localhost/game#${RouteHashKey.Characters}`));
@@ -373,7 +379,7 @@ test("mobile shell allows limited character routes and renders limited identity 
   const root = createRootElement();
   const actor = createLimitedCharacter();
   const writtenUrls: string[] = [];
-  let renderedData: { contentType?: string; actorSheet?: { unavailable: boolean; limited?: boolean; actorName?: string; headerDetails?: unknown; details?: unknown } } | undefined;
+  let renderedData: { contentType?: string; actorSheet?: { unavailable: boolean; limited?: boolean; actorName?: string; headerContent?: unknown; activePaneContent?: unknown; details?: unknown } } | undefined;
 
   Object.defineProperty(globalThis, "Element", { configurable: true, value: Object });
   Object.defineProperty(globalThis, "addEventListener", { configurable: true, value: () => undefined });
@@ -448,7 +454,8 @@ test("mobile shell allows limited character routes and renders limited identity 
   assert.equal(renderedData?.actorSheet?.unavailable, false);
   assert.equal(renderedData?.actorSheet?.limited, true);
   assert.equal(renderedData?.actorSheet?.actorName, "Lima Tallow");
-  assert.equal(renderedData?.actorSheet?.headerDetails, undefined);
+  assert.equal(renderedData?.actorSheet?.headerContent, undefined);
+  assert.equal(renderedData?.actorSheet?.activePaneContent, undefined);
   assert.equal(renderedData?.actorSheet?.details, undefined);
   assert.equal(writtenUrls.at(-1), `http://localhost/game#${RouteHashKey.Character}=Actor.limited&pane=Details`);
   assert.ok(!writtenUrls.includes(`http://localhost/game#${RouteHashKey.Characters}`));

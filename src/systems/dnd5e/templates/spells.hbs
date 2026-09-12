@@ -8,24 +8,24 @@
           <button class="spellcasting-card {{#if primary}}primary{{/if}}" type="button" data-action="spells-set-primary" data-ability="{{ability}}" {{#unless canSetPrimary}}disabled{{/unless}} data-swipe-ignore>
             <span class="spellcasting-title">{{label}}</span>
             <span class="spellcasting-primary" aria-hidden="true"></span>
-            <span><em>Ability</em><strong>{{abilityMod}}</strong></span>
-            <span><em>Attack</em><strong>{{attack}}</strong></span>
-            <span><em>Spell DC</em><strong>{{save}}</strong></span>
-            <span><em>Prepared</em><strong>{{prepared}}</strong></span>
+            <span><em>{{localize 'DND5E.Ability'}}</em><strong>{{abilityMod}}</strong></span>
+            <span><em>{{localize 'DND5E.Attack'}}</em><strong>{{attack}}</strong></span>
+            <span><em>{{localize 'DND5E.SpellDC'}}</em><strong>{{save}}</strong></span>
+            <span><em>{{localize 'DND5E.Prepared'}}</em><strong>{{prepared}}</strong></span>
           </button>
         {{else}}
-          <span><b>No spellcasting</b><em>Spellcasting classes appear here</em></span>
+          <span><b>{{localize 'POCKETFOUNDRY.DND5E.Spells.NoSpellcasting.Title'}}</b><em>{{localize 'POCKETFOUNDRY.DND5E.Spells.NoSpellcasting.Body'}}</em></span>
         {{/each}}
       </div>
     </div>
 
     {{> "modules/pocket-foundry/templates/partials/pane-search-toolbar.hbs"
-      toolbarClass="spells-toolbar"
-      searchClass="spells-search"
+      toolbarClass="pane-search-toolbar spells-toolbar"
+      searchClass="pane-search-field spells-search"
       region="spells-toolbar"
-      placeholder="Search spells"
-      ariaLabel="Search spells"
-      clearAriaLabel="Clear spell search"
+      placeholder=(localize 'DND5E.SpellsSearch')
+      ariaLabel=(localize 'DND5E.SpellsSearch')
+      clearAriaLabel=(localize 'POCKETFOUNDRY.DND5E.Spells.ClearSearch')
       value=searchQuery
       pane="Spells"
       canClear=canClearSearch
@@ -37,7 +37,7 @@
           <div class="section-heading sheet-group-heading spells-section-heading">
             <h2>{{label}}</h2>
             {{#if slotTrack}}
-              <div class="slot-tracks spell-section-slots" aria-label="{{label}} slot controls" data-region="slot-tracks" data-favorite-context>
+              <div class="slot-tracks spell-section-slots" aria-label="{{localize 'POCKETFOUNDRY.DND5E.Spells.SlotControls' label=label}}" data-region="slot-tracks" data-favorite-context>
                 {{#each slotTrack.pips}}
                   <button
                     class="spell-slot-pip {{#if filled}}filled{{/if}} {{#if temporary}}temporary{{/if}}"
@@ -59,29 +59,22 @@
                   ariaLabel=slotTrack.label
                   addAction="context-add-favorite"
                   removeAction="context-remove-favorite"
-                  addLabel="Add to Favorites"
-                  removeLabel="Remove from Favorites"
+                  addLabel=(localize 'POCKETFOUNDRY.Favorites.Add')
+                  removeLabel=(localize 'POCKETFOUNDRY.Favorites.Remove')
                   favoriteType="slots"
                   favoriteId=slotTrack.id
                 }}
               </div>
             {{/if}}
           </div>
-          <div class="sheet-table sheet-list spells-table">
-            <div class="sheet-list-head spells-list-head dnd5e-table-head pf-list-schema pf-list-schema--icon-title-4meta-actions" aria-hidden="true">
-              <span>Name</span>
-              <span>Time</span>
-              <span>Range</span>
-              <span>Target</span>
-              <span>Roll</span>
-              <span></span>
-            </div>
+          <div class="sheet-table sheet-list spells-table" data-table-layout="icon-title-4meta-actions">
+            {{> "modules/pocket-foundry/systems/dnd5e/templates/partials/table-head.hbs" kind="spells" timeLabel=(localize 'DND5E.SpellHeader.Time')}}
             {{#each spells}}
               {{> "modules/pocket-foundry/systems/dnd5e/templates/partials/spell-row.hbs" this}}
             {{else}}
               <div class="feature-card empty-spell-card">
-                <strong>No {{label}} spells</strong>
-                <p class="mini">Spells in this section appear here when present.</p>
+                <strong>{{localize 'POCKETFOUNDRY.DND5E.Spells.NoSectionSpells' label=label}}</strong>
+                <p class="mini">{{localize 'POCKETFOUNDRY.DND5E.Spells.EmptySection'}}</p>
               </div>
             {{/each}}
           </div>
