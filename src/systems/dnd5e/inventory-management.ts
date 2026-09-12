@@ -1,4 +1,4 @@
-import { getCollectionContents, getObject } from "../../core/utils.ts";
+import { getCollectionContents, getObject, getString } from "../../core/utils.ts";
 import { canUpdateDocument, canViewDocument, type FoundryUserLike, type PermissionCheckedDocument } from "../../services/permissions.ts";
 
 export interface ManagedInventoryItem extends PermissionCheckedDocument {
@@ -28,10 +28,12 @@ export function managedItems(actor: ManagedInventoryActor): ManagedInventoryItem
   return (getCollectionContents(actor.items) as ManagedInventoryItem[]).filter(item => PHYSICAL_TYPES.has(item.type ?? ""));
 }
 
-/** Reads the system's container reference without treating a missing reference as an item ID. */
+/** Resolves stored IDs and prepared container documents consistently for every inventory workflow. */
 export function parentContainerId(item: ManagedInventoryItem): string {
   const value = getObject(item.system)?.container;
-  return typeof value === "string" ? value : "";
+  if (typeof value === "string") return value;
+  const container = getObject(value);
+  return getString(container?.id) || getString(container?._id);
 }
 
 /** Finds all descendants safely even if external data contains a container cycle. */

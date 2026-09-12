@@ -25,7 +25,7 @@ function select(form: HTMLElement, label: string, values: { id: string; label: s
   wrapper.append(field); form.append(wrapper); return field;
 }
 
-/** Uses the shared shell popup, preserving drafts across document-driven refreshes. */
+/** Preserves drafts across refreshes of the same actor and pane, closing on navigation. */
 function editor(title: string, context: CharacterSheetShellActionContext) {
   activeEditors.get(context.element)?.();
   const dialog = context.helpers.openFormDialog?.(title);
@@ -72,9 +72,10 @@ function editor(title: string, context: CharacterSheetShellActionContext) {
     if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
     else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
   });
-  // The shell replaces its contents on refresh; keep this form and its entered values.
+  // Only document refreshes may retain a draft; navigation invalidates its actor binding.
   const observer = new MutationObserver(() => {
-    if (!context.element.isConnected) { close(); return; }
+    if (closed) return;
+    if (!context.helpers.isCurrentRoute()) { close(); return; }
     if (!closed && !dialog.isConnected) {
       (context.element.querySelector<HTMLElement>(".pocket-foundry-root") ?? context.element).append(dialog);
     }
@@ -84,12 +85,14 @@ function editor(title: string, context: CharacterSheetShellActionContext) {
   queueMicrotask(() => { if (!closed) fields.querySelector<HTMLElement>("input, select, button")?.focus(); });
   const bind = (operation: () => Promise<InventoryOperationResult>) => {
     form.addEventListener("submit", event => {
+      if (closed || !context.helpers.isCurrentRoute()) { event.preventDefault(); close(); return; }
       event.preventDefault(); if (busy || !form.reportValidity()) return;
       busy = true; submit.disabled = true; cancel.disabled = true;
       status.textContent = text("Saving", "Saving…");
       void (async () => {
         try {
           const result = await operation();
+          if (closed || !context.helpers.isCurrentRoute()) { close(); return; }
           if (!result.ok) {
             status.textContent = result.reason === "contents-changed" ? text("Changed", "The bag contents changed. Close this dialog and review them again.")
               : result.reason === "cycle" || result.reason === "depth" ? text("Nesting", "That move would create invalid or excessively deep nesting.")
@@ -117,7 +120,7 @@ export async function handleInventoryManagement(context: CharacterSheetShellActi
   const resolve = runtime.foundry?.utils?.fromUuid ?? runtime.fromUuid;
   const documentValue = await resolve?.(context.route.actorUuid);
   if (!documentValue || typeof documentValue !== "object") return true;
-  if (!context.element.isConnected) return true;
+  if (!context.helpers.isCurrentRoute()) return true;
   const actor = documentValue as ManagedInventoryActor;
   const user = runtime.game?.user;
   if (!canUpdateDocument(actor, user)) return true;

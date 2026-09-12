@@ -136,6 +136,11 @@ export async function handleCharacterSheetClickAction(context: MobileShellAction
     action,
     route: activeRoute,
     helpers: {
+      isCurrentRoute: () => {
+        const current = router.getCurrentRoute();
+        return element.isConnected && current.view === activeRoute.view
+          && current.actorUuid === activeRoute.actorUuid && current.pane === activeRoute.pane;
+      },
       openFormDialog: title => openConfirmationDialog(element, {
         id: "adapter-form", title, body: "", confirmLabel: "", confirmAction: "", cancelAction: ""
       }),

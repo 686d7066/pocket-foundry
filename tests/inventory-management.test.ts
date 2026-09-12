@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "vitest";
-import { containerChoices, deleteManagedItem, importManagedItem, moveManagedItem, saveManagedBag, validInventoryImage, type ManagedInventoryActor, type ManagedInventoryItem } from "../src/systems/dnd5e/inventory-management.ts";
+import { containerChoices, deleteManagedItem, importManagedItem, inventoryDescendants, moveManagedItem, parentContainerId, saveManagedBag, validInventoryImage, type ManagedInventoryActor, type ManagedInventoryItem } from "../src/systems/dnd5e/inventory-management.ts";
 
 function fixture() {
   const items: ManagedInventoryItem[] = [];
@@ -18,7 +18,7 @@ function fixture() {
       return removed;
     }
   };
-  const add = (id: string, type: string, container: string | null = null) => {
+  const add = (id: string, type: string, container: string | { id?: string; _id?: string } | null = null) => {
     const system = { container, quantity: 1 };
     const item: ManagedInventoryItem = { id, name: id, type, system, parent: actor, canUserModify: () => true, getUserLevel: () => 3,
       update: async changes => { writes.push(changes); if ("system.container" in changes) system.container = String(changes["system.container"] ?? "") || null; return item; }
@@ -42,6 +42,36 @@ test("moves between main inventory and distinct bags while preventing self and d
   assert.deepEqual(containerChoices(f.actor, {}).map(c => c.label), ["bag", "bag › pouch", "spare"]);
   assert.deepEqual(containerChoices(f.actor, {}, "bag").map(c => c.id), ["spare"]);
 });
+
+for (const key of ["id", "_id"] as const) {
+  test(`prepared container references using ${key} preserve descendants, nesting checks, and deletion confirmation`, async () => {
+    const f = fixture();
+    f.add("bag", "container");
+    const pouch = f.add("pouch", "container", { [key]: "bag" });
+    const rope = f.add("rope", "loot", { [key]: "pouch" });
+    assert.equal(parentContainerId(pouch), "bag");
+    assert.equal(parentContainerId(rope), "pouch");
+    assert.deepEqual(inventoryDescendants(f.actor, "bag").map(item => item.id), ["pouch", "rope"]);
+    assert.deepEqual(containerChoices(f.actor, {}).map(choice => choice.label), ["bag", "bag › pouch"]);
+    assert.deepEqual(containerChoices(f.actor, {}, "bag"), []);
+    assert.equal((await moveManagedItem(f.actor, {}, "bag", "pouch")).reason, "cycle");
+    assert.equal((await deleteManagedItem(f.actor, {}, "bag", "keep", [])).reason, "contents-changed");
+    assert.deepEqual(f.writes, []);
+    assert.equal((await deleteManagedItem(f.actor, {}, "bag", "keep", ["pouch", "rope"])).ok, true);
+    assert.equal(parentContainerId(pouch), "");
+    assert.equal(parentContainerId(rope), "pouch");
+  });
+
+  test(`prepared container references using ${key} enforce maximum depth and delete the full subtree`, async () => {
+    const f = fixture();
+    for (let i = 0; i < 5; i++) f.add(String(i), "container", i ? { [key]: String(i - 1) } : null);
+    f.add("bag", "container");
+    f.add("rope", "loot", { [key]: "bag" });
+    assert.equal((await moveManagedItem(f.actor, {}, "bag", "4")).reason, "depth");
+    assert.equal((await deleteManagedItem(f.actor, {}, "bag", "delete", ["rope"])).ok, true);
+    assert.equal(f.items.some(item => item.id === "bag" || item.id === "rope"), false);
+  });
+}
 
 test("nested bag moves account for descendant depth", async () => {
   const f = fixture(); for (let i=0;i<5;i++) f.add(String(i), "container", i ? String(i-1) : null);

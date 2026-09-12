@@ -227,6 +227,8 @@ export type PaneSwipeGesture = {
 };
 
 export type CharacterSheetActionHelpers = {
+  /** Whether the shell still shows the character and pane that initiated this action. */
+  isCurrentRoute(): boolean;
   openFormDialog?(title: string): HTMLElement;
   setDialogOpen(dialogId: string | undefined, open: boolean): void;
   setNumberWheelValue(wheel: HTMLElement, value: number): void;
