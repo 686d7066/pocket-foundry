@@ -1,3 +1,4 @@
+import { disposeTableLayout } from "./table-layout.ts";
 import { getPocketFoundryRouteFromHash } from "../../router/browser-history.ts";
 import { createMobileRouter } from "../../router/mobile-router.ts";
 import { createReactiveRefreshController, type ReactiveRefreshController, type ReactiveRefreshHooks } from "../../services/reactive-refresh.ts";
@@ -79,6 +80,7 @@ export function createMobileShellController(): MobileShellController {
       activateBrowserHistory(router);
       viewportOwnership.acquire();
     } catch (error) {
+      disposeTableLayout(rootElement);
       rootElement.remove();
       rootElement = undefined;
       viewportOwnership.release();
@@ -101,6 +103,7 @@ export function createMobileShellController(): MobileShellController {
     clearSearchDebounce(searchState);
     unbindBrowserBack?.();
     unbindBrowserBack = undefined;
+    if (rootElement) disposeTableLayout(rootElement);
     rootElement?.remove();
     rootElement = undefined;
     uninstallLeaveGameConfirmGuard();

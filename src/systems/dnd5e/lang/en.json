@@ -1,4 +1,7 @@
 {
+  "POCKETFOUNDRY.DND5E.Table.Short.quantity": "Qty.",
+  "POCKETFOUNDRY.DND5E.Table.Short.weight": "Wt.",
+  "POCKETFOUNDRY.DND5E.Table.Short.capacity": "Cap.",
   "POCKETFOUNDRY.DND5E.Biography.Backstory": "Backstory",
   "POCKETFOUNDRY.DND5E.Biography.NoBackstory.Body": "Biography text appears here when filled in.",
   "POCKETFOUNDRY.DND5E.Biography.NoBackstory.Title": "No Backstory",

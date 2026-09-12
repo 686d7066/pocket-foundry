@@ -299,11 +299,34 @@
   .pocket-foundry-root .sheet-list-row { @apply m-0 min-h-[42px]; }
   .pocket-foundry-root .content-list-row:last-child,
   .pocket-foundry-root .sheet-list-row:last-child { @apply border-b-0; }
-  .pocket-foundry-root .pf-list-schema { grid-template-columns: var(--pf-list-cols); }
-  .pocket-foundry-root .pf-list-schema--icon-title-3meta-actions { --pf-list-cols: 34px minmax(0,1fr) 44px 58px 58px 56px; }
-  .pocket-foundry-root .pf-list-schema--icon-title-2meta-actions { --pf-list-cols: 34px minmax(0,1fr) 58px 68px 40px; }
-  .pocket-foundry-root .pf-list-schema--icon-title-4meta-actions { --pf-list-cols: 34px minmax(0,1.35fr) 44px 58px 68px 44px 28px; }
-  .pocket-foundry-root .pf-list-schema--icon-title-source-actions { --pf-list-cols: 34px minmax(0,1fr) minmax(88px,128px) 34px; }
+  /* Metadata fits its content; only the primary text column receives spare space. */
+  .pocket-foundry-root .pf-list-schema,
+  .pocket-foundry-root [data-table-layout] {
+    --pf-list-icon: 34px;
+    --pf-list-title: minmax(0,1fr);
+    --pf-list-meta: fit-content(16%);
+    grid-template-columns: var(--pf-list-cols);
+  }
+  .pocket-foundry-root .pf-list-schema--icon-title-3meta-actions,
+  .pocket-foundry-root [data-table-layout="icon-title-3meta-actions"] { --pf-list-cols: var(--pf-list-icon) var(--pf-list-title) repeat(3,var(--pf-list-meta)) max-content; }
+  .pocket-foundry-root .pf-list-schema--icon-title-2meta-actions,
+  .pocket-foundry-root [data-table-layout="icon-title-2meta-actions"] { --pf-list-cols: var(--pf-list-icon) var(--pf-list-title) repeat(2,var(--pf-list-meta)) max-content; }
+  .pocket-foundry-root .pf-list-schema--icon-title-4meta-actions,
+  .pocket-foundry-root [data-table-layout="icon-title-4meta-actions"] { --pf-list-cols: var(--pf-list-icon) var(--pf-list-title) repeat(4,var(--pf-list-meta)) max-content; }
+  .pocket-foundry-root .pf-list-schema--icon-title-source-actions,
+  .pocket-foundry-root [data-table-layout="icon-title-source-actions"] { --pf-list-cols: var(--pf-list-icon) var(--pf-list-title) var(--pf-list-meta) max-content; }
+  .pocket-foundry-root [data-table-layout="indicator-meta-title-2meta"] { --pf-list-cols: 15px var(--pf-list-meta) var(--pf-list-title) repeat(2,var(--pf-list-meta)); }
+  .pocket-foundry-root [data-table-layout="indicator-meta-title-meta"] { --pf-list-cols: 15px var(--pf-list-meta) var(--pf-list-title) var(--pf-list-meta); }
+  .pocket-foundry-root [data-table-layout="title-5meta"] { --pf-list-cols: var(--pf-list-title) repeat(5,var(--pf-list-meta)); }
+  .pocket-foundry-root .compact-panels,
+  .pocket-foundry-root [data-panel-grid] {
+    display: grid;
+    grid-template-columns: repeat(auto-fit,minmax(min(100%,var(--pf-panel-min-width,320px)),1fr));
+    gap: .625rem;
+    min-width: 0;
+  }
+  .pocket-foundry-root .compact-panels > *,
+  .pocket-foundry-root [data-panel-grid] > * { min-width: 0; }
   .pocket-foundry-root .content-list-row .item-icon,
   .pocket-foundry-root .sheet-list-row .item-icon { @apply h-[30px] w-[30px] rounded text-[.66rem]; }
   .pocket-foundry-root .content-list-value,
@@ -405,7 +428,7 @@
   .pocket-foundry-root .journal-page-row,
   .pocket-foundry-root .recent-row { @apply w-full text-left; }
   .pocket-foundry-root .journal-create-page-button { @apply ml-auto inline-grid min-h-7 grid-cols-[auto_auto] items-center gap-1 rounded border border-mf-line bg-mf-subtle px-2 text-[.74rem] font-extrabold text-mf-accent; }
-  .pocket-foundry-root .journal-page-row-main { @apply col-span-3 grid min-h-[34px] grid-cols-[34px_minmax(0,1fr)_74px] items-center gap-x-2 border-0 bg-transparent p-0 text-left text-mf-text; }
+  .pocket-foundry-root .journal-page-row-main { @apply col-span-3 grid min-h-[34px] [grid-template-columns:var(--pf-table-leading-columns,34px_minmax(0,1fr)_74px)] items-center gap-x-2 border-0 bg-transparent p-0 text-left text-mf-text; }
   .pocket-foundry-root .journal-page-delete-button,
   .pocket-foundry-root .journal-page-edit-button { @apply grid h-8 w-8 place-items-center justify-self-end rounded border border-mf-line bg-mf-subtle p-0 text-mf-accent; }
   .pocket-foundry-root .journal-page-form-panel { @apply relative z-[1] grid w-[min(100%,420px)] gap-3 rounded-lg border border-mf-line bg-mf-surface p-3.5 shadow-lg; }
@@ -570,13 +593,36 @@
   .pocket-foundry-root .portrait-viewer-panel img { @apply block max-h-[86vh] max-w-[92vw] rounded-lg border border-mf-line bg-mf-surface shadow-mf-shell; }
 }
 
+/* Explicit shared tracks avoid native details/summary layout dependencies. */
+.pocket-foundry-root [data-table-layout] { --pf-table-gap: 8px; display: block; min-width: 0; column-gap: var(--pf-table-gap); }
+.pocket-foundry-root [data-table-layout] > article,
+.pocket-foundry-root [data-table-layout] > article > .expandable-detail-drawer { display: block; min-width: 0; }
+.pocket-foundry-root [data-table-layout] > :is(.sheet-list-head, .content-list-head, .content-list-row, [data-table-row]),
+.pocket-foundry-root [data-table-layout] > article > .expandable-detail-drawer > summary {
+  display: grid;
+  grid-template-columns: var(--pf-table-columns, var(--pf-list-cols));
+  column-gap: var(--pf-table-gap);
+  min-width: 0;
+}
+.pocket-foundry-root [data-table-cell-group] { column-gap: var(--pf-table-gap); }
+.pocket-foundry-root .content-list-head > *,
+.pocket-foundry-root .sheet-list-head > *,
+.pocket-foundry-root .content-list-value,
+.pocket-foundry-root .sheet-list-value {
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  overflow: visible;
+  text-overflow: clip;
+}
+
+@media (max-width: 480px) {
+  .pocket-foundry-root [data-table-layout] { --pf-list-icon: 30px; --pf-table-gap: 6px; }
+}
+
 @layer utilities {
   @media (max-width: 480px) {
     .pocket-foundry-root { --pf-header-height: 72px; --pf-bottom-nav-height: 78px; }
-    .pocket-foundry-root .pf-list-schema--icon-title-3meta-actions { --pf-list-cols: 30px minmax(0,1fr) 38px 48px 46px 48px; @apply gap-x-1.5; }
-    .pocket-foundry-root .pf-list-schema--icon-title-2meta-actions { --pf-list-cols: 30px minmax(0,1fr) 46px 54px 32px; @apply gap-x-1.5; }
-    .pocket-foundry-root .pf-list-schema--icon-title-4meta-actions { --pf-list-cols: 30px minmax(104px,1.35fr) 38px 46px 54px 34px 24px; @apply gap-x-1.5; }
-    .pocket-foundry-root .pf-list-schema--icon-title-source-actions { --pf-list-cols: 30px minmax(78px,1fr) minmax(52px,78px) 28px; @apply gap-x-1.5; }
     .pocket-foundry-root .mf-header { @apply grid-cols-[40px_44px_minmax(0,1fr)_max-content] gap-1.5 px-2; }
     .pocket-foundry-root .icon-button { @apply h-10 w-10; }
     .pocket-foundry-root .portrait { @apply h-11 w-11; }

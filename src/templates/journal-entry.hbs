@@ -17,7 +17,7 @@
         {{/if}}
       </div>
       {{#if hasPages}}
-        <div class="content-table content-list pf-view-list journal-list">
+        <div class="content-table content-list pf-view-list journal-list" data-table-layout="icon-title-source-actions">
           <div class="content-list-head journal-list-head" aria-hidden="true">
             <span>{{localize 'POCKETFOUNDRY.Table.Name'}}</span>
             <span>{{localize 'POCKETFOUNDRY.Table.Type'}}</span>
@@ -25,7 +25,7 @@
           </div>
           {{#each visiblePages}}
             <div class="row content-list-row journal-page-row">
-              <button class="journal-page-row-main" type="button" data-action="journal-open-page" data-entry-uuid="{{../uuid}}" data-page-uuid="{{uuid}}">
+              <button class="journal-page-row-main" data-table-cell-group type="button" data-action="journal-open-page" data-entry-uuid="{{../uuid}}" data-page-uuid="{{uuid}}">
                 <span class="item-icon" aria-hidden="true">{{iconText}}</span>
                 <span class="row-title content-row-title">
                   <strong>{{name}}</strong>

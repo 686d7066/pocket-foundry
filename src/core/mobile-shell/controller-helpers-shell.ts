@@ -1,3 +1,4 @@
+import { disposeTableLayout, initializeTableLayout } from "./table-layout.ts";
 import type { foundry } from "fvtt-types";
 import { type MobileRouter } from "../../router/mobile-router.ts";
 import { createShellRoute, getShellDestination, RouteView, ShellDestination, type CharacterRoute, type MobileRoute } from "../../router/routes.ts";
@@ -50,11 +51,14 @@ export async function renderShell(rootElement: HTMLElement, router: MobileRouter
   if (searchState) await prepareSearchForRender(activeRoute, searchState);
   persistSelectedCharacterRoute(selectedCharacterRoute);
   await createFoundryRecentsService()?.recordRoute(activeRoute);
-  rootElement.innerHTML = await runtime.renderTemplate(SHELL_TEMPLATE, await buildShellViewModel(activeRoute, router.canGoBack(), selectedCharacterRoute, searchState));
+  const html = await runtime.renderTemplate(SHELL_TEMPLATE, await buildShellViewModel(activeRoute, router.canGoBack(), selectedCharacterRoute, searchState));
+  disposeTableLayout(rootElement);
+  rootElement.innerHTML = html;
   restoreRouteScroll(rootElement, router.getCurrentRoute());
   restoreSearchFocus(rootElement, activeRoute);
   restorePaneSearchFocus(rootElement, activeRoute);
   restoreCharacterPickerSearchFocus(rootElement, activeRoute);
+  initializeTableLayout(rootElement);
 }
 
 async function normalizeUnavailableCombatRoute(router: MobileRouter): Promise<MobileRoute> {

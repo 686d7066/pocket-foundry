@@ -21,7 +21,7 @@
             <h2>{{label}}</h2>
             {{#if info}}<span class="chip warn">{{info}}</span>{{/if}}
           </div>
-          <div class="sheet-table sheet-list effects-list">
+          <div class="sheet-table sheet-list effects-list" data-table-layout="icon-title-source-actions">
             {{> "modules/pocket-foundry/systems/dnd5e/templates/partials/table-head.hbs" kind="effects"}}
             {{#each effects}}
               {{> "modules/pocket-foundry/systems/dnd5e/templates/partials/effect-row.hbs" this}}

@@ -3,7 +3,7 @@ import { localize, localizeSystemKey } from "../../core/localization.ts";
 import { getCollectionContents, getInitials, getNumber, getObject, getString } from "../../core/utils.ts";
 import { getFoundryRuntime, type FoundryDataShape } from "../../core/foundry-globals.ts";
 import { canUpdateDocument, canViewDocument, type FoundryDocumentMutationApi, type FoundryUserLike, type PermissionCheckedDocument } from "../../services/permissions.ts";
-import { enrichSectionRows } from "../../services/rich-text-enrichment.ts";
+import { enrichDescriptionRows, type RichTextHtmlEnricher } from "../../services/rich-text-enrichment.ts";
 import { SECTION_CONFIG, SECTION_ORDER, type InventoryFactField, type InventorySectionId } from "./inventory-config.ts";
 import {
   buildSignedAdjustmentOptions,
@@ -88,6 +88,7 @@ export type Dnd5eInventorySectionViewModel = {
 export type Dnd5eInventoryListColumnViewModel = {
   id: string;
   label: string;
+  shortLabel?: string;
 };
 
 export type Dnd5eInventoryCurrencyValueViewModel = {
@@ -110,6 +111,7 @@ export type Dnd5eInventoryItemViewModel = {
   outOfStock: boolean;
   isContainer: boolean;
   id: string;
+  dialogItemId: string;
   sectionId: string;
   uuid: string;
   name: string;
@@ -132,7 +134,7 @@ export type Dnd5eInventoryItemViewModel = {
   containerId: string;
   containerName: string;
   contents: string;
-  children: Dnd5eInventoryChildViewModel[];
+  children: Dnd5eInventoryItemViewModel[];
   chips: string[];
   listCells: Dnd5eInventoryListCellViewModel[];
   quantityAdjustment: Dnd5eInventoryAdjustmentViewModel | null;
@@ -156,17 +158,6 @@ export type Dnd5eInventoryItemViewModel = {
     prepared: boolean | null;
     identified: boolean | null;
   };
-};
-
-export type Dnd5eInventoryChildViewModel = {
-  outOfStock: boolean;
-  id: string;
-  uuid: string;
-  name: string;
-  subtitle: string;
-  quantityLabel: string;
-  weightLabel: string;
-  usesLabel: string;
 };
 
 export type Dnd5eInventoryItemFactViewModel = {
@@ -249,13 +240,10 @@ export async function buildDnd5eInventoryViewModel(options: {
   const textEditor = getFoundryRuntime().TextEditor;
   const enrichHTML = textEditor?.enrichHTML;
   const sections = typeof enrichHTML === "function"
-    ? await enrichSectionRows(sectionsInput, {
-        getRows: section => section.items,
-        setRows: (section, sectionItems) => ({ ...section, items: sectionItems }),
-        documents: items,
-        enrichHtml: enrichHTML.bind(textEditor),
-        secrets: isGmUser(options.user)
-      })
+    ? await Promise.all(sectionsInput.map(async section => ({
+        ...section,
+        items: await enrichInventoryRows(section.items, items, enrichHTML.bind(textEditor), isGmUser(options.user))
+      })))
     : sectionsInput;
 
   return {
@@ -524,6 +512,20 @@ function buildContainer(container: Dnd5eInventoryItem, children: Dnd5eInventoryI
   };
 }
 
+/** Enriches contained item descriptions through the same path as top-level rows. */
+async function enrichInventoryRows(
+  rows: Dnd5eInventoryItemViewModel[],
+  documents: Dnd5eInventoryItem[],
+  enrichHtml: RichTextHtmlEnricher,
+  secrets: boolean
+): Promise<Dnd5eInventoryItemViewModel[]> {
+  const enriched = await enrichDescriptionRows(rows, documents, { enrichHtml, secrets });
+  return Promise.all(enriched.map(async row => ({
+    ...row,
+    children: await enrichInventoryRows(row.children, documents, enrichHtml, secrets)
+  })));
+}
+
 function buildSections(
   items: Dnd5eInventoryItem[],
   childrenByContainer: Map<string, Dnd5eInventoryItem[]>,
@@ -545,7 +547,7 @@ function buildSections(
       label: getInventorySectionLabel(id),
       weight: formatWeight(sumItemWeight(sectionItems)),
       listColumns: getListColumns(id),
-      items: sectionItems.map(item => buildItemViewModel(item, id, childrenByContainer.get(getItemId(item)) ?? [], canUpdate)),
+      items: sectionItems.map(item => buildItemViewModel(item, id, childrenByContainer, canUpdate)),
       empty: sectionItems.length === 0
     };
   }).filter(section => !section.empty);
@@ -562,7 +564,16 @@ function matchesInventorySearch(item: Dnd5eInventoryItem, terms: string[]): bool
   return terms.every(term => haystack.includes(term));
 }
 
-function buildItemViewModel(item: Dnd5eInventoryItem, sectionId: InventorySectionId, children: Dnd5eInventoryItem[], canUpdate: boolean): Dnd5eInventoryItemViewModel {
+/** Builds the shared inventory row for each item, stopping malformed container cycles. */
+function buildItemViewModel(
+  item: Dnd5eInventoryItem,
+  sectionId: InventorySectionId,
+  childrenByContainer: Map<string, Dnd5eInventoryItem[]>,
+  canUpdate: boolean,
+  ancestors: ReadonlySet<string> = new Set()
+): Dnd5eInventoryItemViewModel {
+  const path = new Set([...ancestors, getItemId(item)]);
+  const children = (childrenByContainer.get(getItemId(item)) ?? []).filter(child => !path.has(getItemId(child)));
   const system = getObject(item.system) ?? {};
   const labels = getObject(item.labels) ?? {};
   const quantity = getNumber(system.quantity);
@@ -586,6 +597,7 @@ function buildItemViewModel(item: Dnd5eInventoryItem, sectionId: InventorySectio
     outOfStock: quantity === 0,
     isContainer: item.type === "container",
     id: getItemId(item),
+    dialogItemId: [...path].join("-"),
     sectionId,
     uuid: getItemUuid(item),
     name: item.name?.trim() || localize("POCKETFOUNDRY.Document.UnnamedItem", "Unnamed Item"),
@@ -608,7 +620,7 @@ function buildItemViewModel(item: Dnd5eInventoryItem, sectionId: InventorySectio
     containerId: getContainerId(item),
     containerName,
     contents,
-    children: children.map(child => buildChildViewModel(child)),
+    children: children.map(child => buildItemViewModel(child, SECTION_ORDER.find(id => id === getInventorySectionId(child)) ?? "loot", childrenByContainer, canUpdate, path)),
     chips: buildChips(item, { equipped, attuned, prepared, identified }, containerName),
     listCells: [],
     quantityAdjustment,
@@ -633,10 +645,13 @@ function buildItemViewModel(item: Dnd5eInventoryItem, sectionId: InventorySectio
   return itemViewModel;
 }
 
+/** Keeps full column names for accessibility while providing localized compact headings. */
 function getListColumns(sectionId: InventorySectionId): Dnd5eInventoryListColumnViewModel[] {
+  const abbreviations: Record<string, string> = { quantity: "Qty.", weight: "Wt.", capacity: "Cap." };
   return SECTION_CONFIG[sectionId].listColumns.map(column => ({
     ...column,
-    label: getInventoryColumnLabel(column.id, column.label)
+    label: getInventoryColumnLabel(column.id, column.label),
+    ...(abbreviations[column.id] ? { shortLabel: localize(`POCKETFOUNDRY.DND5E.Table.Short.${column.id}`, abbreviations[column.id]) } : {})
   }));
 }
 
@@ -804,22 +819,6 @@ function buildFacts(
   if (containerName) facts.push({ label: localizeSystemKey("TYPES.Item.container", "Container"), value: containerName });
 
   return facts;
-}
-
-function buildChildViewModel(item: Dnd5eInventoryItem): Dnd5eInventoryChildViewModel {
-  const system = getObject(item.system) ?? {};
-  const quantity = getNumber(system.quantity);
-  const weight = formatWeight(getNumber(system.totalWeight) ?? getNumber(system.weight));
-  return {
-    outOfStock: quantity === 0,
-    id: getItemId(item),
-    uuid: getItemUuid(item),
-    name: item.name?.trim() || localize("POCKETFOUNDRY.Document.UnnamedItem", "Unnamed Item"),
-    subtitle: getSubtitle(item, system),
-    quantityLabel: formatNullableQuantity(quantity),
-    weightLabel: weight,
-    usesLabel: getUsesLabel(getObject(system.uses))
-  };
 }
 
 function getItemDescription(system: Record<string, unknown>): string {

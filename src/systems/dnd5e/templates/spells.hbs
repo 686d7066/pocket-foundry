@@ -67,7 +67,7 @@
               </div>
             {{/if}}
           </div>
-          <div class="sheet-table sheet-list spells-table">
+          <div class="sheet-table sheet-list spells-table" data-table-layout="icon-title-4meta-actions">
             {{> "modules/pocket-foundry/systems/dnd5e/templates/partials/table-head.hbs" kind="spells" timeLabel=(localize 'DND5E.SpellHeader.Time')}}
             {{#each spells}}
               {{> "modules/pocket-foundry/systems/dnd5e/templates/partials/spell-row.hbs" this}}

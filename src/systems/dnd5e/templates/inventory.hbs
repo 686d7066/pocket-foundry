@@ -56,7 +56,7 @@
             <h2>{{label}}</h2>
             <span class="chip inventory-section-summary"><span>{{localize 'DND5E.Weight'}}</span><strong>{{weight}}</strong></span>
           </div>
-          <div class="sheet-table sheet-list inventory-list">
+          <div class="sheet-table sheet-list inventory-list" data-table-layout="icon-title-3meta-actions">
             {{> "modules/pocket-foundry/systems/dnd5e/templates/partials/table-head.hbs" kind="inventory"}}
             {{#each items}}
               {{> "modules/pocket-foundry/systems/dnd5e/templates/partials/inventory-list-row.hbs" this}}

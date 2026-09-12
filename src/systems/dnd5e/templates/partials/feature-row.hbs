@@ -15,9 +15,9 @@
   {{/inline}}
   {{#*inline "body"}}
       {{#if activities.length}}
-        <div class="feature-activities">
+        <div class="feature-activities" data-table-layout="title-5meta">
           {{#each activities}}
-            <div class="feature-activity-row">
+            <div class="feature-activity-row" data-table-row>
               <strong>{{name}}</strong>
               <span>{{activation}}</span>
               <span>{{range}}</span>

@@ -58,6 +58,7 @@ test("inventory view model groups visible dnd5e items by semantic sections", asy
   assert.deepEqual(model.sections.find(section => section.id === "weapon")?.listColumns.map(column => column.label), ["Roll", "Formula", "Charges"]);
   assert.deepEqual(model.sections.find(section => section.id === "equipment")?.listColumns.map(column => column.label), ["Weight", "Quantity", "Charges"]);
   assert.deepEqual(model.sections.find(section => section.id === "container")?.listColumns.map(column => column.label), ["Capacity", "Contents", "Quantity"]);
+  assert.deepEqual(model.sections.find(section => section.id === "equipment")?.listColumns.map(column => [column.label, column.shortLabel]), [["Weight", "Wt."], ["Quantity", "Qty."], ["Charges", undefined]]);
   assert.equal(backpack?.primaryLabel, "Capacity");
   assert.equal(backpack?.primary, "28/30");
   assert.deepEqual(backpack?.listCells.map(cell => [cell.id, cell.value]), [
@@ -232,6 +233,11 @@ test("inventory descriptions keep content links but strip roll actions after enr
     assert.equal(model.unavailable, false);
     if (model.unavailable) return;
     const row = model.sections.flatMap(section => section.items).find(item => item.id === "wand");
+    wand.system.container = "backpack";
+    const contained = await buildDnd5eInventoryViewModel({ actor, user });
+    if (contained.unavailable) throw new Error("Expected inventory.");
+    const child = contained.sections.flatMap(section => section.items).find(item => item.id === "backpack")?.children.find(item => item.id === "wand");
+    assert.equal(child?.description, row?.description);
     assert.match(row?.description ?? "", /WIS Save/);
     assert.doesNotMatch(row?.description ?? "", /data-action="roll"/);
     assert.match(row?.description ?? "", /data-uuid="Compendium\.dnd5e\.rules\.Item\.creature"/);
@@ -239,6 +245,52 @@ test("inventory descriptions keep content links but strip roll actions after enr
     if (previousTextEditor) Object.defineProperty(globalThis, "TextEditor", previousTextEditor);
     else Reflect.deleteProperty(globalThis, "TextEditor");
   }
+});
+
+test("contained items retain standard row data, controls, and zero-stock state", async () => {
+  const actor = createInventoryActor();
+  const item = getItem(actor, "rations");
+  assert.ok(item?.system);
+  item.img = "icons/rations.webp";
+  item.system.quantity = 0;
+  const model = await buildDnd5eInventoryViewModel({ actor, user });
+  const search = await buildDnd5eInventoryViewModel({ actor, user, searchQuery: "Rations" });
+  assert.equal(model.unavailable, false);
+  assert.equal(search.unavailable, false);
+  if (model.unavailable || search.unavailable) return;
+  const child = model.sections.flatMap(section => section.items).find(row => row.id === "backpack")?.children[0];
+  const row = search.sections.flatMap(section => section.items)[0];
+  assert.ok(child);
+  assert.deepEqual({ ...child, dialogItemId: row.dialogItemId }, row);
+  assert.notEqual(child.dialogItemId, row.dialogItemId);
+  assert.equal(child.icon, "icons/rations.webp");
+  assert.equal(child.outOfStock, true);
+  assert.equal(child.quantityAdjustment?.current, 0);
+  assert.equal(child.listCells.some(cell => cell.adjustment?.id === "quantity"), true);
+
+  actor.canUserModify = () => false;
+  actor.getUserLevel = () => 2;
+  const readonly = await buildDnd5eInventoryViewModel({ actor, user });
+  if (readonly.unavailable) throw new Error("Expected observable inventory.");
+  const readonlyChild = readonly.sections.flatMap(section => section.items).find(row => row.id === "backpack")?.children[0];
+  assert.equal(readonlyChild?.actions.canUpdate, false);
+  assert.equal(readonlyChild?.quantityAdjustment, null);
+});
+
+test("nested container rows stop cycles and keep their contents", async () => {
+  const actor = createInventoryActor();
+  const backpack = getItem(actor, "backpack");
+  assert.ok(backpack?.system);
+  actor.items.push(createItem(actor, {
+    id: "pouch", name: "Pouch", type: "container",
+    system: { quantity: 1, container: "backpack" }
+  }));
+  backpack.system.container = "pouch";
+  const model = await buildDnd5eInventoryViewModel({ actor, user });
+  if (model.unavailable) throw new Error("Expected inventory.");
+  const row = model.sections.flatMap(section => section.items).find(item => item.id === "pouch");
+  const nestedBackpack = row?.children.find(item => item.id === "backpack");
+  assert.deepEqual(nestedBackpack?.children.map(item => item.id), ["rations"]);
 });
 
 test("inventory controls require update permission and use embedded document update APIs", async () => {
@@ -310,11 +362,13 @@ test("inventory template and styles preserve required regions without a local ca
   assert.match(rowTemplate, /bodyClass="pf-expandable-detail-body"/);
   assert.match(rowTemplate, /class="inventory-detail-actions[^"]*pf-detail-actions"/);
   assert.match(rowTemplate, /class="inventory-children"/);
-  assert.match(rowTemplate, /data-action="inventory-open-item"/);
+  assert.match(rowTemplate, /{{> "modules\/pocket-foundry\/systems\/dnd5e\/templates\/partials\/inventory-list-row\.hbs" this}}/);
+  assert.doesNotMatch(rowTemplate, /inventory-child-row|pf-inventory-child-actions/);
   assert.match(rowTemplate, /class="inventory-icon-toggle inventory-summary-equip equipped/);
   assert.match(rowTemplate, /class="inventory-icon-toggle inventory-summary-attuned attuned/);
   assert.doesNotMatch(rowTemplate, /inventory-expand-indicator/);
-  assert.match(tableHeadTemplate, /\{\{#each listColumns\}\}<span class="inventory-list-head-cell inventory-list-head-cell-\{\{id\}\}">\{\{label\}\}<\/span>\{\{\/each\}\}/);
+  assert.match(tableHeadTemplate, /title="\{\{label\}\}" aria-label="\{\{label\}\}"/);
+  assert.match(tableHeadTemplate, /\{\{#if shortLabel\}\}\{\{shortLabel\}\}\{\{else\}\}\{\{label\}\}\{\{\/if\}\}/);
   assert.match(rowTemplate, /\{\{#each adjustments\}\}/);
   assert.match(rowTemplate, /data-action="inventory-open-number-dialog"/);
   assert.match(rowTemplate, /partials\/number-adjust-dialog\.hbs/);

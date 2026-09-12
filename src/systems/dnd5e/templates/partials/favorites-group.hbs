@@ -1,5 +1,5 @@
 {{#if (eq kind "skills")}}
-  <div class="detail-table skills-table favorites-source-table">
+  <div class="detail-table skills-table favorites-source-table" data-table-layout="indicator-meta-title-2meta">
     {{> "modules/pocket-foundry/systems/dnd5e/templates/partials/table-head.hbs" kind="skill"}}
     {{#each skills}}
       {{> "modules/pocket-foundry/systems/dnd5e/templates/partials/details-skill-row.hbs" this}}
@@ -8,7 +8,7 @@
 {{/if}}
 
 {{#if (eq kind "tools")}}
-  <div class="detail-table tool-table favorites-source-table">
+  <div class="detail-table tool-table favorites-source-table" data-table-layout="indicator-meta-title-meta">
     {{> "modules/pocket-foundry/systems/dnd5e/templates/partials/table-head.hbs" kind="tool"}}
     {{#each tools}}
       {{> "modules/pocket-foundry/systems/dnd5e/templates/partials/details-tool-row.hbs" this}}
@@ -17,7 +17,7 @@
 {{/if}}
 
 {{#if (eq kind "inventory")}}
-  <div class="sheet-table sheet-list inventory-list favorites-source-list">
+  <div class="sheet-table sheet-list inventory-list favorites-source-list" data-table-layout="icon-title-3meta-actions">
     {{> "modules/pocket-foundry/systems/dnd5e/templates/partials/table-head.hbs" kind="inventory" headId="favorites"}}
     {{#each items}}
       {{> "modules/pocket-foundry/systems/dnd5e/templates/partials/inventory-list-row.hbs" this}}
@@ -26,7 +26,7 @@
 {{/if}}
 
 {{#if (eq kind "spells")}}
-  <div class="sheet-table sheet-list spells-table favorites-source-list">
+  <div class="sheet-table sheet-list spells-table favorites-source-list" data-table-layout="icon-title-4meta-actions">
     {{> "modules/pocket-foundry/systems/dnd5e/templates/partials/table-head.hbs" kind="spells" timeLabel=(localize 'DND5E.DurationTime')}}
     {{#each spells}}
       {{> "modules/pocket-foundry/systems/dnd5e/templates/partials/spell-row.hbs" this}}
@@ -73,7 +73,7 @@
 {{/if}}
 
 {{#if (eq kind "features")}}
-  <div class="sheet-table sheet-list features-list favorites-source-list">
+  <div class="sheet-table sheet-list features-list favorites-source-list" data-table-layout="icon-title-2meta-actions">
     {{> "modules/pocket-foundry/systems/dnd5e/templates/partials/table-head.hbs" kind="features"}}
     {{#each features}}
       {{> "modules/pocket-foundry/systems/dnd5e/templates/partials/feature-row.hbs" this}}
@@ -82,7 +82,7 @@
 {{/if}}
 
 {{#if (eq kind "effects")}}
-  <div class="sheet-table sheet-list effects-list favorites-source-list">
+  <div class="sheet-table sheet-list effects-list favorites-source-list" data-table-layout="icon-title-source-actions">
     {{> "modules/pocket-foundry/systems/dnd5e/templates/partials/table-head.hbs" kind="effects"}}
     {{#each effects}}
       {{> "modules/pocket-foundry/systems/dnd5e/templates/partials/effect-row.hbs" this}}

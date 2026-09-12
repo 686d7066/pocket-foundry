@@ -26,13 +26,13 @@
       {{/each}}
     </div>
 
-    <div class="features-sections" data-region="features-sections">
+    <div class="features-sections" data-panel-grid data-region="features-sections">
       {{#each sections}}
         <section class="section sheet-group features-section features-section-{{id}}" data-section="{{id}}">
           <div class="section-heading sheet-group-heading features-section-heading">
             <h2>{{label}}</h2>
           </div>
-          <div class="sheet-table sheet-list features-list">
+          <div class="sheet-table sheet-list features-list" data-table-layout="icon-title-2meta-actions">
             {{> "modules/pocket-foundry/systems/dnd5e/templates/partials/table-head.hbs" kind="features"}}
             {{#each items}}
               {{> "modules/pocket-foundry/systems/dnd5e/templates/partials/feature-row.hbs" this}}

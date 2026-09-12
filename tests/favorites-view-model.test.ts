@@ -280,8 +280,8 @@ test("favorites template, styles, and shell wiring preserve required regions", (
   assert.match(css, /\.pocket-foundry-root \.favorites-list/);
   assert.match(css, /\.pocket-foundry-root \.favorite-row/);
   assert.match(css, /\.pocket-foundry-root \.dnd5e-table-head > \*/);
-  assert.match(css, /white-space: nowrap/);
-  assert.match(css, /overflow-wrap: normal/);
+  assert.match(css, /white-space: normal/);
+  assert.match(css, /overflow-wrap: anywhere/);
   assert.match(css, /\.pocket-foundry-root \.favorite-primary/);
   assert.match(css, /\.pocket-foundry-root \.favorite-secondary/);
   assert.match(css, /\.pocket-foundry-root \.favorite-context-menu/);
