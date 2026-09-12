@@ -74,6 +74,9 @@
         </div>
       {{/if}}
       <div class="inventory-detail-actions pf-detail-actions" id="inventory-actions-{{dialogItemId}}" popover="auto" data-action-popover aria-label="{{localize 'POCKETFOUNDRY.DND5E.Row.Controls' name=name}}">
+        {{#if chargesAdjustment}}
+          <button class="pf-action-popover-button" type="button" data-action="inventory-open-number-dialog" data-dialog-id="inventory-number-{{dialogItemId}}-charges" aria-label="{{localize 'POCKETFOUNDRY.Dialog.TitleForName' title=chargesAdjustment.title name=name}}" data-swipe-ignore><i class="fa-solid fa-bolt" aria-hidden="true"></i><span>{{chargesAdjustment.title}}</span></button>
+        {{/if}}
         {{#if actions.canUse}}<button class="pf-action-popover-button" type="button" data-action="inventory-use" data-item-id="{{id}}" aria-label="{{localize 'DND5E.UseItem' item=name}}" data-swipe-ignore><i class="fa-solid fa-play" aria-hidden="true"></i><span>{{localize 'DND5E.Use'}}</span></button>{{/if}}
         {{#if actions.canTogglePrepared}}<button class="pf-action-popover-button {{#if states.prepared}}active{{/if}}" type="button" data-action="inventory-toggle-prepared" data-item-id="{{id}}" aria-pressed="{{#if states.prepared}}true{{else}}false{{/if}}" data-swipe-ignore>{{localize 'DND5E.Prepared'}}</button>{{/if}}
         {{#if actions.canRecharge}}<button class="pf-action-popover-button recharge" type="button" data-action="inventory-recharge" data-item-id="{{id}}" aria-label="{{localize 'POCKETFOUNDRY.DND5E.RechargeNamed' name=name}}" title="{{localize 'DND5E.Recharge'}}" data-swipe-ignore><i class="fa-solid fa-bolt" aria-hidden="true"></i><span>{{localize 'DND5E.Recharge'}}</span></button>{{/if}}

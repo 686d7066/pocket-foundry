@@ -28,3 +28,21 @@ test("quantity popup uses the existing dialog and wheel without leaking the item
   assert.match(html, /data-action="inventory-confirm-set-quantity-delta"/);
 });
 
+test("charges menu entry targets the existing adjustment dialog and is absent without a charge adjustment", () => {
+  const renderer = Handlebars.create();
+  renderer.registerHelper("localize", (key: string) => key);
+  for (const partial of ["number-wheel", "number-adjust-dialog", "expandable-detail-row", "favorite-context-menu"]) {
+    renderer.registerPartial(`modules/pocket-foundry/templates/partials/${partial}.hbs`,
+      readFileSync(new URL(`../src/templates/partials/${partial}.hbs`, import.meta.url), "utf8"));
+  }
+  const render = renderer.compile(readFileSync(new URL("../src/systems/dnd5e/templates/partials/inventory-list-row.hbs", import.meta.url), "utf8"));
+  const charges = { id: "charges", title: "Adjust Charges", label: "0 / 1", options: [{ value: 1, label: "+1" }, { value: 0, label: "0", center: true }] };
+  const item = { id: "item", name: "Item", dialogItemId: "inside-container-item", actions: { canUpdate: true } };
+  const html = render({ ...item, chargesAdjustment: charges, adjustments: [charges] });
+  assert.match(html, /class="pf-action-popover-button"[^>]*data-dialog-id="inventory-number-inside-container-item-charges"/);
+  assert.match(html, /<span>Adjust Charges<\/span>/);
+  assert.match(html, /id="inventory-number-inside-container-item-charges"/);
+  assert.match(html, /data-action="inventory-confirm-charges-delta"/);
+  assert.doesNotMatch(render({ ...item, chargesAdjustment: null, adjustments: [] }), /Adjust Charges|inside-container-item-charges/);
+});
+
