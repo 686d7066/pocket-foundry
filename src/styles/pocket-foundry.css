@@ -593,6 +593,39 @@
   .pocket-foundry-root .portrait-viewer-panel img { @apply block max-h-[86vh] max-w-[92vw] rounded-lg border border-mf-line bg-mf-surface shadow-mf-shell; }
 }
 
+/* Native action popovers stay above clipped tables and use regular focusable buttons. */
+.pocket-foundry-root [data-action-popover]:not(:popover-open) { display: none; }
+.pocket-foundry-root [data-action-popover]:popover-open {
+  display: grid;
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  width: max-content;
+  height: max-content;
+  max-width: calc(100vw - 24px);
+  max-height: calc(100dvh - 24px);
+  overflow: auto;
+  padding: 8px;
+  gap: 4px;
+  border: 1px solid var(--pf-color-line);
+  border-radius: 6px;
+  background: var(--pf-color-panel);
+  color: var(--pf-color-text);
+  box-shadow: 0 4px 20px #0006;
+}
+.pocket-foundry-root [data-action-popover] > button {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  width: 100%;
+  height: auto;
+  min-height: 44px;
+  padding: 8px 12px;
+  opacity: 1;
+  white-space: normal;
+  text-align: left;
+}
 /* Explicit shared tracks avoid native details/summary layout dependencies. */
 .pocket-foundry-root [data-table-layout] {
   --pf-table-columns: initial;

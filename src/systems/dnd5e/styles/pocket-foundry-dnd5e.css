@@ -287,6 +287,9 @@
   .pocket-foundry-root .row.inventory-list-row + .row.inventory-list-row { @apply mt-0; }
   .pocket-foundry-root .row.inventory-list-row:last-child { @apply border-b-0; }
   .pocket-foundry-root .inventory-children { @apply grid min-w-0 gap-0; }
+  .pocket-foundry-root .inventory-detail-info { @apply flex min-w-0 items-end gap-2; }
+  .pocket-foundry-root .inventory-detail-info > .pf-detail-facts { @apply min-w-0 flex-1; }
+  .pocket-foundry-root .inventory-more-button { @apply ml-auto grid h-8 w-8 min-h-8 min-w-8 shrink-0 place-items-center rounded-md border border-mf-line bg-mf-panel p-0 text-mf-accent; }
   .pocket-foundry-root .inventory-children h3 { @apply m-0 text-[.72rem] font-extrabold uppercase text-mf-muted; }
   .pocket-foundry-root .inventory-stepper,
   .pocket-foundry-root .inventory-row-controls { @apply inline-flex flex-wrap justify-start gap-1; }

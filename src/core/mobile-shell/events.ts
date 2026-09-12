@@ -56,6 +56,7 @@ export function bindMobileShellEvents(options: {
           return;
         }
 
+        target.closest?.<HTMLElement>("[data-action-popover]")?.hidePopover();
         if (await handleShellClickAction(actionContext, target, event)) return;
         if (await handleCombatClickAction(actionContext, target, event)) return;
         if (await handleJournalClickAction(actionContext, target, event)) return;
@@ -163,7 +164,8 @@ export function bindMobileShellEvents(options: {
       clearFavoriteLongPress();
 
       const favoriteRow = target instanceof Element ? target.closest<HTMLElement>(".favorite-context-row, [data-favorite-context]") : null;
-      if (favoriteRow?.querySelector(".favorite-context-menu [data-action]")) {
+      if (favoriteRow?.querySelector(".favorite-context-menu [data-action]")
+        && !(target instanceof Element && target.closest("[popovertarget], [data-action-popover]"))) {
         favoriteLongPressTimer = globalThis.setTimeout(() => openFavoriteContextMenu(element, favoriteRow), 550);
       }
 
