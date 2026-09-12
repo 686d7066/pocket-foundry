@@ -238,6 +238,8 @@ test("inventory descriptions keep content links but strip roll actions after enr
     if (contained.unavailable) throw new Error("Expected inventory.");
     const child = contained.sections.flatMap(section => section.items).find(item => item.id === "backpack")?.children.find(item => item.id === "wand");
     assert.equal(child?.description, row?.description);
+    const tableChild = contained.sections.flatMap(section => section.items).find(item => item.id === "backpack")?.childTables.flatMap(table => table.items).find(item => item.id === "wand");
+    assert.equal(tableChild, child);
     assert.match(row?.description ?? "", /WIS Save/);
     assert.doesNotMatch(row?.description ?? "", /data-action="roll"/);
     assert.match(row?.description ?? "", /data-uuid="Compendium\.dnd5e\.rules\.Item\.creature"/);
@@ -291,6 +293,36 @@ test("nested container rows stop cycles and keep their contents", async () => {
   const row = model.sections.flatMap(section => section.items).find(item => item.id === "pouch");
   const nestedBackpack = row?.children.find(item => item.id === "backpack");
   assert.deepEqual(nestedBackpack?.children.map(item => item.id), ["rations"]);
+});
+
+test("container tables pair each item type with its own headers at every nesting level", async () => {
+  const actor = createInventoryActor();
+  for (const id of ["dagger", "wand"]) {
+    const item = getItem(actor, id);
+    assert.ok(item?.system);
+    item.system.container = "backpack";
+  }
+  actor.items.push(createItem(actor, {
+    id: "inner-bag", name: "Inner bag", type: "container",
+    system: { quantity: 1, container: "backpack" }
+  }));
+  const rations = getItem(actor, "rations");
+  assert.ok(rations?.system);
+  rations.system.container = "inner-bag";
+  const model = await buildDnd5eInventoryViewModel({ actor, user });
+  if (model.unavailable) throw new Error("Expected inventory.");
+  const backpack = model.sections.flatMap(section => section.items).find(item => item.id === "backpack");
+  assert.ok(backpack);
+  assert.deepEqual(backpack.childTables.map(table => table.id), ["weapon", "equipment", "container"]);
+  const nested = backpack.childTables.find(table => table.id === "container")?.items[0];
+  assert.ok(nested);
+  assert.deepEqual(nested.childTables.map(table => table.id), ["consumable"]);
+  for (const table of [...backpack.childTables, ...nested.childTables]) {
+    for (const item of table.items) {
+      assert.deepEqual(item.listCells.map(cell => cell.id), table.listColumns.map(column => column.id));
+      assert.ok([...backpack.children, ...nested.children].includes(item));
+    }
+  }
 });
 
 test("inventory controls require update permission and use embedded document update APIs", async () => {

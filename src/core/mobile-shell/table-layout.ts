@@ -34,7 +34,14 @@ export function initializeTableLayout(root: HTMLElement): void {
   const widths = new WeakMap<HTMLElement, number>();
   const refresh = (): void => {
     frame = 0;
-    if (!disposed) tables.forEach(measureTable);
+    if (disposed) return;
+    // Clear every level before measuring: closed tables must not retain widths
+    // from before a resize, and descendants must not size themselves from them.
+    for (const table of tables) {
+      table.style.removeProperty("--pf-table-columns");
+      table.style.removeProperty("--pf-table-leading-columns");
+    }
+    tables.forEach(measureTable);
   };
   const schedule = (): void => {
     if (!disposed && !frame) frame = requestAnimationFrame(refresh);

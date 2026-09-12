@@ -27,6 +27,7 @@ test("shared table schemas reserve spare width for names and size metadata to co
 test("all table views and favorites opt into the shared column layout", () => {
   const templates = [
     "systems/dnd5e/templates/inventory.hbs",
+    "systems/dnd5e/templates/partials/inventory-list-row.hbs",
     "systems/dnd5e/templates/features.hbs",
     "systems/dnd5e/templates/spells.hbs",
     "systems/dnd5e/templates/effects.hbs",
@@ -42,7 +43,9 @@ test("all table views and favorites opt into the shared column layout", () => {
     assert.ok(tables.length, `No tables checked in ${path}`);
     for (const [table] of tables) assert.match(table, /data-table-layout="[^"]+"/, path);
   }
-  assert.match(readSource("systems/dnd5e/templates/partials/inventory-list-row.hbs"), /class="inventory-children" data-table-layout=/);
+  const containerRow = readSource("systems/dnd5e/templates/partials/inventory-list-row.hbs");
+  assert.match(containerRow, /class="inventory-children">/);
+  assert.match(containerRow, /\{\{#each childTables\}\}[\s\S]*partials\/table-head\.hbs[\s\S]*\{\{#each items\}\}/);
   assert.match(readSource("systems/dnd5e/templates/features.hbs"), /data-panel-grid/);
   assert.match(readSource("styles/pocket-foundry.css"), /minmax\(min\(100%,var\(--pf-panel-min-width,320px\)\),1fr\)/);
 });

@@ -135,6 +135,7 @@ export type Dnd5eInventoryItemViewModel = {
   containerName: string;
   contents: string;
   children: Dnd5eInventoryItemViewModel[];
+  childTables: Pick<Dnd5eInventorySectionViewModel, "id" | "label" | "listColumns" | "items">[];
   chips: string[];
   listCells: Dnd5eInventoryListCellViewModel[];
   quantityAdjustment: Dnd5eInventoryAdjustmentViewModel | null;
@@ -520,10 +521,18 @@ async function enrichInventoryRows(
   secrets: boolean
 ): Promise<Dnd5eInventoryItemViewModel[]> {
   const enriched = await enrichDescriptionRows(rows, documents, { enrichHtml, secrets });
-  return Promise.all(enriched.map(async row => ({
-    ...row,
-    children: await enrichInventoryRows(row.children, documents, enrichHtml, secrets)
-  })));
+  return Promise.all(enriched.map(async row => {
+    const children = await enrichInventoryRows(row.children, documents, enrichHtml, secrets);
+    return { ...row, children, childTables: buildChildTables(children) };
+  }));
+}
+
+/** Gives each contained item type its own table with matching column headings. */
+function buildChildTables(children: Dnd5eInventoryItemViewModel[]): Dnd5eInventoryItemViewModel["childTables"] {
+  return SECTION_ORDER.flatMap(id => {
+    const items = children.filter(child => child.sectionId === id);
+    return items.length ? [{ id, label: getInventorySectionLabel(id), listColumns: getListColumns(id), items }] : [];
+  });
 }
 
 function buildSections(
@@ -621,6 +630,7 @@ function buildItemViewModel(
     containerName,
     contents,
     children: children.map(child => buildItemViewModel(child, SECTION_ORDER.find(id => id === getInventorySectionId(child)) ?? "loot", childrenByContainer, canUpdate, path)),
+    childTables: [],
     chips: buildChips(item, { equipped, attuned, prepared, identified }, containerName),
     listCells: [],
     quantityAdjustment,
@@ -642,6 +652,7 @@ function buildItemViewModel(
   };
 
   itemViewModel.listCells = buildListCells(sectionId, itemViewModel);
+  itemViewModel.childTables = buildChildTables(itemViewModel.children);
   return itemViewModel;
 }
 

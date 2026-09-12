@@ -594,7 +594,17 @@
 }
 
 /* Explicit shared tracks avoid native details/summary layout dependencies. */
-.pocket-foundry-root [data-table-layout] { --pf-table-gap: 8px; display: block; min-width: 0; column-gap: var(--pf-table-gap); }
+.pocket-foundry-root [data-table-layout] {
+  --pf-table-columns: initial;
+  --pf-table-leading-columns: initial;
+  --pf-table-gap: 8px;
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  column-gap: var(--pf-table-gap);
+}
+.pocket-foundry-root .pf-expandable-detail-body { min-width: 0; grid-template-columns: minmax(0,1fr); }
 .pocket-foundry-root [data-table-layout] > article,
 .pocket-foundry-root [data-table-layout] > article > .expandable-detail-drawer { display: block; min-width: 0; }
 .pocket-foundry-root [data-table-layout] > :is(.sheet-list-head, .content-list-head, .content-list-row, [data-table-row]),

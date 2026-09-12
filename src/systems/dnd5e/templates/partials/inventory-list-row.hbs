@@ -52,10 +52,15 @@
         </dl>
       {{/if}}
       {{#if children.length}}
-        <div class="inventory-children" data-table-layout="icon-title-3meta-actions">
+        <div class="inventory-children">
           <h3>{{localize 'DND5E.Contents'}}</h3>
-          {{#each children}}
-            {{> "modules/pocket-foundry/systems/dnd5e/templates/partials/inventory-list-row.hbs" this}}
+          {{#each childTables}}
+            <div class="sheet-table sheet-list inventory-list" data-table-layout="icon-title-3meta-actions" aria-label="{{label}}">
+              {{> "modules/pocket-foundry/systems/dnd5e/templates/partials/table-head.hbs" kind="inventory"}}
+              {{#each items}}
+                {{> "modules/pocket-foundry/systems/dnd5e/templates/partials/inventory-list-row.hbs" this}}
+              {{/each}}
+            </div>
           {{/each}}
         </div>
       {{/if}}
