@@ -2,8 +2,10 @@ import { getFoundryRuntime } from "../../core/foundry-globals.ts";
 import { localize } from "../../core/localization.ts";
 import { canUpdateDocument, canViewDocument } from "../../services/permissions.ts";
 import type { CharacterSheetShellActionContext } from "../character-sheet-adapter.ts";
-import { containerChoices, deleteManagedItem, importManagedItem, inventoryDescendants, managedItems, moveManagedItem, parentContainerId, saveManagedBag, withInventoryMutation, type InventoryOperationResult, type ManagedInventoryActor, type ManagedInventoryItem } from "./inventory-management.ts";
+import { containerChoices, deleteManagedItem, importManagedItem, inventoryDescendants, managedItems, moveManagedItem, parentContainerId, saveManagedBag, type InventoryOperationResult, type ManagedInventoryActor, type ManagedInventoryItem } from "./inventory-management.ts";
 import { inventoryImportEnvironment, searchInventoryCatalog } from "./inventory-catalog.ts";
+
+const activeEditors = new WeakMap<HTMLElement, () => void>();
 
 /** Resolves localized strings for the inventory editor. */
 function text(key: string, fallback: string): string { return localize("POCKETFOUNDRY.DND5E.Inventory.Manage." + key, fallback); }
@@ -23,27 +25,63 @@ function select(form: HTMLElement, label: string, values: { id: string; label: s
   wrapper.append(field); form.append(wrapper); return field;
 }
 
-/** Opens an isolated native modal that retains input across document-driven shell refreshes. */
+/** Uses the shared shell popup, preserving drafts across document-driven refreshes. */
 function editor(title: string, context: CharacterSheetShellActionContext) {
-  document.querySelector<HTMLDialogElement>("dialog.pf-inventory-editor")?.close();
-  const dialog = document.createElement("dialog"); dialog.className = "pf-inventory-editor";
-  dialog.setAttribute("aria-label", title);
-  const heading = document.createElement("h2"); heading.textContent = title;
+  activeEditors.get(context.element)?.();
+  const dialog = context.helpers.openFormDialog?.(title);
+  if (!dialog) throw new Error("The shared form dialog is unavailable.");
+  const panel = dialog.querySelector<HTMLElement>(".confirm-dialog-panel");
+  const actions = dialog.querySelector<HTMLElement>(".dialog-actions");
+  const cancel = actions?.querySelector<HTMLButtonElement>("button");
+  const submit = actions?.querySelector<HTMLButtonElement>(".primary-action");
+  const backdrop = dialog.querySelector<HTMLButtonElement>(".dialog-backdrop");
+  if (!panel || !actions || !cancel || !submit || !backdrop) throw new Error("Incomplete shared form dialog.");
+  panel.classList.add("pf-inventory-editor");
+  panel.querySelector("p")?.remove();
+  panel.setAttribute("aria-label", title);
   const form = document.createElement("form");
   const fields = document.createElement("div"); fields.className = "pf-inventory-fields";
   const status = document.createElement("p"); status.setAttribute("role", "status");
-  const actions = document.createElement("div"); actions.className = "pf-inventory-editor-actions";
-  const cancel = document.createElement("button"); cancel.type = "button"; cancel.textContent = text("Cancel", "Cancel");
-  const submit = document.createElement("button"); submit.type = "submit"; submit.textContent = text("Save", "Save");
-  actions.append(cancel, submit); form.append(fields, status, actions); dialog.append(heading, form); document.body.append(dialog);
+  cancel.removeAttribute("data-action"); submit.removeAttribute("data-action"); backdrop.removeAttribute("data-action");
+  submit.type = "submit"; submit.textContent = text("Save", "Save");
+  form.append(fields, status, actions); panel.append(form);
   let busy = false;
-  cancel.addEventListener("click", () => dialog.close());
-  dialog.addEventListener("cancel", event => { if (busy) event.preventDefault(); });
-  // Close when the shell is unmounted. Its innerHTML refreshes deliberately do not discard the draft.
-  const observer = new MutationObserver(() => { if (!context.element.isConnected) dialog.close(); });
-  observer.observe(document.body, { childList: true });
-  dialog.addEventListener("close", () => { observer.disconnect(); dialog.remove(); context.target.focus(); }, { once: true });
-  dialog.showModal();
+  let closed = false;
+  const sourcePopover = context.target.closest<HTMLElement>("[data-action-popover]");
+  const returnFocus = sourcePopover?.id
+    ? context.element.querySelector<HTMLElement>('[popovertarget="' + CSS.escape(sourcePopover.id) + '"]') ?? context.target
+    : context.target;
+  const close = () => {
+    if (closed) return;
+    closed = true; observer.disconnect(); dialog.remove(); activeEditors.delete(context.element);
+    if (returnFocus.isConnected) returnFocus.focus();
+  };
+  const dismiss = (event: Event) => {
+    event.preventDefault(); event.stopPropagation();
+    if (!busy) close();
+  };
+  cancel.addEventListener("click", dismiss);
+  dialog.addEventListener("click", event => {
+    if (event.target instanceof Node && !panel.contains(event.target)) dismiss(event);
+  });
+  dialog.addEventListener("keydown", event => {
+    if (event.key === "Escape") { dismiss(event); return; }
+    if (event.key !== "Tab") return;
+    const controls = [...panel.querySelectorAll<HTMLElement>("button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled)")];
+    const first = controls[0], last = controls.at(-1);
+    if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+    else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+  });
+  // The shell replaces its contents on refresh; keep this form and its entered values.
+  const observer = new MutationObserver(() => {
+    if (!context.element.isConnected) { close(); return; }
+    if (!closed && !dialog.isConnected) {
+      (context.element.querySelector<HTMLElement>(".pocket-foundry-root") ?? context.element).append(dialog);
+    }
+  });
+  observer.observe(document.body, { childList: true, subtree: true });
+  activeEditors.set(context.element, close);
+  queueMicrotask(() => { if (!closed) fields.querySelector<HTMLElement>("input, select, button")?.focus(); });
   const bind = (operation: () => Promise<InventoryOperationResult>) => {
     form.addEventListener("submit", event => {
       event.preventDefault(); if (busy || !form.reportValidity()) return;
@@ -59,7 +97,7 @@ function editor(title: string, context: CharacterSheetShellActionContext) {
               : text("Rejected", "The change could not be completed. Check permissions and current inventory before trying again.");
             return;
           }
-          dialog.close();
+          close();
           await context.helpers.runAction("inventory-management-refresh");
         } catch {
           status.textContent = text("Failed", "The operation failed or its result is uncertain. Check the current inventory before retrying; some changes may have reached Foundry.");
@@ -72,7 +110,7 @@ function editor(title: string, context: CharacterSheetShellActionContext) {
 
 /** Opens bag identity, movement, deletion, and catalog dialogs through the system adapter. */
 export async function handleInventoryManagement(context: CharacterSheetShellActionContext): Promise<boolean> {
-  const actions = ["inventory-manage-new-bag", "inventory-manage-edit-bag", "inventory-manage-move", "inventory-manage-delete", "inventory-manage-add", "inventory-manage-quantity"];
+  const actions = ["inventory-manage-new-bag", "inventory-manage-edit-bag", "inventory-manage-move", "inventory-manage-delete", "inventory-manage-add"];
   if (!actions.includes(context.action)) return false;
   context.event.preventDefault(); context.event.stopPropagation();
   const runtime = getFoundryRuntime();
@@ -89,24 +127,9 @@ export async function handleInventoryManagement(context: CharacterSheetShellActi
     if (context.action === "inventory-manage-edit-bag" && item?.type !== "container") return true;
     const view = editor(item ? text("EditBag", "Edit bag") : text("NewBag", "New bag"), context);
     const name = input(view.fields, text("Name", "Name"), item?.name ?? ""); name.required = true;
-    const img = input(view.fields, text("Icon", "Icon image path or URL"), item?.img ?? "icons/svg/item-bag.svg");
-    const hint = document.createElement("p"); hint.textContent = text("IconHint", "Use an image path from Foundry or an HTTPS image URL. Only the bag's name and icon are changed."); view.fields.append(hint);
-    view.bind(() => saveManagedBag(actor, user, { id: item?.id, name: name.value, img: img.value })); name.focus(); return true;
+    view.bind(() => saveManagedBag(actor, user, { id: item?.id, name: name.value })); name.focus(); return true;
   }
   if (!item?.id || !canUpdateDocument(item, user)) return true;
-  if (context.action === "inventory-manage-quantity") {
-    const view = editor(text("StockQuantity", "Quantity owned") + ": " + item.name, context);
-    const current = Number((item.system as { quantity?: unknown } | undefined)?.quantity);
-    const quantity = input(view.fields, text("StockQuantity", "Quantity owned"), String(Number.isFinite(current) ? current : 0), "number");
-    quantity.min = item.type === "container" ? "1" : "0"; quantity.step = "1"; quantity.required = true;
-    if (item.type === "container") quantity.max = "1";
-    view.bind(() => withInventoryMutation(actor, user, async () => {
-      const value = Number(quantity.value);
-      if (!Number.isSafeInteger(value) || value < 0 || (item.type === "container" && value !== 1)) return { ok: false, reason: "invalid-quantity" };
-      if (!item.update || !canUpdateDocument(item, user)) return { ok: false, reason: "forbidden" };
-      return await item.update({ "system.quantity": value }) ? { ok: true } : { ok: false, reason: "rejected" };
-    })); return true;
-  }
   if (context.action === "inventory-manage-move") {
     const view = editor(text("Move", "Move item") + ": " + item.name, context);
     const destination = select(view.fields, text("Destination", "Destination"), [{ id: "", label: text("Main", "Main inventory") }, ...containerChoices(actor, user, item.id)]);

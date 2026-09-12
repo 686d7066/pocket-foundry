@@ -1,5 +1,5 @@
 import { canUpdateDocument, canViewDocument, type FoundryUserLike } from "../../../services/permissions.ts";
-import { getFoundryRuntime } from "../../../core/foundry-globals.ts";
+import { getFoundryTextEditor } from "../../../core/foundry-globals.ts";
 import { localize } from "../../../core/localization.ts";
 import { getObject, getNumber } from "../../../core/utils.ts";
 import { enrichSectionRows } from "../../../services/rich-text-enrichment.ts";
@@ -50,7 +50,7 @@ export async function buildDnd5eSpellsViewModel(options: {
   const canUpdate = canUpdateDocument(actor, options.user);
   const allSpells = getSpellItems(actor, options.user);
   const searchQuery = normalizeSearchQuery(options.searchQuery);
-  const textEditor = getFoundryRuntime().TextEditor;
+  const textEditor = getFoundryTextEditor();
   const enrichHTML = textEditor?.enrichHTML;
   const sectionsInput = filterSpellSections(buildSpellSections(actor, allSpells, config, canUpdate), searchQuery);
   const sections = typeof enrichHTML === "function"

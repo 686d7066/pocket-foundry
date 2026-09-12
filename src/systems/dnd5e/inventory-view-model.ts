@@ -1,7 +1,7 @@
 import type { foundry } from "fvtt-types";
 import { localize, localizeSystemKey } from "../../core/localization.ts";
 import { getCollectionContents, getInitials, getNumber, getObject, getString } from "../../core/utils.ts";
-import { getFoundryRuntime, type FoundryDataShape } from "../../core/foundry-globals.ts";
+import { getFoundryTextEditor, type FoundryDataShape } from "../../core/foundry-globals.ts";
 import { canUpdateDocument, canViewDocument, type FoundryDocumentMutationApi, type FoundryUserLike, type PermissionCheckedDocument } from "../../services/permissions.ts";
 import { enrichDescriptionRows, type RichTextHtmlEnricher } from "../../services/rich-text-enrichment.ts";
 import { SECTION_CONFIG, SECTION_ORDER, type InventoryFactField, type InventorySectionId } from "./inventory-config.ts";
@@ -42,6 +42,7 @@ export type Dnd5eInventoryItem = PermissionCheckedDocument
   labels?: Record<string, unknown>;
   hasAttack?: boolean;
   hasRecharge?: boolean;
+  use?: (config?: Record<string, unknown>, dialog?: { configure?: boolean; options: { sheet: null } }) => Promise<unknown>;
   parent?: Dnd5eInventoryActor | null;
 };
 
@@ -142,6 +143,7 @@ export type Dnd5eInventoryItemViewModel = {
   chargesAdjustment: Dnd5eInventoryAdjustmentViewModel | null;
   adjustments: Dnd5eInventoryAdjustmentViewModel[];
   actions: {
+    canUse: boolean;
     canUpdate: boolean;
     canAdjustQuantity: boolean;
     canRecharge: boolean;
@@ -238,7 +240,7 @@ export async function buildDnd5eInventoryViewModel(options: {
   const childrenByContainer = buildChildrenByContainer(items);
   const containers = items.filter(item => item.type === "container");
   const sectionsInput = buildSections(items, childrenByContainer, canUpdate, searchQuery);
-  const textEditor = getFoundryRuntime().TextEditor;
+  const textEditor = getFoundryTextEditor();
   const enrichHTML = textEditor?.enrichHTML;
   const sections = typeof enrichHTML === "function"
     ? await Promise.all(sectionsInput.map(async section => ({
@@ -527,6 +529,24 @@ async function enrichInventoryRows(
   }));
 }
 
+/** Uses dnd5e's activity eligibility without deriving rules from item names or types. */
+function hasUsableInventoryActivity(item: Dnd5eInventoryItem): boolean {
+  return typeof item.use === "function"
+    && getCollectionContents(getObject(item.system)?.activities).some(activity => getObject(activity)?.canUse === true);
+}
+
+/** Delegates activity selection, consumption, and resulting updates to dnd5e. */
+export async function useInventoryItem(actor: Dnd5eInventoryActor | null | undefined, user: FoundryUserLike, itemId: string): Promise<Dnd5eInventoryControlResult> {
+  const item = findOwnedItem(actor, itemId);
+  if (!item) return { ok: false, reason: "unavailable" };
+  if (!canUpdateOwnedItem(actor, item, user)) return { ok: false, reason: "forbidden" };
+  if (!hasUsableInventoryActivity(item) || !item.use) return { ok: false, reason: "unsupported" };
+  // The mobile shell hides the canvas. Skip both the desktop confirmation and
+  // template placement; dnd5e still owns activity selection and consumption.
+  await item.use({ create: { measuredTemplate: false } }, { configure: false, options: { sheet: null } });
+  return { ok: true };
+}
+
 /** Gives each contained item type its own table with matching column headings. */
 function buildChildTables(children: Dnd5eInventoryItemViewModel[]): Dnd5eInventoryItemViewModel["childTables"] {
   return SECTION_ORDER.flatMap(id => {
@@ -637,6 +657,7 @@ function buildItemViewModel(
     chargesAdjustment,
     adjustments: [quantityAdjustment, chargesAdjustment].filter((adjustment): adjustment is Dnd5eInventoryAdjustmentViewModel => adjustment !== null),
     actions: {
+      canUse: canUpdate && hasUsableInventoryActivity(item),
       canUpdate,
       canAdjustQuantity: canUpdate && item.type !== "container" && quantity !== null,
       canRecharge: canUpdate && item.hasRecharge === true && typeof uses?.rollRecharge === "function",

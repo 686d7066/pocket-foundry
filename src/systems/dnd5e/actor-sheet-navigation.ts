@@ -75,8 +75,10 @@ import {
     removeInventoryItemFromContainer,
     setInventoryCurrency,
     setInventoryFavorite,
+    setInventoryQuantity,
     toggleInventoryAttuned,
     toggleInventoryEquipped,
+    useInventoryItem,
     toggleInventoryPrepared,
     type Dnd5eInventoryModel
 } from "./inventory-view-model.ts";
@@ -441,6 +443,8 @@ export function runCharacterSheetPaneAction(options: CharacterSheetActionContext
       });
     case "inventory-confirm-quantity-delta":
       return adjustInventoryQuantity(actor, user, data.itemId ?? "", toNumber(data.delta));
+    case "inventory-confirm-set-quantity-delta":
+      return setInventoryQuantity(actor, user, data.itemId ?? "", toNumber(data.delta));
     case "inventory-confirm-charges-delta":
       return adjustInventoryRemainingUses(actor, user, data.itemId ?? "", toNumber(data.delta));
     case "inventory-confirm-currency":
@@ -453,6 +457,8 @@ export function runCharacterSheetPaneAction(options: CharacterSheetActionContext
       });
     case "inventory-toggle-equipped":
       return toggleInventoryEquipped(actor, user, data.itemId ?? "");
+    case "inventory-use":
+      return useInventoryItem(actor, user, data.itemId ?? "");
     case "inventory-toggle-attuned":
       return toggleInventoryAttuned(actor, user, data.itemId ?? "");
     case "inventory-toggle-prepared":

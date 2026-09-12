@@ -74,15 +74,16 @@
         </div>
       {{/if}}
       <div class="inventory-detail-actions pf-detail-actions" id="inventory-actions-{{dialogItemId}}" popover="auto" data-action-popover aria-label="{{localize 'POCKETFOUNDRY.DND5E.Row.Controls' name=name}}">
-        {{#if actions.canTogglePrepared}}<button class="inventory-toggle {{#if states.prepared}}active{{/if}}" type="button" data-action="inventory-toggle-prepared" data-item-id="{{id}}" aria-pressed="{{#if states.prepared}}true{{else}}false{{/if}}" data-swipe-ignore>{{localize 'DND5E.Prepared'}}</button>{{/if}}
-        {{#if actions.canRecharge}}<button class="inventory-icon-toggle recharge" type="button" data-action="inventory-recharge" data-item-id="{{id}}" aria-label="{{localize 'POCKETFOUNDRY.DND5E.RechargeNamed' name=name}}" title="{{localize 'DND5E.Recharge'}}" data-swipe-ignore><i class="fa-solid fa-bolt" aria-hidden="true"></i><span>{{localize 'DND5E.Recharge'}}</span></button>{{/if}}
+        {{#if actions.canUse}}<button class="pf-action-popover-button" type="button" data-action="inventory-use" data-item-id="{{id}}" aria-label="{{localize 'DND5E.UseItem' item=name}}" data-swipe-ignore><i class="fa-solid fa-play" aria-hidden="true"></i><span>{{localize 'DND5E.Use'}}</span></button>{{/if}}
+        {{#if actions.canTogglePrepared}}<button class="pf-action-popover-button {{#if states.prepared}}active{{/if}}" type="button" data-action="inventory-toggle-prepared" data-item-id="{{id}}" aria-pressed="{{#if states.prepared}}true{{else}}false{{/if}}" data-swipe-ignore>{{localize 'DND5E.Prepared'}}</button>{{/if}}
+        {{#if actions.canRecharge}}<button class="pf-action-popover-button recharge" type="button" data-action="inventory-recharge" data-item-id="{{id}}" aria-label="{{localize 'POCKETFOUNDRY.DND5E.RechargeNamed' name=name}}" title="{{localize 'DND5E.Recharge'}}" data-swipe-ignore><i class="fa-solid fa-bolt" aria-hidden="true"></i><span>{{localize 'DND5E.Recharge'}}</span></button>{{/if}}
         {{#if actions.canAdjustQuantity}}
-          <button class="inventory-icon-toggle" type="button" data-action="inventory-open-number-dialog" data-dialog-id="inventory-number-{{dialogItemId}}-quantity" aria-label="{{localize 'POCKETFOUNDRY.DND5E.Inventory.Manage.StockQuantity'}}: {{name}}" title="{{localize 'POCKETFOUNDRY.DND5E.Inventory.Manage.StockQuantity'}}" data-swipe-ignore><i class="fa-solid fa-hashtag" aria-hidden="true"></i><span>{{localize 'POCKETFOUNDRY.DND5E.Inventory.Manage.StockQuantity'}}</span></button>
+          <button class="pf-action-popover-button" type="button" data-action="inventory-open-number-dialog" data-dialog-id="inventory-number-{{dialogItemId}}-set-quantity" aria-label="{{localize 'POCKETFOUNDRY.DND5E.Inventory.Manage.StockQuantity'}}: {{name}}" title="{{localize 'POCKETFOUNDRY.DND5E.Inventory.Manage.StockQuantity'}}" data-swipe-ignore><i class="fa-solid fa-hashtag" aria-hidden="true"></i><span>{{localize 'POCKETFOUNDRY.DND5E.Inventory.Manage.StockQuantity'}}</span></button>
         {{/if}}
         {{#if actions.canUpdate}}
-          <button class="inventory-icon-toggle" type="button" data-action="inventory-manage-move" data-item-id="{{id}}" aria-label="{{localize 'POCKETFOUNDRY.DND5E.Inventory.Manage.MoveTo'}}: {{name}}" title="{{localize 'POCKETFOUNDRY.DND5E.Inventory.Manage.MoveTo'}}" data-swipe-ignore><i class="fa-solid fa-arrow-right-arrow-left" aria-hidden="true"></i><span>{{localize 'POCKETFOUNDRY.DND5E.Inventory.Manage.MoveTo'}}</span></button>
-          {{#if isContainer}}<button class="inventory-icon-toggle" type="button" data-action="inventory-manage-edit-bag" data-item-id="{{id}}" aria-label="{{localize 'POCKETFOUNDRY.DND5E.Inventory.Manage.EditBag'}}: {{name}}" title="{{localize 'POCKETFOUNDRY.DND5E.Inventory.Manage.EditBag'}}" data-swipe-ignore><i class="fa-solid fa-pen" aria-hidden="true"></i><span>{{localize 'POCKETFOUNDRY.DND5E.Inventory.Manage.EditBag'}}</span></button>{{/if}}
-          <button class="inventory-icon-toggle" type="button" data-action="inventory-manage-delete" data-item-id="{{id}}" aria-label="{{localize 'POCKETFOUNDRY.DND5E.Inventory.Manage.Delete'}}: {{name}}" title="{{localize 'POCKETFOUNDRY.DND5E.Inventory.Manage.Delete'}}" data-swipe-ignore><i class="fa-solid fa-trash" aria-hidden="true"></i><span>{{localize 'POCKETFOUNDRY.DND5E.Inventory.Manage.Delete'}}</span></button>
+          <button class="pf-action-popover-button" type="button" data-action="inventory-manage-move" data-item-id="{{id}}" aria-label="{{localize 'POCKETFOUNDRY.DND5E.Inventory.Manage.MoveTo'}}: {{name}}" title="{{localize 'POCKETFOUNDRY.DND5E.Inventory.Manage.MoveTo'}}" data-swipe-ignore><i class="fa-solid fa-arrow-right-arrow-left" aria-hidden="true"></i><span>{{localize 'POCKETFOUNDRY.DND5E.Inventory.Manage.MoveTo'}}</span></button>
+          {{#if isContainer}}<button class="pf-action-popover-button" type="button" data-action="inventory-manage-edit-bag" data-item-id="{{id}}" aria-label="{{localize 'POCKETFOUNDRY.DND5E.Inventory.Manage.EditBag'}}: {{name}}" title="{{localize 'POCKETFOUNDRY.DND5E.Inventory.Manage.EditBag'}}" data-swipe-ignore><i class="fa-solid fa-pen" aria-hidden="true"></i><span>{{localize 'POCKETFOUNDRY.DND5E.Inventory.Manage.EditBag'}}</span></button>{{/if}}
+          <button class="pf-action-popover-button" type="button" data-action="inventory-manage-delete" data-item-id="{{id}}" aria-label="{{localize 'POCKETFOUNDRY.DND5E.Inventory.Manage.Delete'}}: {{name}}" title="{{localize 'POCKETFOUNDRY.DND5E.Inventory.Manage.Delete'}}" data-swipe-ignore><i class="fa-solid fa-trash" aria-hidden="true"></i><span>{{localize 'POCKETFOUNDRY.DND5E.Inventory.Manage.Delete'}}</span></button>
         {{/if}}
       </div>
   {{/inline}}
@@ -91,6 +92,26 @@
     summaryClass="inventory-list-row-summary pf-list-schema pf-list-schema--icon-title-3meta-actions"
     bodyClass="pf-expandable-detail-body"
   }}
+  {{#if actions.canAdjustQuantity}}
+    {{> "modules/pocket-foundry/templates/partials/number-adjust-dialog.hbs"
+      dialogIdPrefix="inventory-number-"
+      dialogItemId=dialogItemId
+      dialogIdSuffix="-set-quantity"
+      closeAction="inventory-close-number-dialog"
+      title=(localize 'POCKETFOUNDRY.DND5E.Inventory.Manage.StockQuantity')
+      dialogAriaLabelName=name
+      description=""
+      descriptionName=name
+      descriptionLabel=quantity
+      dynamicWheel=true
+      initialValue=quantity
+      dynamicMin=0
+      step=1
+      selectAction="inventory-select-delta"
+      confirmActionPrefix="inventory-confirm-set-quantity"
+      confirmItemId=id
+    }}
+  {{/if}}
   {{#each adjustments}}
     {{> "modules/pocket-foundry/templates/partials/number-adjust-dialog.hbs"
       dialogIdPrefix="inventory-number-"

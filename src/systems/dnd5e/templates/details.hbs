@@ -185,7 +185,7 @@
         <div class="section-heading sheet-group-heading">
           <h2>{{localize 'DND5E.Skills'}}</h2>
         </div>
-        <div class="detail-table skills-table" data-table-layout="indicator-meta-title-2meta">
+        <div class="detail-table skills-table">
           {{> "modules/pocket-foundry/systems/dnd5e/templates/partials/table-head.hbs" kind="skill"}}
           {{#each skills}}
             {{> "modules/pocket-foundry/systems/dnd5e/templates/partials/details-skill-row.hbs" this}}
@@ -197,7 +197,7 @@
         <div class="section-heading sheet-group-heading">
           <h2>{{localize 'DND5E.TraitToolProf'}}</h2>
         </div>
-        <div class="detail-table tool-table" data-table-layout="indicator-meta-title-meta">
+        <div class="detail-table tool-table">
           {{> "modules/pocket-foundry/systems/dnd5e/templates/partials/table-head.hbs" kind="tool"}}
           {{#each tools}}
             {{> "modules/pocket-foundry/systems/dnd5e/templates/partials/details-tool-row.hbs" this}}

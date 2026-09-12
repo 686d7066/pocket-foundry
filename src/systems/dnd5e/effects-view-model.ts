@@ -1,5 +1,5 @@
 import type { foundry } from "fvtt-types";
-import { getFoundryRuntime, type FoundryDataShape } from "../../core/foundry-globals.ts";
+import { getFoundryTextEditor, getFoundryRuntime, type FoundryDataShape } from "../../core/foundry-globals.ts";
 import { localize, localizeSystemKey } from "../../core/localization.ts";
 import { getCollectionContents, getInitials, getObject, getString } from "../../core/utils.ts";
 import { canUpdateDocument, canViewDocument, type FoundryDocumentMutationApi, type FoundryUserLike, type PermissionCheckedDocument } from "../../services/permissions.ts";
@@ -418,7 +418,7 @@ async function enrichEffectDescription(effect: Dnd5eActiveEffect, user: FoundryU
   const rawDescription = getString(effect.description) || getString(effect.getFlag?.("dnd5e", "description"));
   if (!rawDescription) return "";
 
-  const textEditor = getFoundryRuntime().TextEditor;
+  const textEditor = getFoundryTextEditor();
   if (typeof textEditor?.enrichHTML !== "function") return rawDescription;
 
   return enrichHtml(rawDescription, {

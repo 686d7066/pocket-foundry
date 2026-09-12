@@ -1,5 +1,5 @@
 import type { foundry } from "fvtt-types";
-import { getFoundryRuntime, type FoundryDataShape } from "../../core/foundry-globals.ts";
+import { getFoundryTextEditor, type FoundryDataShape } from "../../core/foundry-globals.ts";
 import { localize, localizeSystemKey, localizeSystemLabel } from "../../core/localization.ts";
 import { getObject, getString } from "../../core/utils.ts";
 import { canUpdateDocument, canViewDocument, type FoundryDocumentMutationApi, type FoundryUserLike, type PermissionCheckedDocument } from "../../services/permissions.ts";
@@ -171,7 +171,7 @@ async function enrichBiography(actor: Dnd5eBiographyActor, biographyValue: strin
 }
 
 function getFoundryTextEnricher(): BiographyEnricher | undefined {
-  const textEditor = getFoundryRuntime().TextEditor;
+  const textEditor = getFoundryTextEditor();
   return typeof textEditor?.enrichHTML === "function" ? textEditor.enrichHTML.bind(textEditor) : undefined;
 }
 

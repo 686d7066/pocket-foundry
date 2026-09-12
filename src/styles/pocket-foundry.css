@@ -594,13 +594,24 @@
 }
 
 /* Native action popovers stay above clipped tables and use regular focusable buttons. */
+.pocket-foundry-root .mock-dialog > .dialog-backdrop {
+  height: 100%;
+  min-height: 100%;
+  max-height: none;
+  max-width: none;
+  padding: 0;
+  margin: 0;
+  border-radius: 0;
+}
 .pocket-foundry-root [data-action-popover]:not(:popover-open) { display: none; }
 .pocket-foundry-root [data-action-popover]:popover-open {
-  display: grid;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
   position: fixed;
-  inset: 0;
-  margin: auto;
-  width: max-content;
+  inset: auto;
+  margin: 0;
+  width: min(280px, calc(100vw - 24px));
   height: max-content;
   max-width: calc(100vw - 24px);
   max-height: calc(100dvh - 24px);
@@ -625,7 +636,18 @@
   opacity: 1;
   white-space: normal;
   text-align: left;
+  box-sizing: border-box;
+  min-width: 0;
+  flex: 0 0 auto;
+  border: 1px solid var(--pf-color-line);
+  border-radius: 4px;
+  background: var(--pf-color-panel);
+  color: var(--pf-color-text);
+  font-size: .8rem;
+  line-height: 1.4;
 }
+.pocket-foundry-root [data-action-popover] > button > i { flex: 0 0 16px; }
+.pocket-foundry-root [data-action-popover] > button > span { min-width: 0; overflow-wrap: break-word; }
 /* Explicit shared tracks avoid native details/summary layout dependencies. */
 .pocket-foundry-root [data-table-layout] {
   --pf-table-columns: initial;

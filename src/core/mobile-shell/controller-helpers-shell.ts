@@ -24,7 +24,7 @@ import {
 } from "../../services/recents.ts";
 import { getCharacterSheetAdapter } from "../../systems/character-sheet-adapter-registry.ts";
 import { MODULE_ID } from "../constants.ts";
-import { getFoundryRuntime } from "../foundry-globals.ts";
+import { getFoundryHandlebars, getFoundryTextEditor, getFoundryRuntime } from "../foundry-globals.ts";
 import { localize } from "../localization.ts";
 import { getCharacterSheetBannerEnabled, getColorBlindMode, getMobileViewEnabled } from "../settings.ts";
 import { getCollectionContents, getInitials } from "../utils.ts";
@@ -41,8 +41,8 @@ type JournalEntryPageClass = typeof foundry.documents.JournalEntryPage & {
 
 
 export async function renderShell(rootElement: HTMLElement, router: MobileRouter, searchState?: SearchUiState): Promise<void> {
-  const runtime = getFoundryRuntime();
-  if (!runtime.renderTemplate) {
+  const handlebars = getFoundryHandlebars();
+  if (!handlebars.renderTemplate) {
     throw new Error(`${MODULE_ID} cannot render the mobile shell before Foundry's template renderer is available.`);
   }
 
@@ -51,7 +51,7 @@ export async function renderShell(rootElement: HTMLElement, router: MobileRouter
   if (searchState) await prepareSearchForRender(activeRoute, searchState);
   persistSelectedCharacterRoute(selectedCharacterRoute);
   await createFoundryRecentsService()?.recordRoute(activeRoute);
-  const html = await runtime.renderTemplate(SHELL_TEMPLATE, await buildShellViewModel(activeRoute, router.canGoBack(), selectedCharacterRoute, searchState));
+  const html = await handlebars.renderTemplate(SHELL_TEMPLATE, await buildShellViewModel(activeRoute, router.canGoBack(), selectedCharacterRoute, searchState));
   disposeTableLayout(rootElement);
   rootElement.innerHTML = html;
   restoreRouteScroll(rootElement, router.getCurrentRoute());
@@ -349,7 +349,7 @@ export function addJournalPageRowState(page: JournalPageSummaryViewModel): Journ
 export function createFoundryJournalService(): MobileJournalService {
   const runtime = getFoundryRuntime();
   const fromUuid = runtime.foundry?.utils?.fromUuid;
-  const textEditor = runtime.TextEditor;
+  const textEditor = getFoundryTextEditor();
 
   return createMobileJournalService({
     collection: runtime.game?.journal as Iterable<JournalEntryDocumentLike> | { contents?: JournalEntryDocumentLike[] } | undefined,

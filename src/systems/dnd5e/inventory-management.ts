@@ -126,18 +126,19 @@ export function validInventoryImage(value: string): boolean {
   return !value || (!/[\u0000-\u001f]/.test(value) && !value.startsWith("//") && (!/^[a-z][a-z0-9+.-]*:/i.test(value) || /^https?:\/\//i.test(value)));
 }
 
-/** Creates an empty named bag with system defaults or updates only an existing bag's identity. */
-export async function saveManagedBag(actor: ManagedInventoryActor, user: FoundryUserLike, values: { id?: string; name: string; img: string }): Promise<InventoryOperationResult> {
+/** Creates an empty named bag or renames an existing bag without changing its icon or system data. */
+export async function saveManagedBag(actor: ManagedInventoryActor, user: FoundryUserLike, values: { id?: string; name: string; img?: string }): Promise<InventoryOperationResult> {
   return withInventoryMutation(actor, user, async () => {
     const name = values.name.trim();
-    const img = values.img.trim();
-    if (!name || !validInventoryImage(img)) return { ok: false, reason: "invalid" };
+    const img = values.img?.trim() ?? "";
+    if (!name) return { ok: false, reason: "invalid" };
     if (values.id) {
       const item = managedItems(actor).find(candidate => candidate.id === values.id && candidate.type === "container");
       if (!item?.update) return { ok: false, reason: "unavailable" };
       if (!canUpdateDocument(item, user)) return { ok: false, reason: "forbidden" };
-      if (!await item.update({ name, img: img || "icons/svg/item-bag.svg" })) return { ok: false, reason: "rejected" };
+      if (!await item.update({ name })) return { ok: false, reason: "rejected" };
     } else {
+      if (!validInventoryImage(img)) return { ok: false, reason: "invalid" };
       if (!actor.createEmbeddedDocuments) return { ok: false, reason: "unsupported" };
       const created = await actor.createEmbeddedDocuments("Item", [{ name, img: img || "icons/svg/item-bag.svg", type: "container", system: { quantity: 1, container: null } }]);
       if (!created.length) return { ok: false, reason: "rejected" };

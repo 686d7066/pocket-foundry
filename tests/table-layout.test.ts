@@ -24,14 +24,13 @@ test("shared table schemas reserve spare width for names and size metadata to co
   assert.match(headerRule, /text-overflow: clip/);
 });
 
-test("all table views and favorites opt into the shared column layout", () => {
+test("item tables and content lists opt into shared sizing while Details keeps its original layout", () => {
   const templates = [
     "systems/dnd5e/templates/inventory.hbs",
     "systems/dnd5e/templates/partials/inventory-list-row.hbs",
     "systems/dnd5e/templates/features.hbs",
     "systems/dnd5e/templates/spells.hbs",
     "systems/dnd5e/templates/effects.hbs",
-    "systems/dnd5e/templates/details.hbs",
     "systems/dnd5e/templates/partials/favorites-group.hbs",
     "templates/journal.hbs",
     "templates/journal-entry.hbs",
@@ -44,6 +43,10 @@ test("all table views and favorites opt into the shared column layout", () => {
     for (const [table] of tables) assert.match(table, /data-table-layout="[^"]+"/, path);
   }
   const containerRow = readSource("systems/dnd5e/templates/partials/inventory-list-row.hbs");
+  const details = readSource("systems/dnd5e/templates/details.hbs");
+  assert.doesNotMatch(details, /data-table-layout/);
+  assert.match(details, /class="detail-table skills-table"/);
+  assert.match(details, /class="detail-table tool-table"/);
   assert.match(containerRow, /class="inventory-children">/);
   assert.match(containerRow, /\{\{#each childTables\}\}[\s\S]*partials\/table-head\.hbs[\s\S]*\{\{#each items\}\}/);
   assert.match(readSource("systems/dnd5e/templates/features.hbs"), /data-panel-grid/);

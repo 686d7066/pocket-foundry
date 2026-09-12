@@ -1,5 +1,5 @@
 import type { foundry } from "fvtt-types";
-import { getFoundryRuntime, type FoundryDataShape } from "../core/foundry-globals.ts";
+import { getFoundryTextEditor, getFoundryRuntime, type FoundryDataShape } from "../core/foundry-globals.ts";
 import { localize } from "../core/localization.ts";
 import { getObject, getString } from "../core/utils.ts";
 import { enrichHtml } from "./rich-text-enrichment.ts";
@@ -99,10 +99,11 @@ function canViewItemDetailDocument(document: ItemDetailDocumentLike, user: Found
 
 function createFoundryItemDetailEnvironment(): ItemDetailEnvironment {
   const runtime = getFoundryRuntime();
+  const textEditor = getFoundryTextEditor();
   return {
     user: runtime.game?.user,
     fromUuid: runtime.foundry?.utils?.fromUuid,
-    enrichHTML: runtime.TextEditor?.enrichHTML?.bind(runtime.TextEditor)
+    enrichHTML: textEditor?.enrichHTML?.bind(textEditor)
   };
 }
 

@@ -11,11 +11,38 @@ import {
   toggleInventoryAttuned,
   toggleInventoryEquipped,
   toggleInventoryPrepared,
+  useInventoryItem,
   type Dnd5eInventoryActor,
   type Dnd5eInventoryItem
 } from "../src/systems/dnd5e/inventory-view-model.ts";
 
 const user = { id: "player" };
+
+test("inventory Use follows dnd5e canUse and delegates consumption without type or name rules", async () => {
+  const actor = createInventoryActor();
+  const item = getItem(actor, "rations");
+  assert.ok(item?.system);
+  item.type = "equipment";
+  item.name = "Clothes with a configured activity";
+  const activity = { canUse: true };
+  item.system.activities = [activity];
+  const calls: unknown[] = [];
+  item.use = async (config, dialog) => { calls.push([config, dialog]); };
+  const quantity = item.system.quantity;
+  const model = await buildDnd5eInventoryViewModel({ actor, user });
+  if (model.unavailable) throw new Error("Expected inventory.");
+  const row = model.sections.flatMap(section => section.items).find(entry => entry.id === "backpack")?.children.find(entry => entry.id === item.id);
+  assert.equal(row?.actions.canUse, true);
+  assert.equal((await useInventoryItem(actor, user, item.id ?? "")).ok, true);
+  assert.deepEqual(calls, [[{ create: { measuredTemplate: false } }, { configure: false, options: { sheet: null } }]]);
+  assert.equal(item.system.quantity, quantity);
+  activity.canUse = false;
+  assert.equal((await useInventoryItem(actor, user, item.id ?? "")).ok, false);
+  activity.canUse = true;
+  actor.canUserModify = () => false;
+  assert.equal((await useInventoryItem(actor, user, item.id ?? "")).reason, "forbidden");
+  assert.equal(calls.length, 1);
+});
 
 test("inventory view model groups visible dnd5e items by semantic sections", async () => {
   const actor = createInventoryActor();

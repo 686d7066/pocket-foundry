@@ -1,6 +1,6 @@
 import type { foundry } from "fvtt-types";
 import { getCollectionContents, getInitials, getNumber, getObject, getString } from "../../core/utils.ts";
-import { getFoundryRuntime, type FoundryDataShape } from "../../core/foundry-globals.ts";
+import { getFoundryTextEditor, type FoundryDataShape } from "../../core/foundry-globals.ts";
 import { canUpdateDocument, canViewDocument, type FoundryDocumentMutationApi, type FoundryUserLike, type PermissionCheckedDocument } from "../../services/permissions.ts";
 import { enrichSectionRows } from "../../services/rich-text-enrichment.ts";
 import {
@@ -197,7 +197,7 @@ export async function buildDnd5eFeaturesViewModel(options: {
   const searchQuery = normalizeSearchQuery(options.searchQuery);
   const allItems = getVisibleOwnedItems(actor, options.user);
   const featureItems = allItems.filter(isFeatureListItem);
-  const textEditor = getFoundryRuntime().TextEditor;
+  const textEditor = getFoundryTextEditor();
   const enrichHTML = textEditor?.enrichHTML;
   const featureRowsInput = featureItems.map(item => buildFeatureItemViewModel(actor, item, allItems, canUpdate));
   const sectionsInput = filterFeatureSections(buildFeatureSections(featureRowsInput), searchQuery);

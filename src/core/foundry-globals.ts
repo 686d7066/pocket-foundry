@@ -110,3 +110,15 @@ export type FoundryRuntime = Omit<typeof globalThis, "ActiveEffect" | "CONFIG" |
 export function getFoundryRuntime(): FoundryRuntime {
   return globalThis as unknown as FoundryRuntime;
 }
+
+/** Resolves the configured editor without touching Foundry's deprecated global getter. */
+export function getFoundryTextEditor(): FoundryRuntime["TextEditor"] {
+  const runtime = getFoundryRuntime();
+  return runtime.foundry?.applications?.ux?.TextEditor?.implementation ?? runtime.TextEditor;
+}
+
+/** Resolves template APIs together without reading deprecated globals in Foundry. */
+export function getFoundryHandlebars(): Pick<FoundryRuntime, "renderTemplate" | "loadTemplates"> {
+  const runtime = getFoundryRuntime();
+  return runtime.foundry?.applications?.handlebars ?? runtime;
+}

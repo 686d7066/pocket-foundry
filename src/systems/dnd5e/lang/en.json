@@ -135,6 +135,6 @@
   "POCKETFOUNDRY.DND5E.Inventory.Manage.SearchFailed": "Search failed. Please try again.",
   "POCKETFOUNDRY.DND5E.Inventory.Manage.MoveTo": "Move to…",
   "POCKETFOUNDRY.DND5E.Inventory.Manage.OutOfStock": "Out of stock",
-  "POCKETFOUNDRY.DND5E.Inventory.Manage.StockQuantity": "Quantity owned",
+  "POCKETFOUNDRY.DND5E.Inventory.Manage.StockQuantity": "Set quantity",
   "POCKETFOUNDRY.DND5E.Inventory.Manage.BagDeleteNote": "Keeping contents preserves the items inside, including nested bags. The deleted bag itself, its settings, and any currency stored directly in it are removed."
 }

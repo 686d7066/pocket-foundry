@@ -13,12 +13,13 @@ import {
 } from "./controller-helpers-navigation.ts";
 import { notifyDocumentLinkUnavailable, resolveDocumentLinkRoute } from "./controller-helpers-search.ts";
 import { renderShell } from "./controller-helpers-shell.ts";
-import { closeFavoriteContextMenu, consumeShellActionEvent } from "./controller-helpers-ui.ts";
+import { closeFavoriteContextMenu, consumeShellActionEvent, openConfirmationDialog } from "./controller-helpers-ui.ts";
 import type { MobileShellActionContext } from "./event-context.ts";
 
 /**
  * Routes character-sheet click actions through generic shell behavior first and
- * then through the active system adapter.
+ * then through the active system adapter. Wheel clicks center the chosen value
+ * so confirmation and scroll selection agree with the explicit selection.
  */
 export async function handleCharacterSheetClickAction(context: MobileShellActionContext, target: HTMLElement, event: Event): Promise<boolean> {
   const { element, router, searchState } = context;
@@ -122,6 +123,7 @@ export async function handleCharacterSheetClickAction(context: MobileShellAction
 
   if (action.endsWith("-select-delta")) {
     consumeShellActionEvent(event);
+    target.scrollIntoView({ block: "center", inline: "nearest", behavior: "instant" });
     setNumberWheelSelectedDelta(target);
     return true;
   }
@@ -134,6 +136,9 @@ export async function handleCharacterSheetClickAction(context: MobileShellAction
     action,
     route: activeRoute,
     helpers: {
+      openFormDialog: title => openConfirmationDialog(element, {
+        id: "adapter-form", title, body: "", confirmLabel: "", confirmAction: "", cancelAction: ""
+      }),
       setDialogOpen: (dialogId, open) => setNumberDialogOpen(element, dialogId, open),
       setNumberWheelValue,
       getCenteredNumberWheelOption,

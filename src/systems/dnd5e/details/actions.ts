@@ -1,4 +1,4 @@
-import { getFoundryRuntime } from "../../../core/foundry-globals.ts";
+import { getFoundryTextEditor, getFoundryRuntime } from "../../../core/foundry-globals.ts";
 import { localize, localizeSystemKey, localizeSystemLabel } from "../../../core/localization.ts";
 import { getCollectionContents, getNumber, getObject, getString } from "../../../core/utils.ts";
 import { canUpdateDocument, canViewDocument, type FoundryUserLike } from "../../../services/permissions.ts";
@@ -1051,7 +1051,7 @@ async function summarizeDetailText(value: string, relativeTo?: unknown): Promise
 }
 
 function getTextEnricher(): ((content: string, options?: Record<string, unknown>) => Promise<string> | string) | undefined {
-  const textEditor = getFoundryRuntime().TextEditor;
+  const textEditor = getFoundryTextEditor();
   return typeof textEditor?.enrichHTML === "function" ? textEditor.enrichHTML.bind(textEditor) : undefined;
 }
 

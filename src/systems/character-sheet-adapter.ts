@@ -227,6 +227,7 @@ export type PaneSwipeGesture = {
 };
 
 export type CharacterSheetActionHelpers = {
+  openFormDialog?(title: string): HTMLElement;
   setDialogOpen(dialogId: string | undefined, open: boolean): void;
   setNumberWheelValue(wheel: HTMLElement, value: number): void;
   getCenteredNumberWheelOption(wheel: HTMLElement): HTMLElement | null;

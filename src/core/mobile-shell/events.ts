@@ -1,4 +1,6 @@
 import type { MobileRouter } from "../../router/mobile-router.ts";
+import { bindActionPopoverPositioning } from "./action-popovers.ts";
+import { bindNumberWheelDragging } from "./number-wheel-drag.ts";
 import { RouteView, type CharacterRoute } from "../../router/routes.ts";
 import { getCharacterSheetAdapter } from "../../systems/character-sheet-adapter-registry.ts";
 import { handleCombatClickAction } from "./actions-combat.ts";
@@ -24,6 +26,8 @@ export function bindMobileShellEvents(options: {
   searchState: SearchUiState;
 }): void {
   const { element, abortController, router, searchState } = options;
+  bindActionPopoverPositioning(element, abortController.signal);
+  bindNumberWheelDragging(element, abortController.signal);
   const actionContext = { element, router, searchState };
   let swipeStart: SwipeStart | undefined;
   let favoriteLongPressTimer: ReturnType<typeof globalThis.setTimeout> | undefined;

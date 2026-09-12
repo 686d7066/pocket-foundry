@@ -224,7 +224,7 @@ export function closeFavoriteContextMenu(root: HTMLElement): void {
 /**
  * Opens a reusable confirmation dialog with caller-provided actions and data.
  */
-export function openConfirmationDialog(root: HTMLElement, options: ConfirmationDialogOptions): void {
+export function openConfirmationDialog(root: HTMLElement, options: ConfirmationDialogOptions): HTMLElement {
   closeConfirmationDialog(root, options.id);
 
   const modalHost = root.querySelector<HTMLElement>(".pocket-foundry-root") ?? root;
@@ -269,6 +269,7 @@ export function openConfirmationDialog(root: HTMLElement, options: ConfirmationD
   dialog.append(panel);
   modalHost.append(dialog);
   cancel.focus();
+  return dialog;
 }
 
 export function closeConfirmationDialog(root: HTMLElement, id: string): void {

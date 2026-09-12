@@ -49,10 +49,10 @@ test("nested bag moves account for descendant depth", async () => {
   assert.equal((await moveManagedItem(f.actor, {}, "bag", "4")).reason, "depth");
 });
 
-test("bag identity updates do not overwrite contents or system settings", async () => {
+test("bag renaming ignores icon changes and does not overwrite contents or system settings", async () => {
   const f = fixture(); f.add("bag", "container");
   assert.equal((await saveManagedBag(f.actor, {}, { id: "bag", name: " Travel bag ", img: "icons/bag.webp" })).ok, true);
-  assert.deepEqual(f.writes[0], { name: "Travel bag", img: "icons/bag.webp" });
+  assert.deepEqual(f.writes[0], { name: "Travel bag" });
   assert.equal((await saveManagedBag(f.actor, {}, { name: "", img: "" })).ok, false);
   assert.equal(validInventoryImage("javascript:alert(1)"), false);
   assert.equal((await saveManagedBag(f.actor, {}, { name: "New bag", img: "" })).ok, true);
