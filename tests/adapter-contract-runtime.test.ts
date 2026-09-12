@@ -98,9 +98,6 @@ async function assertAdapterContract(label: string, adapter: CharacterSheetAdapt
   assert.ok(Array.isArray(searchAdapters), `${label}: getSearchAdapters() must return an array.`);
 
   const favoritesCapability = adapter.getFavoritesCapability?.() ?? null;
-  if (label.startsWith("dnd5e ")) {
-    assert.ok(favoritesCapability, `${label}: dnd5e must opt into the generic favorites capability.`);
-  }
   if (favoritesCapability) {
     assert.equal(favoritesCapability.context, "favorites", `${label}: favorites capability must use the generic favorites context.`);
     assert.ok(Array.isArray(favoritesCapability.groupPartials), `${label}: favorites groupPartials must be an array.`);

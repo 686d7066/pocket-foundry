@@ -310,7 +310,7 @@ test("compendium index entries are viewable when Foundry resolves their UUID", (
     user,
     fromUuid: async () => null,
     fromUuidSync: uuid =>
-      uuid === "Compendium.dnd5e.spells.Item.bane"
+      uuid === "Compendium.fixtureSystem.spells.Item.bane"
         ? {
             uuid,
             _id: "bane",
@@ -319,7 +319,7 @@ test("compendium index entries are viewable when Foundry resolves their UUID", (
         : null
   });
 
-  const result = service.lookupByUuidSync("Compendium.dnd5e.spells.Item.bane");
+  const result = service.lookupByUuidSync("Compendium.fixtureSystem.spells.Item.bane");
 
   assert.equal(result.available, true);
   assert.equal(result.documentType, "item");

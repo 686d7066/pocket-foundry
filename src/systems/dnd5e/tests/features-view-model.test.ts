@@ -12,7 +12,7 @@ import {
   type Dnd5eFeatureActivity,
   type Dnd5eFeaturesActor,
   type Dnd5eFeaturesItem
-} from "../src/systems/dnd5e/features-view-model.ts";
+} from "../features-view-model.ts";
 
 const user = { id: "player" };
 
@@ -163,16 +163,16 @@ test("feature controls require update permission and call dnd5e document APIs", 
 });
 
 test("features template and styles preserve required regions without create or delete controls", () => {
-  const template = readFileSync(new URL("../src/systems/dnd5e/templates/features.hbs", import.meta.url), "utf8");
-  const rowTemplate = readFileSync(new URL("../src/systems/dnd5e/templates/partials/feature-row.hbs", import.meta.url), "utf8");
-  const tableHeadTemplate = readFileSync(new URL("../src/systems/dnd5e/templates/partials/table-head.hbs", import.meta.url), "utf8");
-  const actorShellTemplate = readFileSync(new URL("../src/templates/actor-sheet-shell.hbs", import.meta.url), "utf8");
+  const template = readFileSync(new URL("../templates/features.hbs", import.meta.url), "utf8");
+  const rowTemplate = readFileSync(new URL("../templates/partials/feature-row.hbs", import.meta.url), "utf8");
+  const tableHeadTemplate = readFileSync(new URL("../templates/partials/table-head.hbs", import.meta.url), "utf8");
+  const actorShellTemplate = readFileSync(new URL("../../../templates/actor-sheet-shell.hbs", import.meta.url), "utf8");
   const css = [
-    readFileSync(new URL("../src/styles/pocket-foundry.css", import.meta.url), "utf8"),
-    readFileSync(new URL("../src/systems/dnd5e/styles/pocket-foundry-dnd5e.css", import.meta.url), "utf8")
+    readFileSync(new URL("../../../styles/pocket-foundry.css", import.meta.url), "utf8"),
+    readFileSync(new URL("../styles/pocket-foundry-dnd5e.css", import.meta.url), "utf8")
   ].join("\n");
-  const moduleSource = readFileSync(new URL("../src/module.ts", import.meta.url), "utf8");
-  const actorSheetNavigationSource = readFileSync(new URL("../src/systems/dnd5e/actor-sheet-navigation.ts", import.meta.url), "utf8");
+  const moduleSource = readFileSync(new URL("../../../module.ts", import.meta.url), "utf8");
+  const actorSheetNavigationSource = readFileSync(new URL("../actor-sheet-navigation.ts", import.meta.url), "utf8");
 
   assert.match(actorShellTemplate, /class="mf-header actor-sheet-header"/);
   assert.match(actorShellTemplate, /railClass="pane-rail"/);

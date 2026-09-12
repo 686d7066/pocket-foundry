@@ -42,18 +42,18 @@ test("localizeSystemLabel localizes known system keys and preserves literal labe
   const localizedKeys: string[] = [];
   runtime.game = {
     i18n: {
-      has: (key: string) => key === "DND5E.Alignment",
+      has: (key: string) => key === "FIXTURE.Alignment",
       localize: (key: string) => {
         localizedKeys.push(key);
-        return key === "DND5E.Alignment" ? "Localized Alignment" : key;
+        return key === "FIXTURE.Alignment" ? "Localized Alignment" : key;
       }
     }
   };
 
-  assert.equal(localizeSystemLabel("DND5E.Alignment", "Alignment"), "Localized Alignment");
+  assert.equal(localizeSystemLabel("FIXTURE.Alignment", "Alignment"), "Localized Alignment");
   assert.equal(localizeSystemLabel("Already Localized", "Fallback"), "Already Localized");
-  assert.equal(localizeSystemLabel("DND5E.Unknown", "Unknown"), "Unknown");
-  assert.deepEqual(localizedKeys, ["DND5E.Alignment"]);
+  assert.equal(localizeSystemLabel("FIXTURE.Unknown", "Unknown"), "Unknown");
+  assert.deepEqual(localizedKeys, ["FIXTURE.Alignment"]);
 });
 
 test("localizeSystemKey localizes active system keys and falls back with interpolation", () => {
@@ -62,13 +62,13 @@ test("localizeSystemKey localizes active system keys and falls back with interpo
     i18n: {
       has: (key: string, fallback?: boolean) => {
         calls.push([key, fallback]);
-        return key === "DND5E.SpellcastingClass";
+        return key === "FIXTURE.SpellcastingClass";
       },
-      localize: (key: string, data?: Record<string, unknown>) => key === "DND5E.SpellcastingClass" ? `${data?.class} Spellcasting` : key
+      localize: (key: string, data?: Record<string, unknown>) => key === "FIXTURE.SpellcastingClass" ? `${data?.class} Spellcasting` : key
     }
   };
 
-  assert.equal(localizeSystemKey("DND5E.SpellcastingClass", "{class} Spellcasting", { class: "Wizard" }), "Wizard Spellcasting");
-  assert.equal(localizeSystemKey("DND5E.Unknown", "{name} fallback", { name: "English" }), "English fallback");
-  assert.deepEqual(calls, [["DND5E.SpellcastingClass", true], ["DND5E.Unknown", true]]);
+  assert.equal(localizeSystemKey("FIXTURE.SpellcastingClass", "{class} Spellcasting", { class: "Wizard" }), "Wizard Spellcasting");
+  assert.equal(localizeSystemKey("FIXTURE.Unknown", "{name} fallback", { name: "English" }), "English fallback");
+  assert.deepEqual(calls, [["FIXTURE.SpellcastingClass", true], ["FIXTURE.Unknown", true]]);
 });

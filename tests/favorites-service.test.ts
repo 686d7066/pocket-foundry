@@ -17,7 +17,7 @@ test("generic favorites restore entries by current system, user, and actor", () 
     [
       FAVORITES_SETTING,
       {
-        dnd5e: {
+        fixtureSystem: {
           User1: {
             "Actor.arlen": [
               { type: "skill", id: "arc", sort: 2000 },
@@ -29,7 +29,7 @@ test("generic favorites restore entries by current system, user, and actor", () 
             "Actor.arlen": [{ type: "skill", id: "ste", sort: 1000 }]
           }
         },
-        pf2e: {
+        otherFixture: {
           User1: {
             "Actor.arlen": [{ type: "skill", id: "athletics", sort: 1000 }]
           }
@@ -47,7 +47,7 @@ test("generic favorites restore entries by current system, user, and actor", () 
   assert.deepEqual(getFavoriteEntries({ uuid: "Actor.arlen" }), [{ type: "skill", id: "ste", sort: 1000 }]);
 
   (globalThis as typeof globalThis & { game: { user: { id: string }; system: { id: string } } }).game.user.id = "User1";
-  (globalThis as typeof globalThis & { game: { user: { id: string }; system: { id: string } } }).game.system.id = "pf2e";
+  (globalThis as typeof globalThis & { game: { user: { id: string }; system: { id: string } } }).game.system.id = "otherFixture";
   assert.deepEqual(getFavoriteEntries({ uuid: "Actor.arlen" }), [{ type: "skill", id: "athletics", sort: 1000 }]);
 });
 
@@ -56,7 +56,7 @@ test("generic favorites add and remove while preserving existing sort order", as
     [
       FAVORITES_SETTING,
       {
-        dnd5e: {
+        fixtureSystem: {
           User1: {
             "Actor.arlen": [
               { type: "item", id: ".Item.dagger", sort: 1000 },
@@ -73,7 +73,7 @@ test("generic favorites add and remove while preserving existing sort order", as
   assert.equal(await setFavoriteEntry({ uuid: "Actor.arlen" }, "skill", "arc", false), true);
 
   assert.deepEqual(
-    (((settingValues.get(FAVORITES_SETTING) as Record<string, unknown>).dnd5e as Record<string, unknown>).User1 as Record<string, unknown>)["Actor.arlen"],
+    (((settingValues.get(FAVORITES_SETTING) as Record<string, unknown>).fixtureSystem as Record<string, unknown>).User1 as Record<string, unknown>)["Actor.arlen"],
     [
       { type: "item", id: "Item.dagger", sort: 1000 },
       { type: "tool", id: "thieves", sort: 102000 }
@@ -117,7 +117,7 @@ function installFoundrySettings(settingValues: Map<string, unknown>): Map<string
     configurable: true,
     value: {
       user: { id: "User1" },
-      system: { id: "dnd5e" },
+      system: { id: "fixtureSystem" },
       world: { id: "World1" },
       settings: {
         get: (_namespace: string, key: string) => settingValues.get(key) ?? {},

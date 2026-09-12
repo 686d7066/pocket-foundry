@@ -14,7 +14,7 @@ import {
   toggleDetailsInspiration,
   type Dnd5eDetailsActor,
   type Dnd5eDetailsConfig
-} from "../src/systems/dnd5e/details-view-model.ts";
+} from "../details-view-model.ts";
 
 const user = { id: "player" };
 
@@ -500,17 +500,17 @@ test("exhaustion pips set and clear compact exhaustion levels", () => {
 });
 
 test("details template and styles preserve required regions without local submenu or Favorites section", () => {
-  const template = readFileSync(new URL("../src/systems/dnd5e/templates/details.hbs", import.meta.url), "utf8");
-  const skillRowTemplate = readFileSync(new URL("../src/systems/dnd5e/templates/partials/details-skill-row.hbs", import.meta.url), "utf8");
-  const toolRowTemplate = readFileSync(new URL("../src/systems/dnd5e/templates/partials/details-tool-row.hbs", import.meta.url), "utf8");
-  const blipPartialTemplate = readFileSync(new URL("../src/templates/partials/fillable-blips.hbs", import.meta.url), "utf8");
-  const numberAdjustDialogTemplate = readFileSync(new URL("../src/templates/partials/number-adjust-dialog.hbs", import.meta.url), "utf8");
-  const actorShellTemplate = readFileSync(new URL("../src/templates/actor-sheet-shell.hbs", import.meta.url), "utf8");
+  const template = readFileSync(new URL("../templates/details.hbs", import.meta.url), "utf8");
+  const skillRowTemplate = readFileSync(new URL("../templates/partials/details-skill-row.hbs", import.meta.url), "utf8");
+  const toolRowTemplate = readFileSync(new URL("../templates/partials/details-tool-row.hbs", import.meta.url), "utf8");
+  const blipPartialTemplate = readFileSync(new URL("../../../templates/partials/fillable-blips.hbs", import.meta.url), "utf8");
+  const numberAdjustDialogTemplate = readFileSync(new URL("../../../templates/partials/number-adjust-dialog.hbs", import.meta.url), "utf8");
+  const actorShellTemplate = readFileSync(new URL("../../../templates/actor-sheet-shell.hbs", import.meta.url), "utf8");
   const css = [
-    readFileSync(new URL("../src/styles/pocket-foundry.css", import.meta.url), "utf8"),
-    readFileSync(new URL("../src/systems/dnd5e/styles/pocket-foundry-dnd5e.css", import.meta.url), "utf8")
+    readFileSync(new URL("../../../styles/pocket-foundry.css", import.meta.url), "utf8"),
+    readFileSync(new URL("../styles/pocket-foundry-dnd5e.css", import.meta.url), "utf8")
   ].join("\n");
-  const moduleSource = readFileSync(new URL("../src/module.ts", import.meta.url), "utf8");
+  const moduleSource = readFileSync(new URL("../../../module.ts", import.meta.url), "utf8");
 
   assert.match(actorShellTemplate, /class="mf-header actor-sheet-header"/);
   assert.match(actorShellTemplate, /class="header-stats/);
@@ -535,8 +535,8 @@ test("details template and styles preserve required regions without local submen
   assert.match(template, /class="trait-groups"/);
   assert.match(template, /class="trait-group proficiency-group"/);
   assert.match(template, /<h2>\{\{localize 'JOURNALENTRYPAGE\.DND5E\.Class\.Traits\.Header'\}\}<\/h2>/);
-  const dnd5eHeaderTemplate = readFileSync(new URL("../src/systems/dnd5e/templates/partials/header-details.hbs", import.meta.url), "utf8");
-  const dnd5eHeaderDialogsTemplate = readFileSync(new URL("../src/systems/dnd5e/templates/partials/header-details-dialogs.hbs", import.meta.url), "utf8");
+  const dnd5eHeaderTemplate = readFileSync(new URL("../templates/partials/header-details.hbs", import.meta.url), "utf8");
+  const dnd5eHeaderDialogsTemplate = readFileSync(new URL("../templates/partials/header-details-dialogs.hbs", import.meta.url), "utf8");
   assert.match(dnd5eHeaderTemplate, /data-action="details-toggle-inspiration"/);
   assert.match(dnd5eHeaderTemplate, /class="header-inspiration-button .*inspiration-toggle/);
   assert.match(dnd5eHeaderTemplate, /\{\{#if header\.inspiration\.active\}\}fa-solid\{\{else\}\}fa-regular\{\{\/if\}\} fa-star/);

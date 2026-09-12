@@ -84,7 +84,7 @@ export async function withInventoryMutation(actor: ManagedInventoryActor, user: 
   finally { pendingActors.delete(actor); }
 }
 
-/** Moves an item or entire nested bag while rejecting cycles and excessive nesting. */
+/** Moves an item or nested bag, unequipping stowed items and rejecting invalid nesting. */
 export async function moveManagedItem(actor: ManagedInventoryActor, user: FoundryUserLike, itemId: string, destinationId: string): Promise<InventoryOperationResult> {
   return withInventoryMutation(actor, user, async () => {
     const items = managedItems(actor);
@@ -118,7 +118,9 @@ export async function moveManagedItem(actor: ManagedInventoryActor, user: Foundr
       childDepth = Math.max(childDepth, depth);
     }
     if (parents.size + childDepth > 5) return { ok: false, reason: "depth" };
-    if (!await item.update({ "system.container": destinationId || null })) return { ok: false, reason: "rejected" };
+    const changes: Record<string, unknown> = { "system.container": destinationId || null };
+    if (destinationId && getObject(item.system)?.equipped === true) changes["system.equipped"] = false;
+    if (!await item.update(changes)) return { ok: false, reason: "rejected" };
     return { ok: true };
   });
 }

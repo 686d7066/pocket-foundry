@@ -117,7 +117,7 @@ test("mobile startup prompt and setting value are isolated by Foundry user", asy
       }
     },
     user: { id: "Testuser1" },
-    system: { id: "dnd5e", title: "dnd5e" },
+    system: { id: "fixtureSystem", title: "fixtureSystem" },
     world: { id: "World1" }
   } as typeof runtime.game;
   const shell = {
@@ -187,7 +187,7 @@ test("settings templates expose the color-blind mode toggle", () => {
   assert.match(shellTemplate + settingsTemplate, /POCKETFOUNDRY\.Settings\.ColorBlindMode/);
 });
 
-test("actor sheet template supports the dnd5e-style character banner layer", () => {
+test("actor sheet template supports the fixtureSystem-style character banner layer", () => {
   const actorShellTemplate = readFileSync(new URL("../src/templates/actor-sheet-shell.hbs", import.meta.url), "utf8");
   const css = readFileSync(new URL("../src/styles/pocket-foundry.css", import.meta.url), "utf8");
 

@@ -1,12 +1,12 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { afterEach, test } from "vitest";
-import { createMobileRouter } from "../src/router/mobile-router.ts";
-import { createMobileShellController } from "../src/core/mobile-shell/controller.ts";
-import { canViewDocumentByUuid, createFoundryRoutePermissionResolver } from "../src/core/mobile-shell/controller-helpers-navigation.ts";
-import { RouteHashKey } from "../src/router/browser-history.ts";
-import { RouteView, ShellDestination } from "../src/router/routes.ts";
-import { DND5E_CHARACTER_PANE_CONFIG } from "../src/systems/dnd5e/character-panes.ts";
+import { createMobileRouter } from "../../../router/mobile-router.ts";
+import { createMobileShellController } from "../../../core/mobile-shell/controller.ts";
+import { canViewDocumentByUuid, createFoundryRoutePermissionResolver } from "../../../core/mobile-shell/controller-helpers-navigation.ts";
+import { RouteHashKey } from "../../../router/browser-history.ts";
+import { RouteView, ShellDestination } from "../../../router/routes.ts";
+import { DND5E_CHARACTER_PANE_CONFIG } from "../character-panes.ts";
 import {
   buildActorSheetNavigationViewModel,
   createCharacterPaneRoute,
@@ -15,8 +15,8 @@ import {
   isInteractiveSwipeTarget,
   normalizeCharacterPane,
   type ActorSheetNavigationActor
-} from "../src/systems/dnd5e/actor-sheet-navigation.ts";
-import { getCharacterSheetAdapter } from "../src/systems/character-sheet-adapter-registry.ts";
+} from "../actor-sheet-navigation.ts";
+import { getCharacterSheetAdapter } from "../../../systems/character-sheet-adapter-registry.ts";
 
 const user = { id: "player" };
 
@@ -238,11 +238,11 @@ test("swipe gestures ignore interactive controls", () => {
 });
 
 test("actor sheet template preserves required regions and Character terminology", () => {
-  const template = readFileSync(new URL("../src/templates/actor-sheet-shell.hbs", import.meta.url), "utf8");
-  const shellTemplate = readFileSync(new URL("../src/templates/shell.hbs", import.meta.url), "utf8");
-  const css = readFileSync(new URL("../src/styles/pocket-foundry.css", import.meta.url), "utf8");
-  const dnd5eHeaderTemplate = readFileSync(new URL("../src/systems/dnd5e/templates/partials/header-details.hbs", import.meta.url), "utf8");
-  const dnd5eCss = readFileSync(new URL("../src/systems/dnd5e/styles/pocket-foundry-dnd5e.css", import.meta.url), "utf8");
+  const template = readFileSync(new URL("../../../templates/actor-sheet-shell.hbs", import.meta.url), "utf8");
+  const shellTemplate = readFileSync(new URL("../../../templates/shell.hbs", import.meta.url), "utf8");
+  const css = readFileSync(new URL("../../../styles/pocket-foundry.css", import.meta.url), "utf8");
+  const dnd5eHeaderTemplate = readFileSync(new URL("../templates/partials/header-details.hbs", import.meta.url), "utf8");
+  const dnd5eCss = readFileSync(new URL("../styles/pocket-foundry-dnd5e.css", import.meta.url), "utf8");
 
   assert.match(template, /class="mf-header actor-sheet-header"/);
   assert.match(template, /class="portrait"/);
@@ -257,7 +257,7 @@ test("actor sheet template preserves required regions and Character terminology"
   assert.match(dnd5eHeaderTemplate, /class="header-inspiration-button .*inspiration-toggle/);
   assert.match(dnd5eHeaderTemplate, /aria-label="\{\{localize 'POCKETFOUNDRY\.DND5E\.Details\.HeroicInspiration'\}\}"/);
   assert.match(template, /railClass="pane-rail"/);
-  const paneRailTemplate = readFileSync(new URL("../src/templates/partials/pane-rail.hbs", import.meta.url), "utf8");
+  const paneRailTemplate = readFileSync(new URL("../../../templates/partials/pane-rail.hbs", import.meta.url), "utf8");
   assert.match(paneRailTemplate, /aria-label="\{\{label\}\}"/);
   assert.match(paneRailTemplate, /\{\{displayLabel\}\}/);
   assert.match(paneRailTemplate, /class="\{\{railClass\}\}/);
@@ -283,7 +283,7 @@ test("actor sheet template preserves required regions and Character terminology"
 });
 
 test("actor sheet template is registered for Foundry preload", () => {
-  const moduleSource = readFileSync(new URL("../src/module.ts", import.meta.url), "utf8");
+  const moduleSource = readFileSync(new URL("../../../module.ts", import.meta.url), "utf8");
 
   assert.match(moduleSource, /`\$\{TEMPLATE_ROOT\}\/actor-sheet-shell\.hbs`/);
 });

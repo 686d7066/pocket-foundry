@@ -1,17 +1,17 @@
 import assert from "node:assert/strict";
 import { afterEach, test, vi } from "vitest";
-import { handleCharacterSheetClickAction } from "../src/core/mobile-shell/actions-character-sheet.ts";
-import { createInitialSearchUiState } from "../src/core/mobile-shell/controller-helpers-search.ts";
-import { openConfirmationDialog } from "../src/core/mobile-shell/controller-helpers-ui.ts";
-import { createMobileRouter } from "../src/router/mobile-router.ts";
-import { RouteView } from "../src/router/routes.ts";
-import { handleInventoryManagement } from "../src/systems/dnd5e/inventory-management-ui.ts";
+import { handleCharacterSheetClickAction } from "../../../core/mobile-shell/actions-character-sheet.ts";
+import { createInitialSearchUiState } from "../../../core/mobile-shell/controller-helpers-search.ts";
+import { openConfirmationDialog } from "../../../core/mobile-shell/controller-helpers-ui.ts";
+import { createMobileRouter } from "../../../router/mobile-router.ts";
+import { RouteView } from "../../../router/routes.ts";
+import { handleInventoryManagement } from "../inventory-management-ui.ts";
 
-vi.mock("../src/systems/character-sheet-adapter-registry.ts", () => ({
+vi.mock("../../../systems/character-sheet-adapter-registry.ts", () => ({
   getCharacterSheetAdapter: () => ({ handleShellAction: handleInventoryManagement })
 }));
-vi.mock("../src/core/mobile-shell/controller-helpers-ui.ts", async importOriginal => ({
-  ...await importOriginal<typeof import("../src/core/mobile-shell/controller-helpers-ui.ts")>(),
+vi.mock("../../../core/mobile-shell/controller-helpers-ui.ts", async importOriginal => ({
+  ...await importOriginal<typeof import("../../../core/mobile-shell/controller-helpers-ui.ts")>(),
   openConfirmationDialog: vi.fn()
 }));
 afterEach(() => { vi.unstubAllGlobals(); vi.clearAllMocks(); });

@@ -4,12 +4,12 @@ import { summarizeRichTextWithReferences } from "../src/services/rich-text-links
 
 test("rich text summary extracts fallback UUID references without an enricher", async () => {
   const summary = await summarizeRichTextWithReferences(
-    "Craft: @UUID[Compendium.dnd5e.equipment24.Item.phbtrdHerbalism]{Herbalism Kit}"
+    "Craft: @UUID[Compendium.fixtureSystem.equipment24.Item.phbtrdHerbalism]{Herbalism Kit}"
   );
 
   assert.equal(summary.text.includes("@UUID["), false);
   assert.deepEqual(summary.references, [
-    { uuid: "Compendium.dnd5e.equipment24.Item.phbtrdHerbalism", label: "Herbalism Kit" }
+    { uuid: "Compendium.fixtureSystem.equipment24.Item.phbtrdHerbalism", label: "Herbalism Kit" }
   ]);
 });
 

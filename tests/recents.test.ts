@@ -158,22 +158,22 @@ test("Foundry recents storage is scoped by current system and user inside the se
       }
     },
     user: { id: "User1" },
-    system: { id: "dnd5e" },
+    system: { id: "fixtureSystem" },
     world: { id: "World1" }
   };
 
-  const dnd5eService = createMobileRecentsService({
+  const fixtureSystemService = createMobileRecentsService({
     storage: createFoundryRecentRouteRecordStorage()
   });
-  await dnd5eService.recordRoute({ view: RouteView.Character, actorUuid: "Actor.arlen", pane: "Details" }, 10);
+  await fixtureSystemService.recordRoute({ view: RouteView.Character, actorUuid: "Actor.arlen", pane: "Details" }, 10);
 
-  runtime.game.system.id = "pf2e";
-  const pf2eService = createMobileRecentsService({
+  runtime.game.system.id = "otherFixture";
+  const otherFixtureService = createMobileRecentsService({
     storage: createFoundryRecentRouteRecordStorage()
   });
-  assert.equal((await pf2eService.listRows()).length, 0);
+  assert.equal((await otherFixtureService.listRows()).length, 0);
 
-  runtime.game.system.id = "dnd5e";
+  runtime.game.system.id = "fixtureSystem";
   runtime.game.user.id = "User2";
   const secondUserService = createMobileRecentsService({
     storage: createFoundryRecentRouteRecordStorage()
@@ -181,7 +181,7 @@ test("Foundry recents storage is scoped by current system and user inside the se
   assert.equal((await secondUserService.listRows()).length, 0);
 
   runtime.game.user.id = "User1";
-  assert.equal((await dnd5eService.listRows()).length, 1);
+  assert.equal((await fixtureSystemService.listRows()).length, 1);
 });
 
 test("opening a recent entry goes through the internal mobile router", async () => {

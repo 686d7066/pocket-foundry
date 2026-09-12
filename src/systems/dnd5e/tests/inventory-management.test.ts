@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "vitest";
-import { containerChoices, deleteManagedItem, importManagedItem, inventoryDescendants, moveManagedItem, parentContainerId, saveManagedBag, validInventoryImage, type ManagedInventoryActor, type ManagedInventoryItem } from "../src/systems/dnd5e/inventory-management.ts";
+import { containerChoices, deleteManagedItem, importManagedItem, inventoryDescendants, moveManagedItem, parentContainerId, saveManagedBag, validInventoryImage, type ManagedInventoryActor, type ManagedInventoryItem } from "../inventory-management.ts";
 
 function fixture() {
   const items: ManagedInventoryItem[] = [];
@@ -77,6 +77,34 @@ test("nested bag moves account for descendant depth", async () => {
   const f = fixture(); for (let i=0;i<5;i++) f.add(String(i), "container", i ? String(i-1) : null);
   f.add("bag", "container"); f.add("rope", "loot", "bag");
   assert.equal((await moveManagedItem(f.actor, {}, "bag", "4")).reason, "depth");
+});
+
+test("stowing an equipped item clears its equipped state in the same document update", async () => {
+  const f = fixture(); f.add("bag", "container");
+  const item = f.add("sword", "weapon");
+  item.system = { container: null, equipped: true };
+  assert.equal((await moveManagedItem(f.actor, {}, "sword", "bag")).ok, true);
+  assert.deepEqual(f.writes, [{ "system.container": "bag", "system.equipped": false }]);
+});
+
+test("moving to main inventory leaves equipped state unchanged and items without it gain no equipment field", async () => {
+  const f = fixture(); f.add("bag", "container");
+  const item = f.add("sword", "weapon", "bag");
+  item.system = { container: "bag", equipped: true };
+  assert.equal((await moveManagedItem(f.actor, {}, "sword", "")).ok, true);
+  f.add("rope", "loot");
+  assert.equal((await moveManagedItem(f.actor, {}, "rope", "bag")).ok, true);
+  assert.deepEqual(f.writes, [{ "system.container": null }, { "system.container": "bag" }]);
+});
+
+test("a rejected move never unequips the item", async () => {
+  const f = fixture(); f.add("bag", "container");
+  const item = f.add("armor", "equipment");
+  item.system = { equipped: true };
+  assert.equal((await moveManagedItem(f.actor, {}, "armor", "missing")).reason, "invalid-destination");
+  item.canUserModify = () => false;
+  assert.equal((await moveManagedItem(f.actor, {}, "armor", "bag")).reason, "forbidden");
+  assert.deepEqual(f.writes, []);
 });
 
 test("bag renaming ignores icon changes and does not overwrite contents or system settings", async () => {

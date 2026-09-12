@@ -8,9 +8,9 @@ test("quantity popup uses the existing dialog and wheel without leaking the item
   renderer.registerHelper("localize", (key: string) => key);
   for (const partial of ["number-wheel", "number-adjust-dialog"]) {
     renderer.registerPartial(`modules/pocket-foundry/templates/partials/${partial}.hbs`,
-      readFileSync(new URL(`../src/templates/partials/${partial}.hbs`, import.meta.url), "utf8"));
+      readFileSync(new URL(`../../../templates/partials/${partial}.hbs`, import.meta.url), "utf8"));
   }
-  const itemTemplate = readFileSync(new URL("../src/systems/dnd5e/templates/partials/inventory-list-row.hbs", import.meta.url), "utf8");
+  const itemTemplate = readFileSync(new URL("../templates/partials/inventory-list-row.hbs", import.meta.url), "utf8");
   const quantityCall = itemTemplate.match(/\{\{> "modules\/pocket-foundry\/templates\/partials\/number-adjust-dialog\.hbs"[\s\S]*?\}\}/)?.[0];
   assert.ok(quantityCall);
   const render = renderer.compile(quantityCall);
@@ -33,9 +33,9 @@ test("charges menu entry targets the existing adjustment dialog and is absent wi
   renderer.registerHelper("localize", (key: string) => key);
   for (const partial of ["number-wheel", "number-adjust-dialog", "expandable-detail-row", "favorite-context-menu"]) {
     renderer.registerPartial(`modules/pocket-foundry/templates/partials/${partial}.hbs`,
-      readFileSync(new URL(`../src/templates/partials/${partial}.hbs`, import.meta.url), "utf8"));
+      readFileSync(new URL(`../../../templates/partials/${partial}.hbs`, import.meta.url), "utf8"));
   }
-  const render = renderer.compile(readFileSync(new URL("../src/systems/dnd5e/templates/partials/inventory-list-row.hbs", import.meta.url), "utf8"));
+  const render = renderer.compile(readFileSync(new URL("../templates/partials/inventory-list-row.hbs", import.meta.url), "utf8"));
   const charges = { id: "charges", title: "Adjust Charges", label: "0 / 1", options: [{ value: 1, label: "+1" }, { value: 0, label: "0", center: true }] };
   const item = { id: "item", name: "Item", dialogItemId: "inside-container-item", actions: { canUpdate: true } };
   const html = render({ ...item, chargesAdjustment: charges, adjustments: [charges] });

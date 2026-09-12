@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { afterEach, test } from "vitest";
-import { inventoryImportEnvironment, searchInventoryCatalog } from "../src/systems/dnd5e/inventory-catalog.ts";
+import { inventoryImportEnvironment, searchInventoryCatalog } from "../inventory-catalog.ts";
 const originalGame=Object.getOwnPropertyDescriptor(globalThis,"game");
 const originalResolve=Object.getOwnPropertyDescriptor(globalThis,"fromUuid");
 afterEach(()=>{

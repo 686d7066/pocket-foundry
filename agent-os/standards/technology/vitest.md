@@ -5,6 +5,10 @@ Standards for automated tests.
 ## Pattern/Rule
 
 - Use the existing Vitest suite for TypeScript tests.
+- Keep shared-module tests and system-neutral fixtures in `tests/`.
+- Keep each concrete system's tests in `src/systems/<system-id>/tests/`, with its own `vitest.config.ts` inside that system folder. The root config discovers system projects without naming concrete systems.
+- Split mixed tests by ownership. Shared tests may verify adapter contracts with opaque fixtures, but must not require a particular system's mechanics or optional capabilities.
+- `npm test` runs all projects. Use `npm test -- --project core` for shared tests or `npm test -- --project <system-id>` for one system.
 - When creating new features, add tests to the existing test suite.
 - After adding or updating code, run all tests with `npm test`.
 - When tests fail, do not automatically adjust them. Let the user decide whether logic or tests should change.

@@ -11,11 +11,11 @@ function createWheelFixture() {
   let centeredValue = 0;
   const selectedValues = new Set([0]);
   const confirm = mockElement({
-    dataset: { action: "inventory-confirm-charges-delta", delta: "0" },
+    dataset: { action: "fixture-confirm-value-delta", delta: "0" },
     closest: () => dialog
   });
   const options = [1, 0].map(value => mockElement({
-    dataset: { action: "inventory-select-delta", delta: String(value) },
+    dataset: { action: "fixture-select-delta", delta: String(value) },
     classList: {
       add: () => selectedValues.add(value),
       remove: () => selectedValues.delete(value)
@@ -43,7 +43,7 @@ test("clicking a wheel number survives confirmation instead of reverting to the 
   assert.ok(option);
   await handleCharacterSheetClickAction({
     element: fixture.dialog,
-    router: createMobileRouter({ initialRoute: { view: RouteView.Character, actorUuid: "Actor.test", pane: "inventory" } }),
+    router: createMobileRouter({ initialRoute: { view: RouteView.Character, actorUuid: "Actor.test", pane: "TestPane" } }),
     searchState: createInitialSearchUiState()
   }, option, new Event("click", { cancelable: true }));
   assert.equal(getNumberDialogConfirmDelta(fixture.confirm), 1);

@@ -2,78 +2,6 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "vitest";
 
-test("shared partials are preloaded and used by core and dnd5e templates", () => {
-  const moduleSource = readFileSync(new URL("../src/module.ts", import.meta.url), "utf8");
-  const shellTemplate = readFileSync(new URL("../src/templates/shell.hbs", import.meta.url), "utf8");
-  const settingsTemplate = readFileSync(new URL("../src/templates/settings.hbs", import.meta.url), "utf8");
-  const actorShellTemplate = readFileSync(new URL("../src/templates/actor-sheet-shell.hbs", import.meta.url), "utf8");
-  const journalTemplate = readFileSync(new URL("../src/templates/journal.hbs", import.meta.url), "utf8");
-  const recentsTemplate = readFileSync(new URL("../src/templates/recents.hbs", import.meta.url), "utf8");
-  const detailsTemplate = readFileSync(new URL("../src/systems/dnd5e/templates/details.hbs", import.meta.url), "utf8");
-  const inventoryTemplate = readFileSync(new URL("../src/systems/dnd5e/templates/inventory.hbs", import.meta.url), "utf8");
-  const biographyTemplate = readFileSync(new URL("../src/systems/dnd5e/templates/biography.hbs", import.meta.url), "utf8");
-  const favoritesTemplate = readFileSync(new URL("../src/templates/favorites.hbs", import.meta.url), "utf8");
-  const favoriteBasicGroupTemplate = readFileSync(new URL("../src/templates/partials/favorite-basic-group.hbs", import.meta.url), "utf8");
-  const dnd5eFavoritesGroupTemplate = readFileSync(new URL("../src/systems/dnd5e/templates/partials/favorites-group.hbs", import.meta.url), "utf8");
-  const spellsTemplate = readFileSync(new URL("../src/systems/dnd5e/templates/spells.hbs", import.meta.url), "utf8");
-  const featuresTemplate = readFileSync(new URL("../src/systems/dnd5e/templates/features.hbs", import.meta.url), "utf8");
-  const effectsTemplate = readFileSync(new URL("../src/systems/dnd5e/templates/effects.hbs", import.meta.url), "utf8");
-  const featureRowTemplate = readFileSync(new URL("../src/systems/dnd5e/templates/partials/feature-row.hbs", import.meta.url), "utf8");
-  const spellRowTemplate = readFileSync(new URL("../src/systems/dnd5e/templates/partials/spell-row.hbs", import.meta.url), "utf8");
-  const inventoryRowTemplate = readFileSync(new URL("../src/systems/dnd5e/templates/partials/inventory-list-row.hbs", import.meta.url), "utf8");
-  const skillRowTemplate = readFileSync(new URL("../src/systems/dnd5e/templates/partials/details-skill-row.hbs", import.meta.url), "utf8");
-  const toolRowTemplate = readFileSync(new URL("../src/systems/dnd5e/templates/partials/details-tool-row.hbs", import.meta.url), "utf8");
-  const effectRowTemplate = readFileSync(new URL("../src/systems/dnd5e/templates/partials/effect-row.hbs", import.meta.url), "utf8");
-
-  assert.match(moduleSource, /partials\/content-list-row\.hbs/);
-  assert.match(moduleSource, /partials\/expandable-detail-row\.hbs/);
-  assert.match(moduleSource, /partials\/favorite-basic-group\.hbs/);
-  assert.match(moduleSource, /partials\/favorite-context-menu\.hbs/);
-  assert.match(moduleSource, /partials\/number-adjust-dialog\.hbs/);
-  assert.match(moduleSource, /partials\/number-wheel\.hbs/);
-  assert.match(moduleSource, /partials\/pane-search-toolbar\.hbs/);
-  assert.match(moduleSource, /partials\/pane-unavailable\.hbs/);
-  assert.match(moduleSource, /partials\/settings-toggle-row\.hbs/);
-
-  assert.match(shellTemplate, /partials\/settings-toggle-row\.hbs/);
-  assert.match(settingsTemplate, /partials\/settings-toggle-row\.hbs/);
-  assert.match(actorShellTemplate, /partials\/pane-unavailable\.hbs/);
-  const dnd5eHeaderDialogsTemplate = readFileSync(new URL("../src/systems/dnd5e/templates/partials/header-details-dialogs.hbs", import.meta.url), "utf8");
-  assert.match(dnd5eHeaderDialogsTemplate, /partials\/number-adjust-dialog\.hbs/);
-  assert.match(journalTemplate, /partials\/content-list-row\.hbs/);
-  assert.match(recentsTemplate, /partials\/content-list-row\.hbs/);
-
-  assert.match(detailsTemplate, /partials\/pane-unavailable\.hbs/);
-  assert.match(inventoryTemplate, /partials\/pane-unavailable\.hbs/);
-  assert.match(biographyTemplate, /partials\/pane-unavailable\.hbs/);
-  assert.match(favoritesTemplate, /partials\/pane-unavailable\.hbs/);
-  assert.match(favoritesTemplate, /partials\/favorite-basic-group\.hbs/);
-  assert.match(favoriteBasicGroupTemplate, /partials\/favorite-context-menu\.hbs/);
-  assert.match(spellsTemplate, /partials\/pane-search-toolbar\.hbs/);
-  assert.match(featuresTemplate, /partials\/pane-search-toolbar\.hbs/);
-  assert.match(effectsTemplate, /partials\/pane-search-toolbar\.hbs/);
-
-  assert.doesNotMatch(featureRowTemplate, /partials\/number-adjust-dialog\.hbs/);
-  assert.match(featureRowTemplate, /partials\/expandable-detail-row\.hbs/);
-  assert.match(featureRowTemplate, /partials\/favorite-context-menu\.hbs/);
-  assert.match(spellRowTemplate, /partials\/number-adjust-dialog\.hbs/);
-  assert.match(spellRowTemplate, /partials\/expandable-detail-row\.hbs/);
-  assert.match(spellRowTemplate, /partials\/favorite-context-menu\.hbs/);
-  assert.match(inventoryRowTemplate, /partials\/number-adjust-dialog\.hbs/);
-  assert.match(inventoryRowTemplate, /partials\/expandable-detail-row\.hbs/);
-  assert.match(inventoryRowTemplate, /partials\/favorite-context-menu\.hbs/);
-  assert.match(skillRowTemplate, /partials\/favorite-context-menu\.hbs/);
-  assert.match(toolRowTemplate, /partials\/favorite-context-menu\.hbs/);
-  assert.match(effectRowTemplate, /partials\/expandable-detail-row\.hbs/);
-  assert.match(effectRowTemplate, /partials\/favorite-context-menu\.hbs/);
-  assert.match(dnd5eFavoritesGroupTemplate, /partials\/details-skill-row\.hbs/);
-  assert.match(dnd5eFavoritesGroupTemplate, /partials\/details-tool-row\.hbs/);
-  assert.match(dnd5eFavoritesGroupTemplate, /partials\/inventory-list-row\.hbs/);
-  assert.match(dnd5eFavoritesGroupTemplate, /partials\/spell-row\.hbs/);
-  assert.match(dnd5eFavoritesGroupTemplate, /partials\/feature-row\.hbs/);
-  assert.match(dnd5eFavoritesGroupTemplate, /partials\/effect-row\.hbs/);
-});
-
 test("shared partials expose reusable parameterized hooks", () => {
   const contentListRowTemplate = readFileSync(new URL("../src/templates/partials/content-list-row.hbs", import.meta.url), "utf8");
   const expandableDetailRowTemplate = readFileSync(new URL("../src/templates/partials/expandable-detail-row.hbs", import.meta.url), "utf8");
@@ -128,3 +56,34 @@ test("shared partials expose reusable parameterized hooks", () => {
   assert.match(settingsToggleTemplate, /data-action="\{\{action\}\}"/);
 });
 
+test("shared partials are preloaded and used by core templates", () => {
+  const moduleSource = readFileSync(new URL("../src/module.ts", import.meta.url), "utf8");
+  const shellTemplate = readFileSync(new URL("../src/templates/shell.hbs", import.meta.url), "utf8");
+  const settingsTemplate = readFileSync(new URL("../src/templates/settings.hbs", import.meta.url), "utf8");
+  const actorShellTemplate = readFileSync(new URL("../src/templates/actor-sheet-shell.hbs", import.meta.url), "utf8");
+  const journalTemplate = readFileSync(new URL("../src/templates/journal.hbs", import.meta.url), "utf8");
+  const recentsTemplate = readFileSync(new URL("../src/templates/recents.hbs", import.meta.url), "utf8");
+  const favoritesTemplate = readFileSync(new URL("../src/templates/favorites.hbs", import.meta.url), "utf8");
+  const favoriteBasicGroupTemplate = readFileSync(new URL("../src/templates/partials/favorite-basic-group.hbs", import.meta.url), "utf8");
+
+  assert.match(moduleSource, /partials\/content-list-row\.hbs/);
+  assert.match(moduleSource, /partials\/expandable-detail-row\.hbs/);
+  assert.match(moduleSource, /partials\/favorite-basic-group\.hbs/);
+  assert.match(moduleSource, /partials\/favorite-context-menu\.hbs/);
+  assert.match(moduleSource, /partials\/number-adjust-dialog\.hbs/);
+  assert.match(moduleSource, /partials\/number-wheel\.hbs/);
+  assert.match(moduleSource, /partials\/pane-search-toolbar\.hbs/);
+  assert.match(moduleSource, /partials\/pane-unavailable\.hbs/);
+  assert.match(moduleSource, /partials\/settings-toggle-row\.hbs/);
+
+  assert.match(shellTemplate, /partials\/settings-toggle-row\.hbs/);
+  assert.match(settingsTemplate, /partials\/settings-toggle-row\.hbs/);
+  assert.match(actorShellTemplate, /partials\/pane-unavailable\.hbs/);
+  assert.match(journalTemplate, /partials\/content-list-row\.hbs/);
+  assert.match(recentsTemplate, /partials\/content-list-row\.hbs/);
+
+  assert.match(favoritesTemplate, /partials\/pane-unavailable\.hbs/);
+  assert.match(favoritesTemplate, /partials\/favorite-basic-group\.hbs/);
+  assert.match(favoriteBasicGroupTemplate, /partials\/favorite-context-menu\.hbs/);
+
+});

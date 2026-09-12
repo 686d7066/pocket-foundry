@@ -24,42 +24,6 @@ test("shared table schemas reserve spare width for names and size metadata to co
   assert.match(headerRule, /text-overflow: clip/);
 });
 
-test("item tables and content lists opt into shared sizing while Details keeps its original layout", () => {
-  const templates = [
-    "systems/dnd5e/templates/inventory.hbs",
-    "systems/dnd5e/templates/partials/inventory-list-row.hbs",
-    "systems/dnd5e/templates/features.hbs",
-    "systems/dnd5e/templates/spells.hbs",
-    "systems/dnd5e/templates/effects.hbs",
-    "systems/dnd5e/templates/partials/favorites-group.hbs",
-    "templates/journal.hbs",
-    "templates/journal-entry.hbs",
-    "templates/recents.hbs"
-  ];
-  for (const path of templates) {
-    const source = readSource(path);
-    const tables = [...source.matchAll(/<div class="[^"]*(?:sheet-table sheet-list|content-table content-list|detail-table (?:skills-table|tool-table))[^"]*"[^>]*>/g)];
-    assert.ok(tables.length, `No tables checked in ${path}`);
-    for (const [table] of tables) assert.match(table, /data-table-layout="[^"]+"/, path);
-  }
-  const containerRow = readSource("systems/dnd5e/templates/partials/inventory-list-row.hbs");
-  const details = readSource("systems/dnd5e/templates/details.hbs");
-  assert.doesNotMatch(details, /data-table-layout/);
-  assert.match(details, /class="detail-table skills-table"/);
-  assert.match(details, /class="detail-table tool-table"/);
-  assert.match(containerRow, /class="inventory-children">/);
-  assert.match(containerRow, /\{\{#each childTables\}\}[\s\S]*partials\/table-head\.hbs[\s\S]*\{\{#each items\}\}/);
-  assert.match(readSource("systems/dnd5e/templates/features.hbs"), /data-panel-grid/);
-  assert.match(readSource("styles/pocket-foundry.css"), /minmax\(min\(100%,var\(--pf-panel-min-width,320px\)\),1fr\)/);
-});
-
-test("abbreviated inventory headers retain full accessible and hover labels", () => {
-  const template = readSource("systems/dnd5e/templates/partials/table-head.hbs");
-  assert.match(template, /title="\{\{label\}\}" aria-label="\{\{label\}\}"/);
-  assert.match(template, /\{\{#if shortLabel\}\}\{\{shortLabel\}\}\{\{else\}\}\{\{label\}\}\{\{\/if\}\}/);
-  assert.doesNotMatch(template, /aria-hidden="true"/);
-});
-
 test("additional table width goes entirely to names when metadata fits", () => {
   const preferred = [30, 300, 19, 22, 44, 44];
   const narrow = allocateTableColumns(400, 8, preferred, 1, [0, 5]);
@@ -84,4 +48,13 @@ test("ordinary row grids retain native disclosure boxes", () => {
   assert.match(sharedRows, /column-gap: var\(--pf-table-gap\)/);
   assert.doesNotMatch(sharedRows, /column-gap: inherit/);
   assert.match(readSource("core/mobile-shell/table-layout.ts"), /getPropertyValue\("--pf-table-gap"\)/);
+});
+
+test("shared content lists opt into shared table sizing", () => {
+  for (const path of ["templates/journal.hbs", "templates/journal-entry.hbs", "templates/recents.hbs"]) {
+    const tables = [...readSource(path).matchAll(/<div class="[^"]*content-table content-list[^"]*"[^>]*>/g)];
+    assert.ok(tables.length, path);
+    for (const [table] of tables) assert.match(table, /data-table-layout="[^"]+"/, path);
+  }
+  assert.ok(readSource("styles/pocket-foundry.css").includes("minmax(min(100%,var(--pf-panel-min-width,320px)),1fr)"));
 });
