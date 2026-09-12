@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { afterEach, test } from "vitest";
-import { FAVORITES_SETTING } from "../src/core/settings.ts";
+import { FAVORITES_SETTING } from "../../../core/settings.ts";
 import {
   adjustFavoriteValue,
   buildDnd5eFavoritesViewModel,
@@ -11,7 +11,7 @@ import {
   type Dnd5eFavoriteDocument,
   type Dnd5eFavoritesActor,
   type Dnd5eFavoritesConfig
-} from "../src/systems/dnd5e/favorites-view-model.ts";
+} from "../favorites-view-model.ts";
 
 const user = { id: "player" };
 const config: Dnd5eFavoritesConfig = {
@@ -213,22 +213,23 @@ test("favorite play actions check permissions and call dnd5e document APIs", asy
 });
 
 test("favorites template, styles, and shell wiring preserve required regions", () => {
-  const template = readFileSync(new URL("../src/templates/favorites.hbs", import.meta.url), "utf8");
-  const dnd5eGroupTemplate = readFileSync(new URL("../src/systems/dnd5e/templates/partials/favorites-group.hbs", import.meta.url), "utf8");
-  const fallbackGroupTemplate = readFileSync(new URL("../src/templates/partials/favorite-basic-group.hbs", import.meta.url), "utf8");
-  const favoriteContextMenuTemplate = readFileSync(new URL("../src/templates/partials/favorite-context-menu.hbs", import.meta.url), "utf8");
-  const actorShellTemplate = readFileSync(new URL("../src/templates/actor-sheet-shell.hbs", import.meta.url), "utf8");
-  const detailsTemplate = readFileSync(new URL("../src/systems/dnd5e/templates/details.hbs", import.meta.url), "utf8");
-  const detailsSkillRowTemplate = readFileSync(new URL("../src/systems/dnd5e/templates/partials/details-skill-row.hbs", import.meta.url), "utf8");
-  const shellTemplate = readFileSync(new URL("../src/templates/shell.hbs", import.meta.url), "utf8");
+  const template = readFileSync(new URL("../../../templates/favorites.hbs", import.meta.url), "utf8");
+  const dnd5eGroupTemplate = readFileSync(new URL("../templates/partials/favorites-group.hbs", import.meta.url), "utf8");
+  const dnd5eTableHeadTemplate = readFileSync(new URL("../templates/partials/table-head.hbs", import.meta.url), "utf8");
+  const fallbackGroupTemplate = readFileSync(new URL("../../../templates/partials/favorite-basic-group.hbs", import.meta.url), "utf8");
+  const favoriteContextMenuTemplate = readFileSync(new URL("../../../templates/partials/favorite-context-menu.hbs", import.meta.url), "utf8");
+  const actorShellTemplate = readFileSync(new URL("../../../templates/actor-sheet-shell.hbs", import.meta.url), "utf8");
+  const detailsTemplate = readFileSync(new URL("../templates/details.hbs", import.meta.url), "utf8");
+  const detailsSkillRowTemplate = readFileSync(new URL("../templates/partials/details-skill-row.hbs", import.meta.url), "utf8");
+  const shellTemplate = readFileSync(new URL("../../../templates/shell.hbs", import.meta.url), "utf8");
   const css = [
-    readFileSync(new URL("../src/styles/pocket-foundry.css", import.meta.url), "utf8"),
-    readFileSync(new URL("../src/systems/dnd5e/styles/pocket-foundry-dnd5e.css", import.meta.url), "utf8")
+    readFileSync(new URL("../../../styles/pocket-foundry.css", import.meta.url), "utf8"),
+    readFileSync(new URL("../styles/pocket-foundry-dnd5e.css", import.meta.url), "utf8")
   ].join("\n");
-  const actorSheetNavigationSource = readFileSync(new URL("../src/systems/dnd5e/actor-sheet-navigation.ts", import.meta.url), "utf8");
-  const eventsSource = readFileSync(new URL("../src/core/mobile-shell/events.ts", import.meta.url), "utf8");
-  const uiSource = readFileSync(new URL("../src/core/mobile-shell/controller-helpers-ui.ts", import.meta.url), "utf8");
-  const moduleSource = readFileSync(new URL("../src/module.ts", import.meta.url), "utf8");
+  const actorSheetNavigationSource = readFileSync(new URL("../actor-sheet-navigation.ts", import.meta.url), "utf8");
+  const eventsSource = readFileSync(new URL("../../../core/mobile-shell/events.ts", import.meta.url), "utf8");
+  const uiSource = readFileSync(new URL("../../../core/mobile-shell/controller-helpers-ui.ts", import.meta.url), "utf8");
+  const moduleSource = readFileSync(new URL("../../../module.ts", import.meta.url), "utf8");
 
   assert.match(actorShellTemplate, /class="mf-header actor-sheet-header"/);
   assert.match(actorShellTemplate, /railClass="pane-rail"/);
@@ -246,10 +247,11 @@ test("favorites template, styles, and shell wiring preserve required regions", (
   assert.match(dnd5eGroupTemplate, /partials\/spell-row\.hbs/);
   assert.match(dnd5eGroupTemplate, /partials\/feature-row\.hbs/);
   assert.match(dnd5eGroupTemplate, /partials\/effect-row\.hbs/);
-  assert.match(dnd5eGroupTemplate, /pf-list-schema--icon-title-3meta-actions/);
-  assert.match(dnd5eGroupTemplate, /pf-list-schema--icon-title-4meta-actions/);
-  assert.match(dnd5eGroupTemplate, /pf-list-schema--icon-title-2meta-actions/);
-  assert.match(dnd5eGroupTemplate, /pf-list-schema--icon-title-source-actions/);
+  assert.match(dnd5eGroupTemplate, /partials\/table-head\.hbs/);
+  assert.match(dnd5eTableHeadTemplate, /pf-list-schema--icon-title-3meta-actions/);
+  assert.match(dnd5eTableHeadTemplate, /pf-list-schema--icon-title-4meta-actions/);
+  assert.match(dnd5eTableHeadTemplate, /pf-list-schema--icon-title-2meta-actions/);
+  assert.match(dnd5eTableHeadTemplate, /pf-list-schema--icon-title-source-actions/);
   assert.match(dnd5eGroupTemplate, /partials\/favorite-context-menu\.hbs/);
   assert.match(fallbackGroupTemplate, /class="item-icon"/);
   assert.match(dnd5eGroupTemplate, /removeAction="favorites-remove-context"/);
@@ -266,7 +268,8 @@ test("favorites template, styles, and shell wiring preserve required regions", (
   assert.match(actorSheetNavigationSource, /case "Favorites":/);
   assert.match(actorSheetNavigationSource, /favorites-remove-context/);
   assert.match(actorSheetNavigationSource, /getFavoriteContextGestureLabel/);
-  assert.match(actorShellTemplate, /templates\/favorites\.hbs/);
+  assert.match(actorShellTemplate, /activePaneContent/);
+  assert.match(actorSheetNavigationSource, /Favorites: "modules\/pocket-foundry\/templates\/favorites\.hbs"/);
   assert.match(eventsSource, /contextmenu/);
   assert.match(eventsSource, /favoriteLongPressTimer/);
   assert.match(eventsSource, /openFavoriteContextMenu/);
@@ -277,8 +280,8 @@ test("favorites template, styles, and shell wiring preserve required regions", (
   assert.match(css, /\.pocket-foundry-root \.favorites-list/);
   assert.match(css, /\.pocket-foundry-root \.favorite-row/);
   assert.match(css, /\.pocket-foundry-root \.dnd5e-table-head > \*/);
-  assert.match(css, /white-space: nowrap/);
-  assert.match(css, /overflow-wrap: normal/);
+  assert.match(css, /white-space: normal/);
+  assert.match(css, /overflow-wrap: anywhere/);
   assert.match(css, /\.pocket-foundry-root \.favorite-primary/);
   assert.match(css, /\.pocket-foundry-root \.favorite-secondary/);
   assert.match(css, /\.pocket-foundry-root \.favorite-context-menu/);

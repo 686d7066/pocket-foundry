@@ -1,5 +1,6 @@
 import { MODULE_ID } from "./constants.ts";
 import { getFoundryRuntime } from "./foundry-globals.ts";
+import { localize } from "./localization.ts";
 import type { MobileShellController } from "./mobile-shell/controller.ts";
 
 /**
@@ -42,8 +43,8 @@ export function registerMobileViewSetting(shell: MobileShellController): void {
   }
 
   runtime.game.settings.register(MODULE_ID, MOBILE_VIEW_ENABLED_SETTING, {
-    name: "Mobile View",
-    hint: "Use the mobile-optimized Foundry interface for this user.",
+    name: localize("POCKETFOUNDRY.Settings.MobileView.Label", "Mobile View"),
+    hint: localize("POCKETFOUNDRY.Settings.MobileView.Hint", "Use the mobile-optimized Foundry interface for this user."),
     scope: "user",
     config: true,
     type: Boolean,
@@ -54,8 +55,8 @@ export function registerMobileViewSetting(shell: MobileShellController): void {
   });
 
   runtime.game.settings.register(MODULE_ID, CHARACTER_SHEET_BANNER_ENABLED_SETTING, {
-    name: "Character Sheet Banner",
-    hint: "Show a character sheet banner texture at the top of mobile character sheets.",
+    name: localize("POCKETFOUNDRY.Settings.CharacterSheetBanner.Label", "Character Sheet Banner"),
+    hint: localize("POCKETFOUNDRY.Settings.CharacterSheetBanner.Hint", "Show a character sheet banner texture at the top of mobile character sheets."),
     scope: "user",
     config: true,
     type: Boolean,
@@ -66,8 +67,8 @@ export function registerMobileViewSetting(shell: MobileShellController): void {
   });
 
   runtime.game.settings.register(MODULE_ID, COLOR_BLIND_MODE_SETTING, {
-    name: "Color-Blind Mode",
-    hint: "Use color-blind-friendly colors for success and failure blips.",
+    name: localize("POCKETFOUNDRY.Settings.ColorBlindMode.Label", "Color-Blind Mode"),
+    hint: localize("POCKETFOUNDRY.Settings.ColorBlindMode.Hint", "Use color-blind-friendly colors for success and failure blips."),
     scope: "user",
     config: true,
     type: Boolean,
@@ -78,8 +79,8 @@ export function registerMobileViewSetting(shell: MobileShellController): void {
   });
 
   runtime.game.settings.register(MODULE_ID, CHARACTER_PICKER_FAVORITES_SETTING, {
-    name: "Pocket Foundry Character Favorites",
-    hint: "Server-side storage for this user's system-specific character favorites in this world.",
+    name: localize("POCKETFOUNDRY.Settings.CharacterFavorites.Label", "Pocket Foundry Character Favorites"),
+    hint: localize("POCKETFOUNDRY.Settings.CharacterFavorites.Hint", "Server-side storage for this user's system-specific character favorites in this world."),
     scope: "user",
     config: false,
     type: Object,
@@ -87,8 +88,8 @@ export function registerMobileViewSetting(shell: MobileShellController): void {
   });
 
   runtime.game.settings.register(MODULE_ID, FAVORITES_SETTING, {
-    name: "Pocket Foundry Favorites",
-    hint: "Server-side storage for this user's system-specific mobile sheet favorites in this world.",
+    name: localize("POCKETFOUNDRY.Settings.Favorites.Label", "Pocket Foundry Favorites"),
+    hint: localize("POCKETFOUNDRY.Settings.Favorites.Hint", "Server-side storage for this user's system-specific mobile sheet favorites in this world."),
     scope: "user",
     config: false,
     type: Object,
@@ -96,8 +97,8 @@ export function registerMobileViewSetting(shell: MobileShellController): void {
   });
 
   runtime.game.settings.register(MODULE_ID, RECENT_ROUTES_SETTING, {
-    name: "Pocket Foundry Recent Views",
-    hint: "Server-side storage for this user's system-scoped recent mobile views in this world.",
+    name: localize("POCKETFOUNDRY.Settings.RecentViews.Label", "Pocket Foundry Recent Views"),
+    hint: localize("POCKETFOUNDRY.Settings.RecentViews.Hint", "Server-side storage for this user's system-scoped recent mobile views in this world."),
     scope: "user",
     config: false,
     type: Object,

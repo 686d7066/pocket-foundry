@@ -11,7 +11,7 @@ import {
   type Dnd5eActiveEffect,
   type Dnd5eEffectsActor,
   type Dnd5eEffectsConfig
-} from "../src/systems/dnd5e/effects-view-model.ts";
+} from "../effects-view-model.ts";
 
 const user = { id: "player" };
 const config: Dnd5eEffectsConfig = {
@@ -215,30 +215,30 @@ test("effect and condition controls require update permission and call dnd5e API
 });
 
 test("effects template and styles preserve required regions with minimal effect rows", () => {
-  const template = readFileSync(new URL("../src/systems/dnd5e/templates/effects.hbs", import.meta.url), "utf8");
-  const rowTemplate = readFileSync(new URL("../src/systems/dnd5e/templates/partials/effect-row.hbs", import.meta.url), "utf8");
-  const actorShellTemplate = readFileSync(new URL("../src/templates/actor-sheet-shell.hbs", import.meta.url), "utf8");
-  const shellTemplate = readFileSync(new URL("../src/templates/shell.hbs", import.meta.url), "utf8");
+  const template = readFileSync(new URL("../templates/effects.hbs", import.meta.url), "utf8");
+  const rowTemplate = readFileSync(new URL("../templates/partials/effect-row.hbs", import.meta.url), "utf8");
+  const actorShellTemplate = readFileSync(new URL("../../../templates/actor-sheet-shell.hbs", import.meta.url), "utf8");
+  const shellTemplate = readFileSync(new URL("../../../templates/shell.hbs", import.meta.url), "utf8");
   const css = [
-    readFileSync(new URL("../src/styles/pocket-foundry.css", import.meta.url), "utf8"),
-    readFileSync(new URL("../src/systems/dnd5e/styles/pocket-foundry-dnd5e.css", import.meta.url), "utf8")
+    readFileSync(new URL("../../../styles/pocket-foundry.css", import.meta.url), "utf8"),
+    readFileSync(new URL("../styles/pocket-foundry-dnd5e.css", import.meta.url), "utf8")
   ].join("\n");
-  const moduleSource = readFileSync(new URL("../src/module.ts", import.meta.url), "utf8");
-  const eventsSource = readFileSync(new URL("../src/core/mobile-shell/events.ts", import.meta.url), "utf8");
-  const actionsSource = readFileSync(new URL("../src/core/mobile-shell/actions-character-sheet.ts", import.meta.url), "utf8");
-  const actorSheetNavigationSource = readFileSync(new URL("../src/systems/dnd5e/actor-sheet-navigation.ts", import.meta.url), "utf8");
-  const navigationSource = readFileSync(new URL("../src/core/mobile-shell/controller-helpers-navigation.ts", import.meta.url), "utf8");
-  const searchSource = readFileSync(new URL("../src/core/mobile-shell/controller-helpers-search.ts", import.meta.url), "utf8");
-  const characterPanesSource = readFileSync(new URL("../src/systems/dnd5e/character-panes.ts", import.meta.url), "utf8");
-  const shellSource = readFileSync(new URL("../src/core/mobile-shell/controller-helpers-shell.ts", import.meta.url), "utf8");
+  const moduleSource = readFileSync(new URL("../../../module.ts", import.meta.url), "utf8");
+  const eventsSource = readFileSync(new URL("../../../core/mobile-shell/events.ts", import.meta.url), "utf8");
+  const actionsSource = readFileSync(new URL("../../../core/mobile-shell/actions-character-sheet.ts", import.meta.url), "utf8");
+  const actorSheetNavigationSource = readFileSync(new URL("../actor-sheet-navigation.ts", import.meta.url), "utf8");
+  const navigationSource = readFileSync(new URL("../../../core/mobile-shell/controller-helpers-navigation.ts", import.meta.url), "utf8");
+  const searchSource = readFileSync(new URL("../../../core/mobile-shell/controller-helpers-search.ts", import.meta.url), "utf8");
+  const characterPanesSource = readFileSync(new URL("../character-panes.ts", import.meta.url), "utf8");
+  const shellSource = readFileSync(new URL("../../../core/mobile-shell/controller-helpers-shell.ts", import.meta.url), "utf8");
 
   assert.match(actorShellTemplate, /class="mf-header actor-sheet-header"/);
   assert.match(actorShellTemplate, /railClass="pane-rail"/);
   assert.match(shellTemplate, /bottom-nav/);
   assert.match(template, /class="content sheet-dense effects-pane"/);
   assert.match(template, /partials\/pane-search-toolbar\.hbs/);
-  assert.match(template, /toolbarClass="effects-toolbar"/);
-  assert.match(template, /placeholder="Search effects"/);
+  assert.match(template, /toolbarClass="pane-search-toolbar effects-toolbar"/);
+  assert.match(template, /placeholder=\(localize 'DND5E\.EffectsSearch'\)/);
   assert.match(template, /pane="Effects"/);
   assert.match(template, /value=searchQuery/);
   assert.match(template, /canClear=canClearSearch/);
@@ -254,7 +254,7 @@ test("effects template and styles preserve required regions with minimal effect 
   assert.match(css, /grid-template-columns: repeat\(auto-fit, minmax\(min\(100%, 160px\), 1fr\)\)/);
   assert.match(rowTemplate, /class="effect-detail-actions[^"]*pf-detail-actions"/);
   assert.match(rowTemplate, /partials\/pill\.hbs/);
-  assert.match(rowTemplate, /action="details-open-reference"/);
+  assert.match(rowTemplate, /action="document-open-reference"/);
   assert.match(template, /class="condition-grid effects-condition-grid"/);
   assert.match(template, /class="condition effects-condition/);
   assert.match(rowTemplate, /class="sheet-list-value effects-list-value"/);
@@ -279,7 +279,7 @@ test("effects template and styles preserve required regions with minimal effect 
   assert.match(actionsSource, /pane-clear-search/);
   assert.match(characterPanesSource, /effects:search:/);
   assert.match(actorSheetNavigationSource, /effects-toggle-condition/);
-  assert.match(css, /\.pocket-foundry-root \.effects-toolbar/);
+  assert.match(css, /\.pocket-foundry-root \.pane-search-toolbar/);
   assert.match(css, /\.pocket-foundry-root \.effects-sections/);
   assert.match(css, /\.pocket-foundry-root \.effects-list-row/);
   assert.match(css, /\.pocket-foundry-root \.sheet-list-row/);

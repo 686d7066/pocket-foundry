@@ -95,7 +95,7 @@ export type Dnd5eDetailsDeltaOption = {
  */
 export type Dnd5eDetailsHeaderViewModel = {
   actorUuid: string;
-  characterLabel: "Character";
+  characterLabel: string;
   name: string;
   portraitImage: string | null;
   classSummary: string;
@@ -344,8 +344,8 @@ export type Dnd5eDetailsViewModel = {
  */
 export type UnavailableDnd5eDetailsViewModel = {
   unavailable: true;
-  title: "Character Unavailable";
-  body: "This character is not available to the current user.";
+  title: string;
+  body: string;
 };
 
 /**

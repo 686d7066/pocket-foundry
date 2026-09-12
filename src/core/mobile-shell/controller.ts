@@ -1,3 +1,4 @@
+import { disposeTableLayout } from "./table-layout.ts";
 import { getPocketFoundryRouteFromHash } from "../../router/browser-history.ts";
 import { createMobileRouter } from "../../router/mobile-router.ts";
 import { createReactiveRefreshController, type ReactiveRefreshController, type ReactiveRefreshHooks } from "../../services/reactive-refresh.ts";
@@ -8,7 +9,7 @@ import { createViewportOwnershipController } from "../viewport-ownership.ts";
 import { createFoundryRoutePermissionResolver, getStoredSelectedCharacterRoute, rememberCurrentRouteScroll } from "./controller-helpers-navigation.ts";
 import { clearSearchDebounce, createInitialSearchUiState, runSearchImmediately } from "./controller-helpers-search.ts";
 import { normalizeCharacterRoutePanes, renderShell } from "./controller-helpers-shell.ts";
-import { activateBrowserHistory, bindBrowserBack, uninstallLeaveGameConfirmGuard, writeBrowserHistory } from "./controller-helpers-ui.ts";
+import { activateBrowserHistory, bindBrowserBack, uninstallLeaveGameConfirmGuard, writeBrowserHistory } from "./controller-helpers-browser-history.ts";
 import { bindMobileShellEvents } from "./events.ts";
 import type { MobileShellController } from "./types.ts";
 
@@ -79,6 +80,7 @@ export function createMobileShellController(): MobileShellController {
       activateBrowserHistory(router);
       viewportOwnership.acquire();
     } catch (error) {
+      disposeTableLayout(rootElement);
       rootElement.remove();
       rootElement = undefined;
       viewportOwnership.release();
@@ -101,6 +103,7 @@ export function createMobileShellController(): MobileShellController {
     clearSearchDebounce(searchState);
     unbindBrowserBack?.();
     unbindBrowserBack = undefined;
+    if (rootElement) disposeTableLayout(rootElement);
     rootElement?.remove();
     rootElement = undefined;
     uninstallLeaveGameConfirmGuard();

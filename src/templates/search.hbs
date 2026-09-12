@@ -3,14 +3,14 @@
     class="search-box"
     type="search"
     value="{{query}}"
-    placeholder="Search documents"
-    aria-label="Search documents"
+    placeholder="{{localize 'POCKETFOUNDRY.Search.Placeholder'}}"
+    aria-label="{{localize 'POCKETFOUNDRY.Search.Placeholder'}}"
     data-search-input
     data-action="search-input"
     autocomplete="off"
   >
 
-  <nav class="sub-rail rail search-type-rail" aria-label="Search result type filters">
+  <nav class="sub-rail rail search-type-rail" aria-label="{{localize 'POCKETFOUNDRY.Search.TypeFilters'}}">
     {{#each typeFilters}}
       <button
         class="{{#if active}}active{{/if}}"
@@ -24,14 +24,14 @@
 
   <div class="section pf-view-section search-results" data-search-results>
     <div class="section-heading pf-view-section-heading">
-      <h2>Live Results</h2>
-      {{#if loading}}<span class="mini" role="status">Searching</span>{{/if}}
+      <h2>{{localize 'POCKETFOUNDRY.Search.LiveResults'}}</h2>
+      {{#if loading}}<span class="mini" role="status">{{localize 'POCKETFOUNDRY.Search.Searching'}}</span>{{/if}}
     </div>
 
     {{#if errors.length}}
       <div class="empty-state search-error-state" role="status">
-        <h2>Partial Results</h2>
-        <p>Some searchable content could not be queried.</p>
+        <h2>{{localize 'POCKETFOUNDRY.Search.PartialResults.Title'}}</h2>
+        <p>{{localize 'POCKETFOUNDRY.Search.PartialResults.Body'}}</p>
       </div>
     {{/if}}
 
@@ -60,10 +60,10 @@
     {{else}}
       {{#if hasUsableQuery}}
         {{#unless loading}}
-          {{> "modules/pocket-foundry/templates/partials/empty-state.hbs" title="No Results" body="No documents match this search."}}
+          {{> "modules/pocket-foundry/templates/partials/empty-state.hbs" title=(localize 'POCKETFOUNDRY.Search.NoResults.Title') body=(localize 'POCKETFOUNDRY.Search.NoResults.Body')}}
         {{/unless}}
       {{else}}
-        {{> "modules/pocket-foundry/templates/partials/empty-state.hbs" title="Search Content" body="Enter at least one character to search Characters, Items, and Journals."}}
+        {{> "modules/pocket-foundry/templates/partials/empty-state.hbs" title=(localize 'POCKETFOUNDRY.Search.Empty.Title') body=(localize 'POCKETFOUNDRY.Search.Empty.Body')}}
       {{/if}}
     {{/if}}
   </div>

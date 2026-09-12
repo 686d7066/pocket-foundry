@@ -117,7 +117,7 @@ test("mobile startup prompt and setting value are isolated by Foundry user", asy
       }
     },
     user: { id: "Testuser1" },
-    system: { id: "dnd5e", title: "dnd5e" },
+    system: { id: "fixtureSystem", title: "fixtureSystem" },
     world: { id: "World1" }
   } as typeof runtime.game;
   const shell = {
@@ -149,7 +149,7 @@ test("settings templates expose a clear Recents action", () => {
 
   assert.match(shellTemplate, /data-action="clear-recents"/);
   assert.match(settingsTemplate, /data-action="clear-recents"/);
-  assert.match(shellTemplate + settingsTemplate, /Clear Recent Views/);
+  assert.match(shellTemplate + settingsTemplate, /POCKETFOUNDRY\.Settings\.ClearRecentViews/);
   assert.match(css, /\.pocket-foundry-root \.setting-action/);
 });
 
@@ -163,7 +163,7 @@ test("settings templates expose Foundry logout action", () => {
   assert.match(shellTemplate, /data-action="logout"/);
   assert.match(settingsTemplate, /data-action="logout"/);
   assert.match(shellTemplate + settingsTemplate, /data-app="logout"/);
-  assert.match(shellTemplate + settingsTemplate, /Log Out/);
+  assert.match(shellTemplate + settingsTemplate, /POCKETFOUNDRY\.Settings\.LogOut/);
   assert.match(actionsSource, /game\?\.logOut\?\.\(\)/);
   assert.match(foundryGlobalsSource, /logOut\?: \(\) => void/);
   assert.match(css, /\.pocket-foundry-root \.setting-action\.danger-action/);
@@ -184,10 +184,10 @@ test("settings templates expose the color-blind mode toggle", () => {
 
   assert.match(shellTemplate, /action="toggle-color-blind-mode"/);
   assert.match(settingsTemplate, /action="toggle-color-blind-mode"/);
-  assert.match(shellTemplate + settingsTemplate, /Color-Blind Mode/);
+  assert.match(shellTemplate + settingsTemplate, /POCKETFOUNDRY\.Settings\.ColorBlindMode/);
 });
 
-test("actor sheet template supports the dnd5e-style character banner layer", () => {
+test("actor sheet template supports the fixtureSystem-style character banner layer", () => {
   const actorShellTemplate = readFileSync(new URL("../src/templates/actor-sheet-shell.hbs", import.meta.url), "utf8");
   const css = readFileSync(new URL("../src/styles/pocket-foundry.css", import.meta.url), "utf8");
 
@@ -210,7 +210,6 @@ test("bottom navigation renders Search and Settings as compact icons", () => {
   assert.match(css, /\.bottom-nav button\[data-route="search"\]/);
   assert.match(css, /\.bottom-nav button\[data-route="settings"\]/);
 });
-
 
 test("startup honors mobile view settings without a supported system", async () => {
   Object.defineProperty(globalThis, "matchMedia", { configurable: true, value: () => ({ matches: false }) });

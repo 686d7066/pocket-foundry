@@ -5,7 +5,7 @@ import {
   buildDnd5eBiographyViewModel,
   type BiographyEnricher,
   type Dnd5eBiographyActor
-} from "../src/systems/dnd5e/biography-view-model.ts";
+} from "../biography-view-model.ts";
 
 const user = { id: "player" };
 
@@ -119,15 +119,15 @@ test("biography schema labels call Foundry localization with the i18n context", 
 });
 
 test("biography template, styles, and shell wiring preserve required regions and suppress play-mode edits", () => {
-  const template = readFileSync(new URL("../src/systems/dnd5e/templates/biography.hbs", import.meta.url), "utf8");
-  const actorShellTemplate = readFileSync(new URL("../src/templates/actor-sheet-shell.hbs", import.meta.url), "utf8");
-  const shellTemplate = readFileSync(new URL("../src/templates/shell.hbs", import.meta.url), "utf8");
+  const template = readFileSync(new URL("../templates/biography.hbs", import.meta.url), "utf8");
+  const actorShellTemplate = readFileSync(new URL("../../../templates/actor-sheet-shell.hbs", import.meta.url), "utf8");
+  const shellTemplate = readFileSync(new URL("../../../templates/shell.hbs", import.meta.url), "utf8");
   const css = [
-    readFileSync(new URL("../src/styles/pocket-foundry.css", import.meta.url), "utf8"),
-    readFileSync(new URL("../src/systems/dnd5e/styles/pocket-foundry-dnd5e.css", import.meta.url), "utf8")
+    readFileSync(new URL("../../../styles/pocket-foundry.css", import.meta.url), "utf8"),
+    readFileSync(new URL("../styles/pocket-foundry-dnd5e.css", import.meta.url), "utf8")
   ].join("\n");
-  const moduleSource = readFileSync(new URL("../src/module.ts", import.meta.url), "utf8");
-  const searchSource = readFileSync(new URL("../src/core/mobile-shell/controller-helpers-search.ts", import.meta.url), "utf8");
+  const moduleSource = readFileSync(new URL("../../../module.ts", import.meta.url), "utf8");
+  const searchSource = readFileSync(new URL("../../../core/mobile-shell/controller-helpers-search.ts", import.meta.url), "utf8");
 
   assert.match(actorShellTemplate, /class="mf-header actor-sheet-header"/);
   assert.match(actorShellTemplate, /railClass="pane-rail"/);
@@ -143,7 +143,7 @@ test("biography template, styles, and shell wiring preserve required regions and
   assert.match(template, /class="section sheet-group biography-backstory"/);
   assert.match(template, /class="sheet-group-body biography-backstory-body"/);
   assert.match(template, /class="reader bio-backstory-content"/);
-  assert.match(template, /<h2>Backstory<\/h2>/);
+  assert.match(template, /<h2>\{\{localize 'POCKETFOUNDRY\.DND5E\.Biography\.Backstory'\}\}<\/h2>/);
   assert.match(template, /data-biography-links/);
   assert.match(moduleSource, /getTemplatePaths/);
   assert.match(searchSource, /handleBiographyDocumentLinkClick/);

@@ -1,5 +1,6 @@
 import { canUpdateDocument, canViewDocument, type FoundryUserLike } from "../../../services/permissions.ts";
-import { getFoundryRuntime } from "../../../core/foundry-globals.ts";
+import { getFoundryTextEditor } from "../../../core/foundry-globals.ts";
+import { localize } from "../../../core/localization.ts";
 import { getObject, getNumber } from "../../../core/utils.ts";
 import { enrichSectionRows } from "../../../services/rich-text-enrichment.ts";
 import { setDnd5eFavoriteEntry } from "../favorites-storage.ts";
@@ -26,6 +27,10 @@ import type {
   Dnd5eSpellSlotTrackViewModel
 } from "./types.ts";
 
+/**
+ * Builds the dnd5e spells pane from visible spell items, spellcasting classes,
+ * slot tracks, search state, and enriched spell descriptions.
+ */
 export async function buildDnd5eSpellsViewModel(options: {
   actor: Dnd5eSpellsActor | null | undefined;
   user: FoundryUserLike;
@@ -36,8 +41,8 @@ export async function buildDnd5eSpellsViewModel(options: {
   if (!actor || actor.type !== "character" || !canViewDocument(actor, options.user)) {
     return {
       unavailable: true,
-      title: "Spells Unavailable",
-      body: "These spells are not available to the current user."
+      title: localize("POCKETFOUNDRY.DND5E.Spells.Unavailable.Title", "Spells Unavailable"),
+      body: localize("POCKETFOUNDRY.DND5E.Spells.Unavailable.Body", "These spells are not available to the current user.")
     };
   }
 
@@ -45,7 +50,7 @@ export async function buildDnd5eSpellsViewModel(options: {
   const canUpdate = canUpdateDocument(actor, options.user);
   const allSpells = getSpellItems(actor, options.user);
   const searchQuery = normalizeSearchQuery(options.searchQuery);
-  const textEditor = getFoundryRuntime().TextEditor;
+  const textEditor = getFoundryTextEditor();
   const enrichHTML = textEditor?.enrichHTML;
   const sectionsInput = filterSpellSections(buildSpellSections(actor, allSpells, config, canUpdate), searchQuery);
   const sections = typeof enrichHTML === "function"

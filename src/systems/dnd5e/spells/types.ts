@@ -1,4 +1,5 @@
 import type { foundry } from "fvtt-types";
+import { localizeSystemKey } from "../../../core/localization.ts";
 import type { FoundryDataShape } from "../../../core/foundry-globals.ts";
 import type { FoundryDocumentMutationApi, PermissionCheckedDocument } from "../../../services/permissions.ts";
 
@@ -201,8 +202,8 @@ export type Dnd5eSpellsViewModel = {
 
 export type UnavailableDnd5eSpellsViewModel = {
   unavailable: true;
-  title: "Spells Unavailable";
-  body: "These spells are not available to the current user.";
+  title: string;
+  body: string;
 };
 
 export type Dnd5eSpellsModel = Dnd5eSpellsViewModel | UnavailableDnd5eSpellsViewModel;
@@ -218,6 +219,11 @@ const ordinal = (value: number): string => {
   return `${value}${suffix}`;
 };
 
+function getSpellLevelLabel(level: number): string {
+  if (level === 0) return localizeSystemKey("DND5E.SpellLevel0", "Cantrips");
+  return localizeSystemKey(`DND5E.SpellLevel${level}`, "{level} Level", { level: ordinal(level) });
+}
+
 export const DEFAULT_SPELLCASTING: Record<string, Dnd5eSpellcastingConfig> = {
   spell: {
     key: "spell",
@@ -226,7 +232,7 @@ export const DEFAULT_SPELLCASTING: Record<string, Dnd5eSpellcastingConfig> = {
     cantrips: true,
     prepares: true,
     getSpellSlotKey: level => `spell${level ?? 1}`,
-    getLabel: ({ level }) => (level === 0 ? "Cantrips" : `${ordinal(level ?? 1)} Level`)
+    getLabel: ({ level }) => getSpellLevelLabel(level ?? 1)
   },
   pact: {
     key: "pact",
@@ -234,7 +240,9 @@ export const DEFAULT_SPELLCASTING: Record<string, Dnd5eSpellcastingConfig> = {
     slots: true,
     prepares: false,
     getSpellSlotKey: () => "pact",
-    getLabel: ({ level }) => `Pact Magic${level ? ` (${ordinal(level)} Level)` : ""}`
+    getLabel: ({ level }) => level
+      ? `${localizeSystemKey("DND5E.PactMagic", "Pact Magic")} (${getSpellLevelLabel(level)})`
+      : localizeSystemKey("DND5E.PactMagic", "Pact Magic")
   },
   innate: {
     key: "innate",
@@ -242,7 +250,7 @@ export const DEFAULT_SPELLCASTING: Record<string, Dnd5eSpellcastingConfig> = {
     slots: false,
     prepares: false,
     getSpellSlotKey: () => "innate",
-    getLabel: () => "Innate"
+    getLabel: () => localizeSystemKey("DND5E.SpellPrepInnate", "Innate")
   },
   atwill: {
     key: "atwill",
@@ -250,7 +258,6 @@ export const DEFAULT_SPELLCASTING: Record<string, Dnd5eSpellcastingConfig> = {
     slots: false,
     prepares: false,
     getSpellSlotKey: () => "atwill",
-    getLabel: () => "At-will"
+    getLabel: () => localizeSystemKey("DND5E.SpellPrepAtWill", "At-will")
   }
 };
-

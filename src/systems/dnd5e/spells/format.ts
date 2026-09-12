@@ -1,5 +1,6 @@
 import type { FoundryUserLike } from "../../../services/permissions.ts";
 import { getFoundryRuntime } from "../../../core/foundry-globals.ts";
+import { localize, localizeSystemKey } from "../../../core/localization.ts";
 import { getCollectionContents, getNumber, getObject, getString } from "../../../core/utils.ts";
 import { hasDnd5eFavoriteReference } from "../favorites-storage.ts";
 import {
@@ -105,8 +106,10 @@ export function isAlwaysPrepared(item: Dnd5eSpellItem, config?: Dnd5eSpellsConfi
 }
 
 export function getPreparationLabel(item: Dnd5eSpellItem, config: Dnd5eSpellsConfig): string {
-  if (isAlwaysPrepared(item, config)) return getString(config.spellPreparationStates?.always?.label) || "Always prepared";
-  return isPrepared(item) ? getString(config.spellPreparationStates?.prepared?.label) || "Prepared" : getString(config.spellPreparationStates?.unprepared?.label) || "Unprepared";
+  if (isAlwaysPrepared(item, config)) return getString(config.spellPreparationStates?.always?.label) || localizeSystemKey("DND5E.SpellPrepAlways", "Always prepared");
+  return isPrepared(item)
+    ? getString(config.spellPreparationStates?.prepared?.label) || localizeSystemKey("DND5E.SpellPrepPrepared", "Prepared")
+    : getString(config.spellPreparationStates?.unprepared?.label) || localizeSystemKey("DND5E.SpellUnprepared", "Unprepared");
 }
 
 export function getSchoolLabel(item: Dnd5eSpellItem, config: Dnd5eSpellsConfig): string {
@@ -183,7 +186,7 @@ export function getRangeLabel(system: Record<string, unknown>): string {
   const units = getString(range?.units);
   const value = getNumber(range?.value);
   if (!units || units === "none") return "-";
-  if (units === "self" || units === "touch" || units === "spec") return units === "spec" ? "Special" : titleCase(units);
+  if (units === "self" || units === "touch" || units === "spec") return units === "spec" ? localizeSystemKey("DND5E.Special", "Special") : titleCase(units);
   return [value === null ? "" : formatNumber(value), units].filter(Boolean).join(" ");
 }
 
@@ -248,7 +251,7 @@ export function isFavorite(actor: Dnd5eSpellsActor, item: Dnd5eSpellItem): boole
 export function buildAdjustment(current: number, max: number, label: string): Dnd5eSpellAdjustmentViewModel {
   return {
     id: "uses",
-    title: "Adjust Uses",
+    title: localize("POCKETFOUNDRY.DND5E.Uses.Adjust", "Adjust Uses"),
     label,
     value: label,
     current,
@@ -274,9 +277,9 @@ export function hasSetValue(value: unknown, key: string): boolean {
 export { clampNumber, formatAttackValue, formatNumber, formatPair, getRemainingUses, getUsesLabel, normalizeSearchQuery, titleCase, uniqueStrings };
 
 export function getFallbackSectionLabel(key: string, level: number | null | undefined): string {
-  if (key === "spell0" || level === 0) return "Cantrips";
-  if (key === "innate") return "Innate";
-  if (key === "atwill") return "At-will";
-  if (key === "pact") return "Pact Magic";
-  return level ? `${ordinal(level)} Level` : "Spells";
+  if (key === "spell0" || level === 0) return localizeSystemKey("DND5E.SpellLevel0", "Cantrips");
+  if (key === "innate") return localizeSystemKey("DND5E.SpellPrepInnate", "Innate");
+  if (key === "atwill") return localizeSystemKey("DND5E.SpellPrepAtWill", "At-will");
+  if (key === "pact") return localizeSystemKey("DND5E.PactMagic", "Pact Magic");
+  return level ? localizeSystemKey(`DND5E.SpellLevel${level}`, "{level} Level", { level: ordinal(level) }) : localizeSystemKey("DND5E.Spellbook", "Spells");
 }

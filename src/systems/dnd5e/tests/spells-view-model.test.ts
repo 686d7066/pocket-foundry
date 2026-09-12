@@ -16,7 +16,7 @@ import {
   type Dnd5eSpellItem,
   type Dnd5eSpellsActor,
   type Dnd5eSpellsConfig
-} from "../src/systems/dnd5e/spells-view-model.ts";
+} from "../spells-view-model.ts";
 
 const user = { id: "player" };
 const config: Dnd5eSpellsConfig = {
@@ -262,15 +262,15 @@ test("spell controls require update permission and call dnd5e document APIs", as
 });
 
 test("spells template and styles preserve required regions without create or delete controls", () => {
-  const template = readFileSync(new URL("../src/systems/dnd5e/templates/spells.hbs", import.meta.url), "utf8");
-  const rowTemplate = readFileSync(new URL("../src/systems/dnd5e/templates/partials/spell-row.hbs", import.meta.url), "utf8");
-  const actorShellTemplate = readFileSync(new URL("../src/templates/actor-sheet-shell.hbs", import.meta.url), "utf8");
+  const template = readFileSync(new URL("../templates/spells.hbs", import.meta.url), "utf8");
+  const rowTemplate = readFileSync(new URL("../templates/partials/spell-row.hbs", import.meta.url), "utf8");
+  const actorShellTemplate = readFileSync(new URL("../../../templates/actor-sheet-shell.hbs", import.meta.url), "utf8");
   const css = [
-    readFileSync(new URL("../src/styles/pocket-foundry.css", import.meta.url), "utf8"),
-    readFileSync(new URL("../src/systems/dnd5e/styles/pocket-foundry-dnd5e.css", import.meta.url), "utf8")
+    readFileSync(new URL("../../../styles/pocket-foundry.css", import.meta.url), "utf8"),
+    readFileSync(new URL("../styles/pocket-foundry-dnd5e.css", import.meta.url), "utf8")
   ].join("\n");
-  const moduleSource = readFileSync(new URL("../src/module.ts", import.meta.url), "utf8");
-  const actorSheetNavigationSource = readFileSync(new URL("../src/systems/dnd5e/actor-sheet-navigation.ts", import.meta.url), "utf8");
+  const moduleSource = readFileSync(new URL("../../../module.ts", import.meta.url), "utf8");
+  const actorSheetNavigationSource = readFileSync(new URL("../actor-sheet-navigation.ts", import.meta.url), "utf8");
 
   assert.match(actorShellTemplate, /class="mf-header actor-sheet-header"/);
   assert.match(actorShellTemplate, /railClass="pane-rail"/);
@@ -278,8 +278,8 @@ test("spells template and styles preserve required regions without create or del
   assert.match(template, /class="spell-summary"/);
   assert.match(template, /class="spell-stats"/);
   assert.match(template, /partials\/pane-search-toolbar\.hbs/);
-  assert.match(template, /toolbarClass="spells-toolbar"/);
-  assert.match(template, /placeholder="Search spells"/);
+  assert.match(template, /toolbarClass="pane-search-toolbar spells-toolbar"/);
+  assert.match(template, /placeholder=\(localize 'DND5E\.SpellsSearch'\)/);
   assert.match(template, /pane="Spells"/);
   assert.match(template, /canClear=canClearSearch/);
   assert.match(template, /class="slot-tracks spell-section-slots"/);

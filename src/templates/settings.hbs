@@ -1,30 +1,30 @@
 <main class="pocket-foundry-root mf-app" data-view="settings">
   <header class="mf-header">
-    <button class="icon-button" type="button" data-action="back" aria-label="Back">&lt;</button>
+    <button class="icon-button" type="button" data-action="back" aria-label="{{localize 'POCKETFOUNDRY.Action.Back'}}">&lt;</button>
     <div class="portrait" aria-hidden="true">PF</div>
     <div class="title-block">
-      <h1>Settings</h1>
-      <p>User-specific mobile mode controls</p>
+      <h1>{{localize 'POCKETFOUNDRY.Settings.Title'}}</h1>
+      <p>{{localize 'POCKETFOUNDRY.Settings.Subtitle'}}</p>
     </div>
   </header>
 
   <section class="content pf-view">
     {{#> "modules/pocket-foundry/templates/partials/section.hbs"
       id="mobile-mode"
-      title="Mobile Mode"
+      title=(localize 'POCKETFOUNDRY.Settings.MobileMode.Title')
       sectionClass="pf-view-section"
       headingClass="pf-view-section-heading"
     }}
       {{> "modules/pocket-foundry/templates/partials/settings-toggle-row.hbs"
-        label="Mobile View"
-        hint="Use the mobile-optimized Foundry interface for this user."
+        label=(localize 'POCKETFOUNDRY.Settings.MobileView.Label')
+        hint=(localize 'POCKETFOUNDRY.Settings.MobileView.Hint')
         enabled=mobileViewEnabled
-        ariaLabel="Mobile View"
+        ariaLabel=(localize 'POCKETFOUNDRY.Settings.MobileView.Label')
         action="toggle-mobile-view"
       }}
       {{> "modules/pocket-foundry/templates/partials/settings-toggle-row.hbs"
-        label="Color-Blind Mode"
-        hint="Use color-blind-friendly colors for success and failure blips."
+        label=(localize 'POCKETFOUNDRY.Settings.ColorBlindMode.Label')
+        hint=(localize 'POCKETFOUNDRY.Settings.ColorBlindMode.Hint')
         enabled=colorBlindMode
         ariaLabel=colorBlindModeAriaLabel
         action="toggle-color-blind-mode"
@@ -42,40 +42,40 @@
 
     {{#> "modules/pocket-foundry/templates/partials/section.hbs"
       id="recents"
-      title="Recents"
+      title=(localize 'POCKETFOUNDRY.Recents.Title')
       sectionClass="pf-view-section"
       headingClass="pf-view-section-heading"
     }}
       <div class="setting-row">
         <div>
-          <strong>Clear Recent Views</strong>
-          <p class="mini">Remove this user's saved recent mobile views for this system.</p>
+          <strong>{{localize 'POCKETFOUNDRY.Settings.ClearRecentViews.Label'}}</strong>
+          <p class="mini">{{localize 'POCKETFOUNDRY.Settings.ClearRecentViews.Hint'}}</p>
         </div>
         <button
           class="setting-action"
           type="button"
           data-action="clear-recents"
-        >Clear</button>
+        >{{localize 'POCKETFOUNDRY.Action.Clear'}}</button>
       </div>
     {{/"modules/pocket-foundry/templates/partials/section.hbs"}}
 
     {{#> "modules/pocket-foundry/templates/partials/section.hbs"
       id="session"
-      title="Session"
+      title=(localize 'POCKETFOUNDRY.Settings.Session.Title')
       sectionClass="pf-view-section"
       headingClass="pf-view-section-heading"
     }}
       <div class="setting-row">
         <div>
-          <strong>Log Out</strong>
-          <p class="mini">Return to Foundry's join screen.</p>
+          <strong>{{localize 'POCKETFOUNDRY.Settings.LogOut.Label'}}</strong>
+          <p class="mini">{{localize 'POCKETFOUNDRY.Settings.LogOut.Hint'}}</p>
         </div>
         <button
           class="setting-action danger-action"
           type="button"
           data-action="logout"
           data-app="logout"
-        >Log Out</button>
+        >{{localize 'POCKETFOUNDRY.Settings.LogOut.Label'}}</button>
       </div>
     {{/"modules/pocket-foundry/templates/partials/section.hbs"}}
   </section>

@@ -1,6 +1,8 @@
 import type { foundry } from "fvtt-types";
 import { getFoundryRuntime, type FoundryDataShape } from "../core/foundry-globals.ts";
+import { localize } from "../core/localization.ts";
 import { getCollectionContents, getInitials, getNumber, getObject, getString } from "../core/utils.ts";
+import { getSystemTermLabel } from "../systems/character-sheet-adapter-registry.ts";
 import { canViewDocument, type FoundryDocumentMutationApi, type FoundryUserLike, type PermissionCheckedDocument } from "./permissions.ts";
 
 const ENCOUNTER_VISIBILITY_MODULE_ID = "inverted-encounter-visibility";
@@ -39,6 +41,9 @@ export type CombatActionsViewModel = {
 export type CombatViewModel = {
   encounter: CombatSummaryViewModel;
   combatants: CombatantRowViewModel[];
+  labels: {
+    initiative: string;
+  };
   hasCombat: boolean;
   localUserTurn: boolean;
   actions: CombatActionsViewModel;
@@ -88,6 +93,10 @@ export function createCombatService(): CombatService {
   };
 }
 
+/**
+ * Builds the current encounter model from Foundry combat state while preserving
+ * player visibility and system-owned combat terminology.
+ */
 export function buildCombatViewModel(): CombatViewModel {
   const runtime = getFoundryRuntime();
   const game = runtime.game as FoundryGameCombatLike | undefined;
@@ -123,6 +132,9 @@ export function buildCombatViewModel(): CombatViewModel {
       hasCombatants: combatants.length > 0
     },
     combatants: combatants.map(combatant => buildCombatantRow(combatant, displayActiveCombatant, displayNextCombatant)),
+    labels: {
+      initiative: getSystemTermLabel("initiative")
+    },
     hasCombat,
     localUserTurn,
     actions: {
@@ -150,6 +162,10 @@ export function canEndTurn(combatant: unknown, user: FoundryUserLike | null | un
   return (candidate.players ?? []).some(player => getString(player.id) === userId);
 }
 
+/**
+ * Builds one visible combatant row using system-owned terminology for fallback
+ * labels while keeping combat visibility decisions in the core service.
+ */
 function buildCombatantRow(
   combatant: CombatantDocumentLike,
   activeCombatant: CombatantDocumentLike | null | undefined,
@@ -159,7 +175,7 @@ function buildCombatantRow(
   return {
     id: combatant.id ?? "",
     icon: combatant.img ?? null,
-    iconText: getInitials(rowName || "Enemy", "E"),
+    iconText: getInitials(rowName || getSystemTermLabel("enemy"), "E"),
     name: rowName,
     initiative: getNumber(combatant.initiative) ?? null,
     initiativeLabel: formatInitiativeLabel(combatant.initiative),
@@ -195,14 +211,14 @@ function getCombatantsInOrder(combat: CombatDocumentLike): CombatantDocumentLike
 }
 
 function getCombatEncounterName(combat: CombatDocumentLike | null): string {
-  if (!combat) return "Encounter";
+  if (!combat) return localize("POCKETFOUNDRY.Route.Encounter", "Encounter");
   const name = getString(combat.name);
-  return name || "Encounter";
+  return name || localize("POCKETFOUNDRY.Route.Encounter", "Encounter");
 }
 
 function getCombatantName(combatant: CombatantDocumentLike): string {
   const name = getString(combatant.name);
-  return name || "Unknown Combatant";
+  return name || localize("POCKETFOUNDRY.Combat.UnknownCombatant", "Unknown Combatant");
 }
 
 function getActiveCombatantFromIndex(

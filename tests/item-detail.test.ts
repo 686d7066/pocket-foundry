@@ -63,11 +63,11 @@ test("world item detail view is mobile-native, read-only, and permission checked
 
 test("compendium spell detail includes source pack and spell-specific fields", async () => {
   const bane = createItem({
-    uuid: "Compendium.dnd5e.spells.Item.bane",
+    uuid: "Compendium.fixtureSystem.spells.Item.bane",
     name: "Bane",
     type: "spell",
     img: "icons/bane.webp",
-    pack: "dnd5e.spells",
+    pack: "fixtureSystem.spells",
     system: {
       level: 1,
       school: "enc",
@@ -78,7 +78,7 @@ test("compendium spell detail includes source pack and spell-specific fields", a
     }
   });
 
-  const model = await buildItemDetailViewModel("Compendium.dnd5e.spells.Item.bane", { source: "Spells (SRD)" }, {
+  const model = await buildItemDetailViewModel("Compendium.fixtureSystem.spells.Item.bane", { source: "Spells (SRD)" }, {
     user,
     fromUuid: async uuid => (uuid === bane.uuid ? bane : null),
     enrichHTML: async html => html
@@ -142,12 +142,12 @@ test("item detail description keeps content links but strips roll actions", asyn
     fromUuid: async uuid => (uuid === item.uuid ? item : null),
     enrichHTML: async content => content
       .replace("[[/save ability=wis dc=13 format=long]]", "<button class=\"inline-roll\">WIS Save</button>")
-      .replace("One creature", "<a class=\"content-link\" data-uuid=\"Compendium.dnd5e.rules.Item.creature\">One creature</a>")
+      .replace("One creature", "<a class=\"content-link\" data-uuid=\"Compendium.fixtureSystem.rules.Item.creature\">One creature</a>")
   });
 
   assert.equal(model.available, true);
   assert.match(model.descriptionHtml, /WIS Save/);
   assert.doesNotMatch(model.descriptionHtml, /<button\b/i);
-  assert.match(model.descriptionHtml, /data-uuid="Compendium\.dnd5e\.rules\.Item\.creature"/);
+  assert.match(model.descriptionHtml, /data-uuid="Compendium\.fixtureSystem\.rules\.Item\.creature"/);
 });
 

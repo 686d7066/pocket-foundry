@@ -20,7 +20,7 @@ test("journal templates preserve required regions and separate phone navigation 
   assert.match(shellTemplate, /templates\/journal-entry\.hbs/);
   assert.match(shellTemplate, /templates\/journal-page\.hbs/);
   assert.match(shellTemplate, /data-action="journal-up"/);
-  assert.match(shellTemplate, /aria-label="Up one Journal level"/);
+  assert.match(shellTemplate, /aria-label="\{\{localize 'POCKETFOUNDRY\.Journal\.UpOneLevel'\}\}"/);
   assert.match(journalTemplate, /class="content pf-view journal-browser"/);
   assert.match(journalTemplate, /class="section content-group pf-view-section journal-entry-list"/);
   assert.match(journalTemplate, /class="section-heading content-group-heading pf-view-section-heading journal-entry-list-heading"/);

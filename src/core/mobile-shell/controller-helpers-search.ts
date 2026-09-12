@@ -20,9 +20,10 @@ import {
 } from "../../services/search.ts";
 import { getCharacterSheetAdapter } from "../../systems/character-sheet-adapter-registry.ts";
 import { getFoundryRuntime } from "../foundry-globals.ts";
+import { localize } from "../localization.ts";
 import { buildSearchTypeFilters, createFoundryRecentsService, createSearchResultViewModel, getSearchRequestKey, hasUsableSearchQuery, normalizeSearchTypeFilter, rememberCurrentRouteScroll } from "./controller-helpers-navigation.ts";
 import { renderShell } from "./controller-helpers-shell.ts";
-import { consumeShellActionEvent } from "./controller-helpers-ui.ts";
+import { consumeShellActionEvent, runHandledShellTask } from "./controller-helpers-ui.ts";
 import type { SearchUiState, SearchViewModel } from "./types.ts";
 
 const SEARCH_DEBOUNCE_MS = 250;
@@ -159,14 +160,14 @@ export function scheduleSearch(element: HTMLElement, router: MobileRouter, searc
     searchState.errors = [];
     searchState.loading = false;
     searchState.completedKey = getSearchRequestKey(searchState.query, searchState.typeFilter);
-    void renderShell(element, router, searchState);
+    runHandledShellTask(element, renderShell(element, router, searchState), { kind: "render", action: "search-render-empty" });
     return;
   }
 
   searchState.loading = true;
-  void renderShell(element, router, searchState);
+  runHandledShellTask(element, renderShell(element, router, searchState), { kind: "render", action: "search-render-loading" });
   searchState.debounceTimer = globalThis.setTimeout(() => {
-    void runSearchImmediately(element, router, searchState);
+    runHandledShellTask(element, runSearchImmediately(element, router, searchState), { kind: "search", action: "search-debounce" });
   }, SEARCH_DEBOUNCE_MS);
 }
 
@@ -279,7 +280,8 @@ export async function handleEnrichedDocumentLinkClick(
     return;
   }
 
-  void router.push(nextRoute).then(() => renderShell(element, router, searchState));
+  await router.push(nextRoute);
+  await renderShell(element, router, searchState);
 }
 
 export async function handleBiographyDocumentLinkClick(
@@ -302,6 +304,10 @@ export function getEnrichedLinkUuid(link: HTMLAnchorElement | null): string {
   return uuidMatch?.[1] ?? "";
 }
 
+/**
+ * Resolves a Foundry document UUID to the most specific mobile route available
+ * after checking document availability and ownership context.
+ */
 export async function resolveDocumentLinkRoute(uuid: string, previousRoute: MobileRoute): Promise<MobileRoute | null> {
   const runtime = getFoundryRuntime();
   const user = runtime.game?.user;
@@ -348,7 +354,7 @@ export async function resolveDocumentLinkRoute(uuid: string, previousRoute: Mobi
 
 export function notifyDocumentLinkUnavailable(): void {
   const notifications = getFoundryRuntime().ui?.notifications;
-  notifications?.warn?.("This document is no longer available or you do not have permission to view it.");
+  notifications?.warn?.(localize("POCKETFOUNDRY.Document.Unavailable.Body", "This document is no longer available or you do not have permission to view it."));
 }
 
 /**

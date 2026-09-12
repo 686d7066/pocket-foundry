@@ -1,3 +1,4 @@
+import { localize } from "../core/localization.ts";
 import { RouteView, type MobileRoute } from "./routes.ts";
 
 /**
@@ -6,21 +7,21 @@ import { RouteView, type MobileRoute } from "./routes.ts";
 export function getRouteLabel(route: MobileRoute): string {
   switch (route.view) {
     case RouteView.Characters:
-      return "Characters";
+      return localize("POCKETFOUNDRY.Route.Characters", "Characters");
     case RouteView.Combat:
-      return "Encounter";
+      return localize("POCKETFOUNDRY.Route.Encounter", "Encounter");
     case RouteView.Character:
-      return route.pane ? `Character ${route.pane}` : "Character";
+      return route.pane ? localize("POCKETFOUNDRY.Route.CharacterPane", "Character {pane}", { pane: route.pane }) : localize("POCKETFOUNDRY.Document.Character", "Character");
     case RouteView.OwnedDocument:
-      return "Character Item";
+      return localize("POCKETFOUNDRY.Route.CharacterItem", "Character Item");
     case RouteView.Journal:
-      return route.pageUuid ? "Journal Page" : "Journal";
+      return route.pageUuid ? localize("POCKETFOUNDRY.Document.JournalPage", "Journal Page") : localize("POCKETFOUNDRY.Route.Journal", "Journal");
     case RouteView.Recents:
-      return "Recents";
+      return localize("POCKETFOUNDRY.Recents.Title", "Recents");
     case RouteView.Search:
-      return "Search";
+      return localize("POCKETFOUNDRY.Route.Search", "Search");
     case RouteView.Settings:
-      return "Settings";
+      return localize("POCKETFOUNDRY.Settings.Title", "Settings");
     case RouteView.DocumentDetail:
       return getDocumentTypeLabel(route.documentType);
   }
@@ -29,14 +30,14 @@ export function getRouteLabel(route: MobileRoute): string {
 function getDocumentTypeLabel(documentType: Extract<MobileRoute, { view: RouteView.DocumentDetail }>["documentType"]): string {
   switch (documentType) {
     case "character":
-      return "Character";
+      return localize("POCKETFOUNDRY.Document.Character", "Character");
     case "item":
-      return "Item";
+      return localize("POCKETFOUNDRY.Document.Item", "Item");
     case "journal-entry":
-      return "Journal Entry";
+      return localize("POCKETFOUNDRY.Document.JournalEntry", "Journal Entry");
     case "journal-page":
-      return "Journal Page";
+      return localize("POCKETFOUNDRY.Document.JournalPage", "Journal Page");
     case "unknown":
-      return "Document";
+      return localize("POCKETFOUNDRY.Document.Generic", "Document");
   }
 }

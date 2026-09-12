@@ -1,5 +1,6 @@
 import type { foundry } from "fvtt-types";
-import { getFoundryRuntime, type FoundryDataShape } from "../../core/foundry-globals.ts";
+import { getFoundryTextEditor, type FoundryDataShape } from "../../core/foundry-globals.ts";
+import { localize, localizeSystemKey, localizeSystemLabel } from "../../core/localization.ts";
 import { getObject, getString } from "../../core/utils.ts";
 import { canUpdateDocument, canViewDocument, type FoundryDocumentMutationApi, type FoundryUserLike, type PermissionCheckedDocument } from "../../services/permissions.ts";
 import { demoteRollActionLinks } from "../../services/rich-text-enrichment.ts";
@@ -66,8 +67,8 @@ export type Dnd5eBiographyViewModel = {
 
 export type UnavailableDnd5eBiographyViewModel = {
   unavailable: true;
-  title: "Biography Unavailable";
-  body: "This biography is not available to the current user.";
+  title: string;
+  body: string;
 };
 
 export type Dnd5eBiographyModel = Dnd5eBiographyViewModel | UnavailableDnd5eBiographyViewModel;
@@ -86,13 +87,17 @@ const IDENTITY_FALLBACK_LABELS: Record<(typeof IDENTITY_FIELDS)[number], string>
 };
 
 const TRAIT_FIELDS = [
-  { id: "ideal", label: "Ideals", icon: "fa-solid fa-seedling" },
-  { id: "trait", label: "Personality Traits", icon: "fa-solid fa-puzzle-piece" },
-  { id: "bond", label: "Bonds", icon: "fa-solid fa-link" },
-  { id: "flaw", label: "Flaws", icon: "fa-solid fa-heart-crack" },
-  { id: "appearance", label: "Appearance", icon: "fa-solid fa-image-portrait" }
+  { id: "ideal", label: "Ideals", localizationKey: "DND5E.Ideals", icon: "fa-solid fa-seedling" },
+  { id: "trait", label: "Personality Traits", localizationKey: "DND5E.PersonalityTraits", icon: "fa-solid fa-puzzle-piece" },
+  { id: "bond", label: "Bonds", localizationKey: "DND5E.Bonds", icon: "fa-solid fa-link" },
+  { id: "flaw", label: "Flaws", localizationKey: "DND5E.Flaws", icon: "fa-solid fa-heart-crack" },
+  { id: "appearance", label: "Appearance", localizationKey: "DND5E.Appearance", icon: "fa-solid fa-image-portrait" }
 ] as const;
 
+/**
+ * Builds the dnd5e biography pane from character details, identity fields,
+ * traits, and enriched backstory content.
+ */
 export async function buildDnd5eBiographyViewModel(options: {
   actor: Dnd5eBiographyActor | null | undefined;
   user: FoundryUserLike;
@@ -102,8 +107,8 @@ export async function buildDnd5eBiographyViewModel(options: {
   if (!actor || actor.type !== "character" || !canViewDocument(actor, options.user)) {
     return {
       unavailable: true,
-      title: "Biography Unavailable",
-      body: "This biography is not available to the current user."
+      title: localize("POCKETFOUNDRY.DND5E.Biography.Unavailable.Title", "Biography Unavailable"),
+      body: localize("POCKETFOUNDRY.DND5E.Biography.Unavailable.Body", "This biography is not available to the current user.")
     };
   }
 
@@ -144,7 +149,7 @@ function buildTraitCards(details: Record<string, unknown>): BiographyTraitCardVi
     return {
       id: field.id,
       name: `system.details.${field.id}`,
-      label: field.label,
+      label: localizeSystemKey(field.localizationKey, field.label),
       icon: field.icon,
       text,
       preview: createPreview(text),
@@ -166,7 +171,7 @@ async function enrichBiography(actor: Dnd5eBiographyActor, biographyValue: strin
 }
 
 function getFoundryTextEnricher(): BiographyEnricher | undefined {
-  const textEditor = getFoundryRuntime().TextEditor;
+  const textEditor = getFoundryTextEditor();
   return typeof textEditor?.enrichHTML === "function" ? textEditor.enrichHTML.bind(textEditor) : undefined;
 }
 
@@ -181,8 +186,7 @@ function getSchemaLabel(actor: Dnd5eBiographyActor, field: string): string {
 
 function localizeLabel(label: string): string {
   if (!label) return "";
-  const i18n = getFoundryRuntime().game?.i18n;
-  return typeof i18n?.localize === "function" ? i18n.localize(label) : label.replace(/^DND5E\./, "");
+  return localizeSystemLabel(label, label.replace(/^DND5E\./, ""));
 }
 
 function createPreview(value: string): string {

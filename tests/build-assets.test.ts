@@ -11,6 +11,8 @@ test("static packaging preserves nested runtime assets and excludes source files
     const source = join(temporary, "src");
     const target = join(temporary, "dist");
     mkdirSync(join(source, "nested"), { recursive: true });
+    mkdirSync(join(source, "nested", "tests", "fixtures"), { recursive: true });
+    writeFileSync(join(source, "nested", "tests", "fixtures", "sheet.hbs"), "test-only template");
     for (const name of ["module.json", "sheet.hbs", "image.png", "font.woff2", "index.ts", "types.d.ts", "code.js", "code.js.map", "styles.css", "styles.scss", "README.md"]) {
       writeFileSync(join(source, "nested", name), "fixture");
     }

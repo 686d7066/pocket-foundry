@@ -14,6 +14,11 @@ export type Dnd5eFavoriteActorReference = FavoriteActorReference & {
   system?: Record<string, unknown>;
 };
 
+export type Dnd5eFavoriteToggleState = {
+  favorite: boolean;
+  canToggleFavorite: boolean;
+};
+
 /**
  * Reads dnd5e favorite entries through the generic favorites service.
  *
@@ -60,6 +65,32 @@ export async function setDnd5eFavoriteEntry(
 export function canToggleDnd5eFavorites(actor: Dnd5eFavoriteActorReference | null | undefined): boolean {
   if (!actor) return false;
   return canToggleFavorites({ legacyAvailable: hasLegacyFavoriteApi(actor) });
+}
+
+/**
+ * Builds the shared row state used by dnd5e templates that expose favorite actions.
+ */
+export function buildDnd5eFavoriteToggleState(
+  actor: Dnd5eFavoriteActorReference | null | undefined,
+  canUpdate: boolean,
+  favorite: boolean
+): Dnd5eFavoriteToggleState {
+  return {
+    favorite,
+    canToggleFavorite: canUpdate && canToggleDnd5eFavorites(actor)
+  };
+}
+
+/**
+ * Builds favorite row state only when the current actor can expose favorite controls.
+ */
+export function buildOptionalDnd5eFavoriteToggleState(
+  actor: Dnd5eFavoriteActorReference | null | undefined,
+  canUpdate: boolean,
+  favorite: boolean
+): Partial<Dnd5eFavoriteToggleState> {
+  const state = buildDnd5eFavoriteToggleState(actor, canUpdate, favorite);
+  return state.canToggleFavorite ? state : {};
 }
 
 async function setLegacyDnd5eFavoriteEntry(

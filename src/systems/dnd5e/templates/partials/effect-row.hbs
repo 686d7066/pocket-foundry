@@ -8,9 +8,9 @@
         <span>{{#if sourceName}}{{sourceName}}{{else}}-{{/if}} - {{durationLabel}}</span>
       </span>
       <span class="sheet-list-value effects-list-value">{{#if sourceName}}{{sourceName}}{{else}}-{{/if}}</span>
-      <span class="effect-row-actions" aria-label="{{name}} controls">
+      <span class="effect-row-actions" aria-label="{{localize 'POCKETFOUNDRY.DND5E.Row.Controls' name=name}}">
         {{#if actions.canDelete}}
-          <button class="effect-delete" type="button" data-action="effects-delete-temporary" data-effect-id="{{id}}" aria-label="Remove {{name}}" data-swipe-ignore>
+          <button class="effect-delete" type="button" data-action="effects-delete-temporary" data-effect-id="{{id}}" aria-label="{{localize 'POCKETFOUNDRY.DND5E.RemoveNamed' name=name}}" data-swipe-ignore>
             <i class="fa-solid fa-trash" aria-hidden="true"></i>
           </button>
         {{/if}}
@@ -33,7 +33,7 @@
           {{> "modules/pocket-foundry/templates/partials/pill.hbs"
             button=true
             label=sourceName
-            action="details-open-reference"
+            action="document-open-reference"
             uuid=sourceUuid
             swipeIgnore=true
           }}
@@ -41,10 +41,10 @@
       {{/if}}
       <div class="effect-detail-actions pf-detail-actions">
         {{#if actions.canEndConcentration}}
-          <button type="button" data-action="effects-end-concentration" data-effect-id="{{id}}" data-swipe-ignore>End Concentration</button>
+          <button type="button" data-action="effects-end-concentration" data-effect-id="{{id}}" data-swipe-ignore>{{localize 'DND5E.ConcentratingEnd'}}</button>
         {{/if}}
         {{#if actions.canDelete}}
-          <button class="effect-delete" type="button" data-action="effects-delete-temporary" data-effect-id="{{id}}" aria-label="Remove {{name}}" data-swipe-ignore>
+          <button class="effect-delete" type="button" data-action="effects-delete-temporary" data-effect-id="{{id}}" aria-label="{{localize 'POCKETFOUNDRY.DND5E.RemoveNamed' name=name}}" data-swipe-ignore>
             <i class="fa-solid fa-trash" aria-hidden="true"></i>
           </button>
         {{/if}}
@@ -61,8 +61,8 @@
     ariaLabel=name
     addAction="context-add-favorite"
     removeAction="context-remove-favorite"
-    addLabel="Add to Favorites"
-    removeLabel="Remove from Favorites"
+    addLabel=(localize 'POCKETFOUNDRY.Favorites.Add')
+    removeLabel=(localize 'POCKETFOUNDRY.Favorites.Remove')
     favoriteType="effect"
     favoriteId=favoriteId
   }}

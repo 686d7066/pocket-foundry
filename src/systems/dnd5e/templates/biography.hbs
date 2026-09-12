@@ -4,7 +4,7 @@
   <section class="content sheet-dense biography-pane" data-region="biography-pane" data-swipe-region="character-pane">
     <section class="section sheet-group biography-identity-section" data-section="identity">
       <div class="section-heading sheet-group-heading biography-section-heading">
-        <h2>Identity</h2>
+        <h2>{{localize 'DND5E.ACTIVITY.SECTIONS.Identity'}}</h2>
       </div>
       <div class="sheet-group-body biography-identity-body">
         {{#if hasIdentity}}
@@ -17,7 +17,7 @@
             {{/each}}
           </div>
         {{else}}
-          {{> "modules/pocket-foundry/templates/partials/empty-state.hbs" title="No Identity Details" body="Visible character details appear here when filled in."}}
+          {{> "modules/pocket-foundry/templates/partials/empty-state.hbs" title=(localize 'POCKETFOUNDRY.DND5E.Biography.NoIdentity.Title') body=(localize 'POCKETFOUNDRY.DND5E.Biography.NoIdentity.Body')}}
         {{/if}}
       </div>
     </section>
@@ -39,19 +39,19 @@
         {{/each}}
       {{else}}
         <section class="section biography-trait-card empty-feature-card">
-          {{> "modules/pocket-foundry/templates/partials/empty-state.hbs" title="No Traits" body="Ideals, bonds, flaws, personality traits, and appearance appear here when filled in."}}
+          {{> "modules/pocket-foundry/templates/partials/empty-state.hbs" title=(localize 'POCKETFOUNDRY.DND5E.Biography.NoTraits.Title') body=(localize 'POCKETFOUNDRY.DND5E.Biography.NoTraits.Body')}}
         </section>
       {{/if}}
 
-      <article class="section sheet-group biography-backstory" data-section="backstory" aria-label="Backstory">
+      <article class="section sheet-group biography-backstory" data-section="backstory" aria-label="{{localize 'POCKETFOUNDRY.DND5E.Biography.Backstory'}}">
         <div class="section-heading sheet-group-heading biography-section-heading">
-          <h2>Backstory</h2>
+          <h2>{{localize 'POCKETFOUNDRY.DND5E.Biography.Backstory'}}</h2>
         </div>
         <div class="sheet-group-body biography-backstory-body">
           {{#if hasBackstory}}
             <div class="reader bio-backstory-content" data-biography-links>{{{backstoryHtml}}}</div>
           {{else}}
-            {{> "modules/pocket-foundry/templates/partials/empty-state.hbs" title="No Backstory" body="Biography text appears here when filled in."}}
+            {{> "modules/pocket-foundry/templates/partials/empty-state.hbs" title=(localize 'POCKETFOUNDRY.DND5E.Biography.NoBackstory.Title') body=(localize 'POCKETFOUNDRY.DND5E.Biography.NoBackstory.Body')}}
           {{/if}}
         </div>
       </article>

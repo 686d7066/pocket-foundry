@@ -1,3 +1,4 @@
+import { disposeTableLayout, initializeTableLayout } from "./table-layout.ts";
 import type { foundry } from "fvtt-types";
 import { type MobileRouter } from "../../router/mobile-router.ts";
 import { createShellRoute, getShellDestination, RouteView, ShellDestination, type CharacterRoute, type MobileRoute } from "../../router/routes.ts";
@@ -23,7 +24,8 @@ import {
 } from "../../services/recents.ts";
 import { getCharacterSheetAdapter } from "../../systems/character-sheet-adapter-registry.ts";
 import { MODULE_ID } from "../constants.ts";
-import { getFoundryRuntime } from "../foundry-globals.ts";
+import { getFoundryHandlebars, getFoundryTextEditor, getFoundryRuntime } from "../foundry-globals.ts";
+import { localize } from "../localization.ts";
 import { getCharacterSheetBannerEnabled, getColorBlindMode, getMobileViewEnabled } from "../settings.ts";
 import { getCollectionContents, getInitials } from "../utils.ts";
 import { buildBottomNav, createFoundryRecentsService, getActorByUuid, getCharacterPickerRouteFavorites, getHeader, persistSelectedCharacterRoute, restoreCharacterPickerSearchFocus, restorePaneSearchFocus, restoreRouteScroll, restoreSearchFocus } from "./controller-helpers-navigation.ts";
@@ -39,8 +41,8 @@ type JournalEntryPageClass = typeof foundry.documents.JournalEntryPage & {
 
 
 export async function renderShell(rootElement: HTMLElement, router: MobileRouter, searchState?: SearchUiState): Promise<void> {
-  const runtime = getFoundryRuntime();
-  if (!runtime.renderTemplate) {
+  const handlebars = getFoundryHandlebars();
+  if (!handlebars.renderTemplate) {
     throw new Error(`${MODULE_ID} cannot render the mobile shell before Foundry's template renderer is available.`);
   }
 
@@ -49,11 +51,14 @@ export async function renderShell(rootElement: HTMLElement, router: MobileRouter
   if (searchState) await prepareSearchForRender(activeRoute, searchState);
   persistSelectedCharacterRoute(selectedCharacterRoute);
   await createFoundryRecentsService()?.recordRoute(activeRoute);
-  rootElement.innerHTML = await runtime.renderTemplate(SHELL_TEMPLATE, await buildShellViewModel(activeRoute, router.canGoBack(), selectedCharacterRoute, searchState));
+  const html = await handlebars.renderTemplate(SHELL_TEMPLATE, await buildShellViewModel(activeRoute, router.canGoBack(), selectedCharacterRoute, searchState));
+  disposeTableLayout(rootElement);
+  rootElement.innerHTML = html;
   restoreRouteScroll(rootElement, router.getCurrentRoute());
   restoreSearchFocus(rootElement, activeRoute);
   restorePaneSearchFocus(rootElement, activeRoute);
   restoreCharacterPickerSearchFocus(rootElement, activeRoute);
+  initializeTableLayout(rootElement);
 }
 
 async function normalizeUnavailableCombatRoute(router: MobileRouter): Promise<MobileRoute> {
@@ -92,7 +97,7 @@ export async function buildShellViewModel(
     portraitInitials: header.portraitInitials,
     portraitImage: header.portraitImage,
     bottomNav: {
-      label: "Shell navigation",
+      label: localize("POCKETFOUNDRY.Navigation.Shell", "Shell navigation"),
       items: buildBottomNav(activeRoute, activeDestination, selectedCharacterRoute)
     },
     ...contentViewModel
@@ -144,7 +149,6 @@ export async function buildShellContentViewModel(
 ): Promise<Pick<ShellViewModel, "characterPicker" | "actorSheet" | "journal" | "combat" | "recents" | "search" | "settings" | "itemDetail" | "pendingDetail">> {
   const characterSheetAdapter = getCharacterSheetAdapter();
   const visualMetadata = characterSheetAdapter.getVisualMetadata();
-  const paneTemplatePaths = characterSheetAdapter.getPaneTemplatePaths();
 
   switch (contentType) {
     case "character":
@@ -157,7 +161,7 @@ export async function buildShellContentViewModel(
         activePane
       });
       const paneModel = navigationModel.unavailable || navigationModel.limited
-        ? { pane: normalizedPane, context: characterSheetAdapter.getPaneContext(normalizedPane), data: undefined }
+        ? { pane: normalizedPane, context: characterSheetAdapter.getPaneContext(normalizedPane), templatePath: "", data: undefined }
         : await characterSheetAdapter.buildPaneViewModel({
             pane: normalizedPane,
             actor,
@@ -168,33 +172,16 @@ export async function buildShellContentViewModel(
       const actorSheet: ShellViewModel["actorSheet"] = {
         ...navigationModel,
         showCharacterBanner: getCharacterSheetBannerEnabled(),
-        paneTemplatePaths,
         canGoBack
       };
 
       if (!navigationModel.unavailable && !navigationModel.limited) {
-        const paneSpecs = characterSheetAdapter.getPaneSpecs({ actor, user: runtime.game?.user ?? null });
-        const headerPaneContext = characterSheetAdapter.getHeaderPaneContext?.() ?? null;
-        const headerPane = headerPaneContext
-          ? paneSpecs.find(spec => spec.context === headerPaneContext)?.id
-          : undefined;
-
-        const paneContext = characterSheetAdapter.getPaneContext(normalizedPane);
-        const paneData = paneModel.data as Record<string, unknown> | undefined;
-        (actorSheet as Record<string, unknown>)[paneContext] = paneData;
-        if (headerPane) {
-          if (headerPane === normalizedPane) {
-            actorSheet.headerDetails = paneData;
-          } else {
-            const headerPaneModel = await characterSheetAdapter.buildPaneViewModel({
-              pane: headerPane,
-              actor,
-              user: runtime.game?.user ?? null,
-              route: activeRoute
-            });
-            actorSheet.headerDetails = headerPaneModel.data as Record<string, unknown> | undefined;
-          }
-        }
+        actorSheet.activePaneContent = paneModel;
+        actorSheet.headerContent = await characterSheetAdapter.buildHeaderViewModel?.({
+          actor,
+          user: runtime.game?.user ?? null,
+          route: activeRoute
+        });
       }
 
       return {
@@ -225,8 +212,8 @@ export async function buildShellContentViewModel(
 
       return {
         pendingDetail: {
-          title: "Character Item",
-          body: "This item detail is not available from this view."
+          title: localize("POCKETFOUNDRY.Route.CharacterItem", "Character Item"),
+          body: localize("POCKETFOUNDRY.ItemDetail.UnavailableFromView", "This item detail is not available from this view.")
         }
       };
     case "document-detail":
@@ -238,8 +225,8 @@ export async function buildShellContentViewModel(
 
       return {
         pendingDetail: {
-          title: "Unavailable document",
-          body: "This document is no longer available or you do not have permission to view it."
+          title: localize("POCKETFOUNDRY.Document.Unavailable.Title", "Unavailable document"),
+          body: localize("POCKETFOUNDRY.Document.Unavailable.Body", "This document is no longer available or you do not have permission to view it.")
         }
       };
     case ShellDestination.Journal:
@@ -261,15 +248,19 @@ export async function buildShellContentViewModel(
           characterSheetBannerEnabled: getCharacterSheetBannerEnabled(),
           colorBlindMode: getColorBlindMode(),
           characterSheetBannerAvailable: Boolean(visualMetadata.bannerImage),
-          characterSheetBannerLabel: visualMetadata.bannerLabel ?? "Character Sheet Banner",
-          characterSheetBannerHint: visualMetadata.bannerHint ?? "Show the character sheet banner texture at the top of mobile character sheets.",
-          characterSheetBannerAriaLabel: visualMetadata.bannerAriaLabel ?? "Character Sheet Banner",
-          colorBlindModeAriaLabel: "Color-Blind Mode"
+          characterSheetBannerLabel: visualMetadata.bannerLabel ?? localize("POCKETFOUNDRY.Settings.CharacterSheetBanner.Label", "Character Sheet Banner"),
+          characterSheetBannerHint: visualMetadata.bannerHint ?? localize("POCKETFOUNDRY.Settings.CharacterSheetBanner.Hint", "Show the character sheet banner texture at the top of mobile character sheets."),
+          characterSheetBannerAriaLabel: visualMetadata.bannerAriaLabel ?? localize("POCKETFOUNDRY.Settings.CharacterSheetBanner.Label", "Character Sheet Banner"),
+          colorBlindModeAriaLabel: localize("POCKETFOUNDRY.Settings.ColorBlindMode.Label", "Color-Blind Mode")
         }
       };
   }
 }
 
+/**
+ * Builds the journal portion of the shell view model from the current route,
+ * including list, entry, page, and unavailable states.
+ */
 export async function buildJournalShellViewModel(activeRoute: MobileRoute): Promise<JournalShellViewModel> {
   const service = createFoundryJournalService();
   if (activeRoute.view !== RouteView.Journal) {
@@ -333,7 +324,7 @@ export function addJournalPageTemplateState(page: JournalPageViewModel | Unavail
     pdfPage: page.pageType === "pdf",
     videoPage: page.pageType === "video",
     unsupportedPage: page.pageType === "unsupported",
-    unsupportedBody: `This ${page.type || "journal"} page type is not supported by the mobile journal reader yet.`
+    unsupportedBody: localize("POCKETFOUNDRY.Journal.UnsupportedPage.Body", "This {type} page type is not supported by the mobile journal reader yet.", { type: page.type || "journal" })
   };
 }
 
@@ -351,10 +342,14 @@ export function addJournalPageRowState(page: JournalPageSummaryViewModel): Journ
   };
 }
 
+/**
+ * Creates the Foundry-backed journal service with UUID lookup, enrichment,
+ * page creation, page updates, and desktop sheet fallbacks wired in.
+ */
 export function createFoundryJournalService(): MobileJournalService {
   const runtime = getFoundryRuntime();
   const fromUuid = runtime.foundry?.utils?.fromUuid;
-  const textEditor = runtime.TextEditor;
+  const textEditor = getFoundryTextEditor();
 
   return createMobileJournalService({
     collection: runtime.game?.journal as Iterable<JournalEntryDocumentLike> | { contents?: JournalEntryDocumentLike[] } | undefined,
@@ -464,15 +459,15 @@ export function getJournalPageIconText(page: JournalPageSummaryViewModel): strin
 export function getJournalPageTypeLabel(pageType: JournalPageSummaryViewModel["pageType"]): string {
   switch (pageType) {
     case "text":
-      return "Text page";
+      return localize("POCKETFOUNDRY.Journal.PageType.Text", "Text page");
     case "image":
-      return "Image page";
+      return localize("POCKETFOUNDRY.Journal.PageType.Image", "Image page");
     case "pdf":
-      return "PDF page";
+      return localize("POCKETFOUNDRY.Journal.PageType.PDF", "PDF page");
     case "video":
-      return "Video page";
+      return localize("POCKETFOUNDRY.Journal.PageType.Video", "Video page");
     case "unsupported":
-      return "Unsupported page";
+      return localize("POCKETFOUNDRY.Journal.PageType.Unsupported", "Unsupported page");
   }
 }
 

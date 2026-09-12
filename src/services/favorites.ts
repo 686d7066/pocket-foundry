@@ -25,8 +25,8 @@ export type FavoriteBasicRowViewModel = {
   canToggleFavorite: boolean;
   addAction: string;
   removeAction: string;
-  addLabel: "Add to Favorites";
-  removeLabel: "Remove from Favorites";
+  addLabel: string;
+  removeLabel: string;
 };
 
 export type FavoriteGroupViewModel = {
@@ -52,8 +52,8 @@ export type FavoritesViewModel = {
 
 export type UnavailableFavoritesViewModel = {
   unavailable: true;
-  title: "Favorites Unavailable";
-  body: "These favorites are not available to the current user.";
+  title: string;
+  body: string;
 };
 
 export type FavoritesModel = FavoritesViewModel | UnavailableFavoritesViewModel;

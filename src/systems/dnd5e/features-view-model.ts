@@ -1,6 +1,6 @@
 import type { foundry } from "fvtt-types";
 import { getCollectionContents, getInitials, getNumber, getObject, getString } from "../../core/utils.ts";
-import { getFoundryRuntime, type FoundryDataShape } from "../../core/foundry-globals.ts";
+import { getFoundryTextEditor, type FoundryDataShape } from "../../core/foundry-globals.ts";
 import { canUpdateDocument, canViewDocument, type FoundryDocumentMutationApi, type FoundryUserLike, type PermissionCheckedDocument } from "../../services/permissions.ts";
 import { enrichSectionRows } from "../../services/rich-text-enrichment.ts";
 import {
@@ -20,7 +20,7 @@ import {
   toSearchTerms,
   uniqueStrings
 } from "./view-model-helpers.ts";
-import { canToggleDnd5eFavorites, hasDnd5eFavoriteReference, setDnd5eFavoriteEntry } from "./favorites-storage.ts";
+import { buildDnd5eFavoriteToggleState, hasDnd5eFavoriteReference, setDnd5eFavoriteEntry } from "./favorites-storage.ts";
 
 export type Dnd5eFeaturesActor = PermissionCheckedDocument
   & FoundryDocumentMutationApi
@@ -175,6 +175,10 @@ export type Dnd5eFeaturesControlResult = {
   reason?: "unavailable" | "forbidden" | "unsupported";
 };
 
+/**
+ * Builds the dnd5e features pane from visible owned features, progression
+ * sources, activities, usage state, and favorite metadata.
+ */
 export async function buildDnd5eFeaturesViewModel(options: {
   actor: Dnd5eFeaturesActor | null | undefined;
   user: FoundryUserLike;
@@ -193,7 +197,7 @@ export async function buildDnd5eFeaturesViewModel(options: {
   const searchQuery = normalizeSearchQuery(options.searchQuery);
   const allItems = getVisibleOwnedItems(actor, options.user);
   const featureItems = allItems.filter(isFeatureListItem);
-  const textEditor = getFoundryRuntime().TextEditor;
+  const textEditor = getFoundryTextEditor();
   const enrichHTML = textEditor?.enrichHTML;
   const featureRowsInput = featureItems.map(item => buildFeatureItemViewModel(actor, item, allItems, canUpdate));
   const sectionsInput = filterFeatureSections(buildFeatureSections(featureRowsInput), searchQuery);
@@ -408,7 +412,8 @@ function buildFeatureItemViewModel(
   const origin = getFeatureOrigin(actor, item, allItems);
   const source = origin.source;
   const subtitle = [getString(getObject(system.type)?.label) || getFeatureTypeLabel(item), activation].filter(Boolean).join(" - ");
-  const favorite = isFavorite(actor, item);
+  const favoriteState = buildDnd5eFavoriteToggleState(actor, canUpdate, isFavorite(actor, item));
+  const favorite = favoriteState.favorite;
   const concentrating = isConcentrating(actor, item);
   const adjustment = canUpdate && max !== null && current !== null ? buildAdjustment(current, max, usesLabel) : null;
 
@@ -439,7 +444,7 @@ function buildFeatureItemViewModel(
       canUse: canUpdate && !isPassiveFeature(item) && typeof item.use === "function" && activities.length <= 1,
       canRecharge: canUpdate && item.hasRecharge === true && typeof uses?.rollRecharge === "function",
       canAdjustUses: adjustment !== null,
-      canToggleFavorite: canUpdate && canToggleDnd5eFavorites(actor),
+      canToggleFavorite: favoriteState.canToggleFavorite,
       canEndConcentration: canUpdate && concentrating && typeof actor.endConcentration === "function"
     },
     favorite,

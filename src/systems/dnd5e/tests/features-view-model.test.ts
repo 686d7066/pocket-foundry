@@ -12,7 +12,7 @@ import {
   type Dnd5eFeatureActivity,
   type Dnd5eFeaturesActor,
   type Dnd5eFeaturesItem
-} from "../src/systems/dnd5e/features-view-model.ts";
+} from "../features-view-model.ts";
 
 const user = { id: "player" };
 
@@ -163,22 +163,23 @@ test("feature controls require update permission and call dnd5e document APIs", 
 });
 
 test("features template and styles preserve required regions without create or delete controls", () => {
-  const template = readFileSync(new URL("../src/systems/dnd5e/templates/features.hbs", import.meta.url), "utf8");
-  const rowTemplate = readFileSync(new URL("../src/systems/dnd5e/templates/partials/feature-row.hbs", import.meta.url), "utf8");
-  const actorShellTemplate = readFileSync(new URL("../src/templates/actor-sheet-shell.hbs", import.meta.url), "utf8");
+  const template = readFileSync(new URL("../templates/features.hbs", import.meta.url), "utf8");
+  const rowTemplate = readFileSync(new URL("../templates/partials/feature-row.hbs", import.meta.url), "utf8");
+  const tableHeadTemplate = readFileSync(new URL("../templates/partials/table-head.hbs", import.meta.url), "utf8");
+  const actorShellTemplate = readFileSync(new URL("../../../templates/actor-sheet-shell.hbs", import.meta.url), "utf8");
   const css = [
-    readFileSync(new URL("../src/styles/pocket-foundry.css", import.meta.url), "utf8"),
-    readFileSync(new URL("../src/systems/dnd5e/styles/pocket-foundry-dnd5e.css", import.meta.url), "utf8")
+    readFileSync(new URL("../../../styles/pocket-foundry.css", import.meta.url), "utf8"),
+    readFileSync(new URL("../styles/pocket-foundry-dnd5e.css", import.meta.url), "utf8")
   ].join("\n");
-  const moduleSource = readFileSync(new URL("../src/module.ts", import.meta.url), "utf8");
-  const actorSheetNavigationSource = readFileSync(new URL("../src/systems/dnd5e/actor-sheet-navigation.ts", import.meta.url), "utf8");
+  const moduleSource = readFileSync(new URL("../../../module.ts", import.meta.url), "utf8");
+  const actorSheetNavigationSource = readFileSync(new URL("../actor-sheet-navigation.ts", import.meta.url), "utf8");
 
   assert.match(actorShellTemplate, /class="mf-header actor-sheet-header"/);
   assert.match(actorShellTemplate, /railClass="pane-rail"/);
   assert.match(template, /class="content sheet-dense features-pane"/);
   assert.match(template, /partials\/pane-search-toolbar\.hbs/);
-  assert.match(template, /toolbarClass="features-toolbar"/);
-  assert.match(template, /placeholder="Search features"/);
+  assert.match(template, /toolbarClass="pane-search-toolbar features-toolbar"/);
+  assert.match(template, /placeholder=\(localize 'DND5E\.FeatureSearch'\)/);
   assert.match(template, /pane="Features"/);
   assert.match(template, /value=searchQuery/);
   assert.match(template, /canClear=canClearSearch/);
@@ -186,7 +187,8 @@ test("features template and styles preserve required regions without create or d
   assert.match(template, /class="features-sections"/);
   assert.match(template, /class="section sheet-group features-section features-section-\{\{id\}\}"/);
   assert.match(template, /class="section-heading sheet-group-heading features-section-heading"/);
-  assert.match(template, /class="sheet-list-head features-list-head[^"]*pf-list-schema[^"]*pf-list-schema--icon-title-2meta-actions/);
+  assert.match(template, /partials\/table-head\.hbs/);
+  assert.match(tableHeadTemplate, /class="sheet-list-head features-list-head[^"]*pf-list-schema[^"]*pf-list-schema--icon-title-2meta-actions/);
   assert.match(template, /partials\/feature-row\.hbs/);
   assert.match(rowTemplate, /partials\/expandable-detail-row\.hbs/);
   assert.match(rowTemplate, /class="row sheet-list-row features-list-row feature-row"/);
@@ -206,7 +208,7 @@ test("features template and styles preserve required regions without create or d
   assert.match(actorSheetNavigationSource, /getCharacterPaneSearchQuery/);
   assert.match(actorSheetNavigationSource, /features-confirm-uses-delta/);
   assert.match(css, /\.pocket-foundry-root \.features-status/);
-  assert.match(css, /\.pocket-foundry-root \.features-toolbar/);
+  assert.match(css, /\.pocket-foundry-root \.pane-search-toolbar/);
   assert.match(css, /\.pocket-foundry-root \.features-sections/);
   assert.match(css, /\.pocket-foundry-root \.sheet-group-heading/);
   assert.match(css, /\.pocket-foundry-root \.sheet-list\.sheet-table/);

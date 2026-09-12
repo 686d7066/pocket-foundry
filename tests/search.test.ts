@@ -17,7 +17,7 @@ import {
 } from "../src/services/search.ts";
 
 const user = { id: "player" };
-const dnd5eCompendiumSearchCustomization: CompendiumSearchCustomization = {
+const fixtureSystemCompendiumSearchCustomization: CompendiumSearchCustomization = {
   resultTypes: ["Spell"],
   resolveResultType: context => (context.documentName === "Item" && context.entryType === "spell" ? "Spell" : null)
 };
@@ -417,10 +417,10 @@ test("compendium adapter accepts system-owned result types for pack context", as
   const service = createMobileSearchService({
     adapters: [
       createCompendiumSearchAdapter({
-        ...dnd5eCompendiumSearchCustomization,
+        ...fixtureSystemCompendiumSearchCustomization,
         packs: [
           {
-            collection: "dnd5e.spells",
+            collection: "fixtureSystem.spells",
             documentName: "Item",
             metadata: { label: "Spells (SRD)" },
             getIndex: async () => [
@@ -452,7 +452,7 @@ test("compendium adapter accepts system-owned result types for pack context", as
   assert.deepEqual(spellResults, results);
   assert.deepEqual(createRouteForSearchResult(results[0]!), {
     view: RouteView.DocumentDetail,
-    documentUuid: "Compendium.dnd5e.spells.Item.bane-one",
+    documentUuid: "Compendium.fixtureSystem.spells.Item.bane-one",
     documentType: "item",
     source: "Spells (SRD)"
   });

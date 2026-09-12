@@ -31,6 +31,7 @@ import type {
 } from "../../systems/character-sheet-adapter.ts";
 import { MODULE_ID } from "../constants.ts";
 import { getFoundryRuntime } from "../foundry-globals.ts";
+import { localize } from "../localization.ts";
 import { getCollectionContents, getInitials } from "../utils.ts";
 import { createPaneSearchDrawer, getPaneSearchQuery } from "./controller-helpers-search.ts";
 import { createFoundryJournalService, getJournalPageIconText, getJournalPageTypeLabel, renderShell } from "./controller-helpers-shell.ts";
@@ -51,7 +52,7 @@ export function clearSearchDebounce(searchState: SearchUiState): void {
 export function buildSearchTypeFilters(resultTypes: string[], activeTypeFilter: string): SearchTypeFilterViewModel[] {
   return [
     {
-      label: "All",
+      label: localize("POCKETFOUNDRY.Search.Filter.All", "All"),
       value: ALL_SEARCH_RESULT_TYPES,
       active: activeTypeFilter === ALL_SEARCH_RESULT_TYPES
     },
@@ -80,11 +81,11 @@ export function getSearchResultSubtitle(result: MobileSearchResult): string {
 export function getSearchResultActionLabel(result: MobileSearchResult): string {
   switch (result.type) {
     case "Journal Page":
-      return "Page";
+      return localize("POCKETFOUNDRY.Journal.Page", "Page");
     case "Item":
-      return "Item";
+      return localize("POCKETFOUNDRY.Document.Item", "Item");
     default:
-      return "Open";
+      return localize("POCKETFOUNDRY.Action.Open", "Open");
   }
 }
 
@@ -124,7 +125,7 @@ export function buildBottomNav(activeRoute: MobileRoute, activeDestination: Shel
   return [
     { label: characterLabel, action: "navigate", route: ShellDestination.Characters, active: activeDestination === ShellDestination.Characters },
     {
-      label: "Encounter",
+      label: localize("POCKETFOUNDRY.Route.Encounter", "Encounter"),
       action: "navigate",
       route: ShellDestination.Combat,
       active: activeDestination === ShellDestination.Combat,
@@ -133,10 +134,10 @@ export function buildBottomNav(activeRoute: MobileRoute, activeDestination: Shel
       backgroundImage: showEncounterBackgroundImage ? encounterBackgroundImage ?? undefined : undefined,
       highlightBorder: showEncounterFallbackBorder
     },
-    { label: "Journal", action: "navigate", route: ShellDestination.Journal, active: activeDestination === ShellDestination.Journal },
-    { label: "Recents", action: "navigate", route: ShellDestination.Recents, active: activeDestination === ShellDestination.Recents },
-    { label: "Search", action: "navigate", route: ShellDestination.Search, active: activeDestination === ShellDestination.Search, icon: "fa-solid fa-magnifying-glass" },
-    { label: "Settings", action: "navigate", route: ShellDestination.Settings, active: activeDestination === ShellDestination.Settings, icon: "fa-solid fa-cog" }
+    { label: localize("POCKETFOUNDRY.Route.Journal", "Journal"), action: "navigate", route: ShellDestination.Journal, active: activeDestination === ShellDestination.Journal },
+    { label: localize("POCKETFOUNDRY.Recents.Title", "Recents"), action: "navigate", route: ShellDestination.Recents, active: activeDestination === ShellDestination.Recents },
+    { label: localize("POCKETFOUNDRY.Route.Search", "Search"), action: "navigate", route: ShellDestination.Search, active: activeDestination === ShellDestination.Search, icon: "fa-solid fa-magnifying-glass" },
+    { label: localize("POCKETFOUNDRY.Settings.Title", "Settings"), action: "navigate", route: ShellDestination.Settings, active: activeDestination === ShellDestination.Settings, icon: "fa-solid fa-cog" }
   ];
 }
 
@@ -144,11 +145,11 @@ export function buildBottomNav(activeRoute: MobileRoute, activeDestination: Shel
  * Builds the Characters nav label from the selected character shortcut state.
  */
 export function getCharactersNavLabel(activeRoute: MobileRoute, selectedCharacterRoute: CharacterRoute | undefined): string {
-  if (activeRoute.view === RouteView.Character) return "Characters";
-  if (!selectedCharacterRoute) return "Characters";
+  if (activeRoute.view === RouteView.Character) return localize("POCKETFOUNDRY.Route.Characters", "Characters");
+  if (!selectedCharacterRoute) return localize("POCKETFOUNDRY.Route.Characters", "Characters");
 
   const actor = getActorByUuid(selectedCharacterRoute.actorUuid);
-  return getFirstName(actor?.name) || "Character";
+  return getFirstName(actor?.name) || localize("POCKETFOUNDRY.Document.Character", "Character");
 }
 
 /**
@@ -163,28 +164,34 @@ export function getHeader(
   if (itemDetail?.available) {
     return {
       title: itemDetail.name,
-      subtitle: itemDetail.source ? `${itemDetail.typeLabel} - ${itemDetail.source}` : itemDetail.typeLabel,
+      subtitle: itemDetail.source ? localize("POCKETFOUNDRY.Format.TypeSource", "{type} - {source}", { type: itemDetail.typeLabel, source: itemDetail.source }) : itemDetail.typeLabel,
       portraitInitials: itemDetail.iconText,
       portraitImage: itemDetail.icon
     };
   }
 
   if (activeRoute?.view === RouteView.DocumentDetail && activeRoute.documentType === "item") {
-    return { title: "Item", subtitle: activeRoute.source ? `Search result - ${activeRoute.source}` : "Search result", portraitInitials: "I" };
+    return {
+      title: localize("POCKETFOUNDRY.Document.Item", "Item"),
+      subtitle: activeRoute.source
+        ? localize("POCKETFOUNDRY.Search.ResultFromSource", "Search result - {source}", { source: activeRoute.source })
+        : localize("POCKETFOUNDRY.Search.Result", "Search result"),
+      portraitInitials: "I"
+    };
   }
 
   if (activeRoute?.view === RouteView.OwnedDocument) {
-    return { title: "Character Item", subtitle: "Character-owned item route", portraitInitials: "I" };
+    return { title: localize("POCKETFOUNDRY.Route.CharacterItem", "Character Item"), subtitle: localize("POCKETFOUNDRY.Route.CharacterOwnedItem", "Character-owned item route"), portraitInitials: "I" };
   }
 
   switch (activeDestination) {
     case ShellDestination.Combat:
-      return { title: "Encounter", subtitle: "Initiative order and turn controls", portraitInitials: "E" };
+      return { title: localize("POCKETFOUNDRY.Route.Encounter", "Encounter"), subtitle: localize("POCKETFOUNDRY.Combat.Subtitle", "Encounter order and turn controls"), portraitInitials: "E" };
     case ShellDestination.Journal:
       if (journal?.page && !journal.page.unavailable) {
         return {
           title: journal.page.title,
-          subtitle: `${journal.page.entryName} - ${getJournalPageTypeLabel(journal.page.pageType)}`,
+          subtitle: localize("POCKETFOUNDRY.Format.TypeSource", "{type} - {source}", { type: journal.page.entryName, source: getJournalPageTypeLabel(journal.page.pageType) }),
           portraitInitials: getJournalPageIconText(journal.page)
         };
       }
@@ -192,20 +199,20 @@ export function getHeader(
       if (journal?.entry && !journal.entry.unavailable) {
         return {
           title: journal.entry.name,
-          subtitle: "Journal Entry - visible pages",
+          subtitle: localize("POCKETFOUNDRY.Journal.EntryVisiblePages", "Journal Entry - visible pages"),
           portraitInitials: getInitials(journal.entry.name, "J")
         };
       }
 
-      return { title: "Journal", subtitle: "Visible entries and pages", portraitInitials: "J" };
+      return { title: localize("POCKETFOUNDRY.Route.Journal", "Journal"), subtitle: localize("POCKETFOUNDRY.Journal.Subtitle", "Visible entries and pages"), portraitInitials: "J" };
     case ShellDestination.Recents:
-      return { title: "Recents", subtitle: "Recently opened mobile views", portraitInitials: "R" };
+      return { title: localize("POCKETFOUNDRY.Recents.Title", "Recents"), subtitle: localize("POCKETFOUNDRY.Recents.Subtitle", "Recently opened mobile views"), portraitInitials: "R" };
     case ShellDestination.Search:
-      return { title: "Search", subtitle: "Find Characters, Items, Journals, and Compendiums", portraitInitials: "S" };
+      return { title: localize("POCKETFOUNDRY.Route.Search", "Search"), subtitle: localize("POCKETFOUNDRY.Search.Subtitle", "Find Characters, Items, Journals, and Compendiums"), portraitInitials: "S" };
     case ShellDestination.Settings:
-      return { title: "Settings", subtitle: "User-specific mobile mode controls", portraitInitials: "PF" };
+      return { title: localize("POCKETFOUNDRY.Settings.Title", "Settings"), subtitle: localize("POCKETFOUNDRY.Settings.Subtitle", "User-specific mobile mode controls"), portraitInitials: "PF" };
     case ShellDestination.Characters:
-      return { title: "Characters", subtitle: "Observable player characters", portraitInitials: "PF" };
+      return { title: localize("POCKETFOUNDRY.Route.Characters", "Characters"), subtitle: localize("POCKETFOUNDRY.CharacterPicker.Subtitle", "Observable player characters"), portraitInitials: "PF" };
   }
 }
 
@@ -335,7 +342,10 @@ export async function runCharacterSheetAction(
   const result = await characterSheetAdapter.runPaneAction(actionContext);
   characterSheetAdapter.onPaneActionResult?.({ actionContext, result });
 
-  if (!result.ok) return;
+  if (!result.ok) {
+    notifyCharacterSheetActionUnavailable(result.reason);
+    return;
+  }
 
   if (options.closeDialogs) setNumberDialogOpen(element, undefined, false);
   await options.onSuccess?.(result);
@@ -369,12 +379,24 @@ export async function runJournalControl(
 export function notifyJournalMutationUnavailable(reason?: JournalPageMutationResult["reason"]): void {
   const notifications = getFoundryRuntime().ui?.notifications;
   const message = reason === "forbidden"
-    ? "You do not have permission to modify this journal page."
+    ? localize("POCKETFOUNDRY.Journal.Error.Forbidden", "You do not have permission to modify this journal page.")
     : reason === "invalid"
-      ? "Enter a page name before saving."
+      ? localize("POCKETFOUNDRY.Journal.Error.NameRequired", "Enter a page name before saving.")
       : reason === "upload-failed"
-        ? "The selected file could not be uploaded."
-      : "This journal page action is not available here.";
+        ? localize("POCKETFOUNDRY.Journal.Error.UploadFailed", "The selected file could not be uploaded.")
+      : localize("POCKETFOUNDRY.Journal.Error.Unavailable", "This journal page action is not available here.");
+  notifications?.warn?.(message);
+}
+
+export function notifyCharacterSheetActionUnavailable(reason?: string): void {
+  const notifications = getFoundryRuntime().ui?.notifications;
+  const message = reason === "forbidden"
+    ? localize("POCKETFOUNDRY.Character.Error.Forbidden", "You do not have permission to change this character.")
+    : reason === "unavailable"
+      ? localize("POCKETFOUNDRY.Character.Error.OptionUnavailable", "That character option is no longer available.")
+      : reason === "unsupported"
+        ? localize("POCKETFOUNDRY.Character.Error.Unsupported", "That character action is not supported here.")
+        : localize("POCKETFOUNDRY.Character.Error.Failed", "The character action could not be completed.");
   notifications?.warn?.(message);
 }
 
@@ -502,14 +524,14 @@ export function setNumberDialogOpen(element: HTMLElement, dialogId: string | und
 
   const dialogElement = dialogId ? element.querySelector<HTMLElement>(`#${CSS.escape(dialogId)}`) : null;
   dialogElement?.classList.add("open");
-  dialogElement?.querySelectorAll<HTMLElement>(".spinner-wheel").forEach(wheel => ensureDetailsWheelOptions(wheel));
+  dialogElement?.querySelectorAll<HTMLElement>(".spinner-wheel").forEach(wheel => ensureNumberWheelOptions(wheel));
   dialogElement?.querySelector<HTMLElement>(".spinner-wheel .selected")?.scrollIntoView({ block: "center" });
 }
 
 /**
- * Stores the selected HP delta locally in the open dialog until OK confirms it.
+ * Stores the selected numeric delta locally in the open dialog until OK confirms it.
  */
-export function setDetailsSelectedDelta(target: HTMLElement): void {
+export function setNumberWheelSelectedDelta(target: HTMLElement): void {
   const wheel = target.closest<HTMLElement>(".spinner-wheel");
   const selectionScope = wheel?.dataset.wheelSelectScope === "wheel" ? "wheel" : "dialog";
   if (selectionScope === "wheel") {
@@ -527,56 +549,29 @@ export function setDetailsSelectedDelta(target: HTMLElement): void {
   if (confirm?.dataset.action?.endsWith("-delta")) confirm.dataset.delta = target.dataset.delta ?? "0";
 }
 
-export function getDetailsConfirmDelta(target: HTMLElement): number {
+export function getNumberDialogConfirmDelta(target: HTMLElement): number {
   const dialog = target.closest<HTMLElement>(".mock-dialog");
   const wheel = dialog?.querySelector<HTMLElement>(".spinner-wheel");
-  if (wheel) updateDetailsWheelSelection(wheel);
+  if (wheel) updateNumberWheelSelection(wheel);
 
   return Number(target.dataset.delta);
 }
 
-export function getDetailsRestActionData(target: HTMLElement): Record<string, string> {
-  const dialog = target.closest<HTMLElement>(".mock-dialog");
-  const type = target.dataset.restType === "long" ? "long" : "short";
-  const getChecked = (name: string): boolean | undefined => {
-    const input = dialog?.querySelector<HTMLInputElement>(`input[name="${CSS.escape(name)}"]`);
-    return input ? input.checked : undefined;
-  };
-
-  if (type === "short") {
-    return {
-      restType: "short",
-      type,
-      dialog: "false",
-      autoHD: getChecked("autoHD") === true ? "true" : "false"
-    };
-  }
-
-  return {
-    restType: "long",
-    type,
-    dialog: "false",
-    newDay: getChecked("newDay") === false ? "false" : "true",
-    recoverTemp: getChecked("recoverTemp") === false ? "false" : "true",
-    recoverTempMax: getChecked("recoverTempMax") === false ? "false" : "true"
-  };
-}
-
-export function updateDetailsWheelSelection(wheel: HTMLElement): void {
-  ensureDetailsWheelOptions(wheel);
-  const selected = getCenteredDetailsWheelOption(wheel) ?? wheel.querySelector<HTMLElement>(".selected");
+export function updateNumberWheelSelection(wheel: HTMLElement): void {
+  ensureNumberWheelOptions(wheel);
+  const selected = getCenteredNumberWheelOption(wheel) ?? wheel.querySelector<HTMLElement>(".selected");
   if (!selected) return;
 
-  setDetailsSelectedDelta(selected);
+  setNumberWheelSelectedDelta(selected);
 }
 
-export function ensureDetailsWheelOptions(wheel: HTMLElement): void {
+export function ensureNumberWheelOptions(wheel: HTMLElement): void {
   if (wheel.dataset.wheelDynamic !== "true") return;
   initializeDynamicWheelOptions(wheel);
   extendDynamicWheelOptions(wheel);
 }
 
-export function setDetailsWheelValue(wheel: HTMLElement, value: number): void {
+export function setNumberWheelValue(wheel: HTMLElement, value: number): void {
   const normalized = Number.isFinite(value) ? Math.trunc(value) : 0;
   if (wheel.dataset.wheelDynamic === "true") {
     wheel.dataset.wheelValue = String(normalized);
@@ -595,7 +590,7 @@ export function setDetailsWheelValue(wheel: HTMLElement, value: number): void {
   centered?.scrollIntoView({ block: "center" });
 }
 
-export function getCenteredDetailsWheelOption(wheel: HTMLElement): HTMLElement | null {
+export function getCenteredNumberWheelOption(wheel: HTMLElement): HTMLElement | null {
   if (typeof wheel.getBoundingClientRect !== "function") return null;
 
   const wheelRect = wheel.getBoundingClientRect();
@@ -625,7 +620,7 @@ export function getCenteredDetailsWheelOption(wheel: HTMLElement): HTMLElement |
  */
 export function restoreRouteScroll(element: HTMLElement, route: MobileRoute): void {
   const shellElement = getShellScrollElement(element);
-  restoreExpandedDetailsState(shellElement, route);
+  restoreExpandedDrawerState(shellElement, route);
   const scrollTop = route.scrollTop ?? 0;
   if (!globalThis.requestAnimationFrame) {
     shellElement.scrollTop = scrollTop;
@@ -683,7 +678,7 @@ function extendDynamicWheelOptions(wheel: HTMLElement): void {
   const options = wheel.querySelectorAll<HTMLButtonElement>("button[data-delta]");
   if (options.length === 0) return;
 
-  const centered = getCenteredDetailsWheelOption(wheel);
+  const centered = getCenteredNumberWheelOption(wheel);
   if (!centered) return;
 
   const centeredButton = centered as HTMLButtonElement;
@@ -710,7 +705,7 @@ function extendDynamicWheelOptions(wheel: HTMLElement): void {
   }
 
   const refreshedOptions = wheel.querySelectorAll<HTMLButtonElement>("button[data-delta]");
-  const refreshedCentered = getCenteredDetailsWheelOption(wheel);
+  const refreshedCentered = getCenteredNumberWheelOption(wheel);
   const refreshedIndex = refreshedCentered ? [...refreshedOptions].indexOf(refreshedCentered as HTMLButtonElement) : centeredIndex;
   if (refreshedIndex >= refreshedOptions.length - 1 - DYNAMIC_WHEEL_EDGE_THRESHOLD && (min === null || bottom > min)) {
     const nextBottom = min === null ? bottom - chunkSize * step : Math.max(bottom - chunkSize * step, min);
@@ -738,7 +733,7 @@ function buildWheelButtons(
   for (let value = top; value >= bottom; value -= step) {
     const button = globalThis.document.createElement("button");
     button.type = "button";
-    button.dataset.action = wheel.dataset.wheelAction ?? "details-select-delta";
+    button.dataset.action = wheel.dataset.wheelAction ?? "number-select-delta";
     button.dataset.delta = String(value);
     if (selectedDelta !== null && value === selectedDelta) button.classList.add("selected");
     button.textContent = formatWheelLabel(value, { showSign, centerZeroLabel });
@@ -928,7 +923,7 @@ export function getFirstName(name: string | undefined): string {
   return name?.trim().split(/\s+/)[0] ?? "";
 }
 
-function restoreExpandedDetailsState(element: HTMLElement, route: MobileRoute): void {
+function restoreExpandedDrawerState(element: HTMLElement, route: MobileRoute): void {
   if (!canQueryChildren(element)) return;
 
   const drawers = element.querySelectorAll<HTMLDetailsElement>("details");

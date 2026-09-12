@@ -10,6 +10,7 @@ Standards for npm scripts, tsx scripts, esbuild bundling, and generated output.
 - Treat `dist/pocket-foundry/` as generated output.
 - Do not edit generated build output when the source in `src/` or `scripts/` should be changed.
 - Keep generated files clearly marked with the generator name.
+- Keep source assets and generated assets aligned with `agent-os/standards/repository/assets.md`.
 - Run `npm run build` when changes affect build scripts, module packaging, generated adapter registration, CSS compilation, or static asset output.
 
 ## Review Rules
@@ -27,3 +28,4 @@ The module is built from TypeScript, templates, styles, and static assets into `
 - `package.json`
 - `scripts/build.ts`
 - `agent-os/product/tech-stack.md`
+- `agent-os/standards/repository/assets.md`

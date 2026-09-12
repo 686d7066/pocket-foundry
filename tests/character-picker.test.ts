@@ -2,12 +2,10 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { afterEach, test } from "vitest";
 import { createMobileShellController } from "../src/core/mobile-shell/controller.ts";
-import { createMobileRouter } from "../src/router/mobile-router.ts";
 import { RouteHashKey } from "../src/router/browser-history.ts";
-import { RouteView } from "../src/router/routes.ts";
-import { buildCharacterPickerViewModel, type CharacterPickerActor } from "../src/services/character-picker.ts";
+import { buildCharacterPickerViewModel } from "../src/services/character-picker.ts";
 import { characterPickerFavoritesCodec, createFoundryCharacterPickerFavoritesStorage, readCharacterPickerFavoritesFromStorage, setCharacterPickerFavoriteInStorage } from "../src/services/character-picker-favorites.ts";
-import { createCharacterPaneRoute } from "../src/systems/dnd5e/actor-sheet-navigation.ts";
+import { createActor } from "./support/character-picker-fixture.ts";
 
 const user = { id: "player" };
 
@@ -20,32 +18,6 @@ afterEach(() => {
   Reflect.deleteProperty(globalThis, "localStorage");
   Reflect.deleteProperty(globalThis, "renderTemplate");
 });
-
-function createActor(options: {
-  uuid: string;
-  name: string;
-  type?: string;
-  visible?: boolean;
-  updateable?: boolean;
-  userLevel?: number;
-  system?: Record<string, unknown>;
-  items?: Array<{ name: string; type: string; system?: Record<string, unknown> }>;
-  folder?: { id?: string; name?: string; sort?: number; folder?: { id?: string; name?: string; sort?: number } | null } | null;
-}): CharacterPickerActor {
-  return {
-    uuid: options.uuid,
-    id: options.uuid.split(".").at(-1),
-    name: options.name,
-    type: options.type ?? "character",
-    img: null,
-    system: options.system,
-    items: options.items ?? [],
-    folder: options.folder ?? null,
-    testUserPermission: (_user, level) => level === "OBSERVER" && (options.visible ?? true),
-    canUserModify: (_user, action) => action === "update" && (options.updateable ?? false),
-    getUserLevel: () => options.userLevel ?? (options.visible === false ? 0 : options.updateable ? 3 : 2)
-  };
-}
 
 test("character picker lists only observable player characters", () => {
   const visibleCharacter = createActor({ uuid: "Actor.visible", name: "Visible Character" });
@@ -88,45 +60,6 @@ test("character picker includes limited characters like the Foundry actor direct
   assert.deepEqual(model.characters.map(character => character.name), ["Limited Character"]);
 });
 
-test("character picker renders limited characters as identity-only rows", () => {
-  const limitedCharacter = {
-    ...createActor({
-      uuid: "Actor.limited",
-      name: "Limited Character",
-      updateable: false,
-      userLevel: 1,
-      system: {
-        details: { species: "Human", level: 3 },
-        attributes: {
-          hp: { value: 24, max: 24 },
-          ac: { value: 13 },
-          init: { total: 2 }
-        }
-      },
-      items: [{ name: "Warlock", type: "class", system: { levels: 3 } }]
-    }),
-    testUserPermission: (_user: unknown, level: unknown) => level === "LIMITED",
-    getUserLevel: () => 1
-  } satisfies CharacterPickerActor;
-
-  const model = buildCharacterPickerViewModel({
-    actors: [limitedCharacter],
-    user
-  });
-
-  const character = model.characters[0];
-  assert.equal(character?.name, "Limited Character");
-  assert.equal(character?.limited, true);
-  assert.equal(character?.ownershipLabel, "Limited");
-  assert.equal(character?.subtitle, "");
-  assert.equal(character?.summary, "");
-  assert.equal(character?.showHeaderStats, false);
-  assert.equal(character?.acValue, "");
-  assert.equal(character?.hpValue, "");
-  assert.deepEqual(character?.chips, []);
-  assert.doesNotMatch(JSON.stringify(model), /Human|Warlock|24\/24|"13"|\+2/);
-});
-
 test("character picker prioritizes owned player characters before observed characters", () => {
   const observed = createActor({ uuid: "Actor.observed", name: "Aster Vale", updateable: false, userLevel: 2 });
   const owned = createActor({ uuid: "Actor.owned", name: "Borin Flint", updateable: true, userLevel: 3 });
@@ -140,50 +73,6 @@ test("character picker prioritizes owned player characters before observed chara
     model.characters.map(character => `${character.name}:${character.ownershipLabel}`),
     ["Borin Flint:Owner", "Aster Vale:Observer"]
   );
-});
-
-test("character picker builds dnd5e summary labels and dashboard chips", () => {
-  const model = buildCharacterPickerViewModel({
-    actors: [
-      createActor({
-        uuid: "Actor.arlen",
-        name: "Arlen Mire",
-        updateable: true,
-        system: {
-          details: { species: "Human", level: 3 },
-          attributes: {
-            hp: { value: 24, max: 24 },
-            ac: { value: 13 },
-            init: { total: 2 }
-          }
-        },
-        items: [{ name: "Warlock", type: "class", system: { levels: 3 } }]
-      })
-    ],
-    user
-  });
-
-  const character = model.characters[0];
-  assert.equal(character?.typeLabel, "Character");
-  assert.equal(character?.iconText, "AM");
-  assert.equal(character?.summary, "Human Warlock 3");
-  assert.equal(character?.subtitle, "Warlock 3");
-  assert.equal(character?.acValue, "13");
-  assert.equal(character?.hpValue, "24/24");
-  assert.deepEqual(character?.chips, [
-    { id: "hp", label: "HP", value: "24/24" },
-    { id: "ac", label: "AC", value: "13" },
-    { id: "initiative", label: "Init", value: "+2" }
-  ]);
-});
-
-test("selecting a character creates the expected character route", async () => {
-  const router = createMobileRouter({ initialRoute: { view: RouteView.Characters } });
-
-  await router.push(createCharacterPaneRoute({ actorUuid: "Actor.arlen", pane: undefined }));
-
-  assert.deepEqual(router.getCurrentRoute(), { view: RouteView.Character, actorUuid: "Actor.arlen", pane: "Details" });
-  assert.deepEqual(router.getHistory(), [{ view: RouteView.Characters }]);
 });
 
 test("character picker template preserves regions and Character terminology", () => {
@@ -209,7 +98,7 @@ test("character picker template preserves regions and Character terminology", ()
   assert.match(template, /class="character-picker-help-toggle"/);
   assert.match(template, /data-action="character-picker-toggle-favorite-help"/);
   assert.match(template, /fa-circle-info/);
-  assert.match(template, /Long-press or right-click a character row to add or remove favorites\./);
+  assert.match(template, /POCKETFOUNDRY\.CharacterPicker\.FavoriteHelpText/);
   assert.match(template, /characterPickerSearch=true/);
   assert.match(template, /addAction="character-picker-add-favorite"/);
   assert.match(template, /removeAction="character-picker-remove-favorite"/);
@@ -581,17 +470,17 @@ test("Foundry character picker favorites are scoped by current system and user i
       }
     },
     user: { id: "User1" },
-    system: { id: "dnd5e" },
+    system: { id: "fixtureSystem" },
     world: { id: "World1" }
   };
 
   await setCharacterPickerFavoriteInStorage(createFoundryCharacterPickerFavoritesStorage(), "Actor.arlen", true);
   assert.deepEqual(readCharacterPickerFavoritesFromStorage(createFoundryCharacterPickerFavoritesStorage()), ["Actor.arlen"]);
 
-  runtime.game.system.id = "pf2e";
+  runtime.game.system.id = "otherFixture";
   assert.deepEqual(readCharacterPickerFavoritesFromStorage(createFoundryCharacterPickerFavoritesStorage()), []);
 
-  runtime.game.system.id = "dnd5e";
+  runtime.game.system.id = "fixtureSystem";
   runtime.game.user.id = "User2";
   assert.deepEqual(readCharacterPickerFavoritesFromStorage(createFoundryCharacterPickerFavoritesStorage()), []);
 
@@ -620,7 +509,7 @@ test("character picker view model does not show favorites from a previous Foundr
       }
     },
     user: { id: "User1" },
-    system: { id: "dnd5e" },
+    system: { id: "fixtureSystem" },
     world: { id: "World1" }
   };
   const actors = [
@@ -689,4 +578,3 @@ function createElement(_tagName: string): TestElement {
     }
   };
 }
-

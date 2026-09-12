@@ -1,10 +1,14 @@
 import { RouteView } from "../../router/routes.ts";
 import type { MobileJournalService } from "../../services/journal.ts";
+import { awaitHandledShellTask, consumeShellActionEvent } from "./controller-helpers-ui.ts";
+import { closeJournalPageDeleteDialog, closeJournalPageDraftDialog, getJournalPageDraftFromForm, openJournalPageDeleteDialog, openJournalPageDraftDialog } from "./controller-helpers-journal-dialogs.ts";
 import { notifyJournalMutationUnavailable, rememberCurrentRouteScroll, runJournalControl } from "./controller-helpers-navigation.ts";
 import { getJournalParentRoute, renderShell } from "./controller-helpers-shell.ts";
-import { closeJournalPageDeleteDialog, closeJournalPageDraftDialog, consumeShellActionEvent, getJournalPageDraftFromForm, openJournalPageDeleteDialog, openJournalPageDraftDialog } from "./controller-helpers-ui.ts";
 import type { MobileShellActionContext } from "./event-context.ts";
 
+/**
+ * Handles journal navigation and mutation actions from delegated shell clicks.
+ */
 export async function handleJournalClickAction(context: MobileShellActionContext, target: HTMLElement, event: Event): Promise<boolean> {
   const { element, router, searchState } = context;
 
@@ -14,7 +18,7 @@ export async function handleJournalClickAction(context: MobileShellActionContext
           if (!entryUuid) return true;
 
           rememberCurrentRouteScroll(element, router);
-          void router.push({ view: RouteView.Journal, entryUuid }).then(() => renderShell(element, router, searchState));
+          await awaitHandledShellTask(element, router.push({ view: RouteView.Journal, entryUuid }).then(() => renderShell(element, router, searchState)), { kind: "navigation", action: target.dataset.action });
           return true;
         }
 
@@ -25,7 +29,7 @@ export async function handleJournalClickAction(context: MobileShellActionContext
           if (!entryUuid || !pageUuid) return true;
 
           rememberCurrentRouteScroll(element, router);
-          void router.push({ view: RouteView.Journal, entryUuid, pageUuid, scrollTop: 0 }).then(() => renderShell(element, router, searchState));
+          await awaitHandledShellTask(element, router.push({ view: RouteView.Journal, entryUuid, pageUuid, scrollTop: 0 }).then(() => renderShell(element, router, searchState)), { kind: "navigation", action: target.dataset.action });
           return true;
         }
 
@@ -62,7 +66,7 @@ export async function handleJournalClickAction(context: MobileShellActionContext
           if (!entryUuid || !pageUuid) return true;
 
           closeJournalPageDeleteDialog(element);
-          void runJournalControl(element, router, searchState, service => service.deletePage(pageUuid, entryUuid), { navigateToResult: true });
+          await awaitHandledShellTask(element, runJournalControl(element, router, searchState, service => service.deletePage(pageUuid, entryUuid), { navigateToResult: true }), { kind: "journal", action: target.dataset.action });
           return true;
         }
 
@@ -72,7 +76,7 @@ export async function handleJournalClickAction(context: MobileShellActionContext
           const pageUuid = target.dataset.pageUuid;
           if (!entryUuid || !pageUuid) return true;
 
-          void openJournalPageDraftDialog(element, { mode: "edit", entryUuid, pageUuid });
+          await awaitHandledShellTask(element, openJournalPageDraftDialog(element, { mode: "edit", entryUuid, pageUuid }), { kind: "journal", action: target.dataset.action });
           return true;
         }
 
@@ -99,7 +103,7 @@ export async function handleJournalClickAction(context: MobileShellActionContext
           const control = pageUuid
             ? (service: MobileJournalService) => service.updatePageFromDraft(pageUuid, entryUuid, draft)
             : (service: MobileJournalService) => service.createPageFromDraft(entryUuid, draft);
-          void runJournalControl(element, router, searchState, control, { navigateToResult: true }).then(() => closeJournalPageDraftDialog(element));
+          await awaitHandledShellTask(element, runJournalControl(element, router, searchState, control, { navigateToResult: true }).then(() => closeJournalPageDraftDialog(element)), { kind: "journal", action: target.dataset.action });
           return true;
         }
 
@@ -109,7 +113,7 @@ export async function handleJournalClickAction(context: MobileShellActionContext
           if (!parentRoute) return true;
 
           rememberCurrentRouteScroll(element, router);
-          void router.push(parentRoute).then(() => renderShell(element, router, searchState));
+          await awaitHandledShellTask(element, router.push(parentRoute).then(() => renderShell(element, router, searchState)), { kind: "navigation", action: target.dataset.action });
           return true;
         }
 

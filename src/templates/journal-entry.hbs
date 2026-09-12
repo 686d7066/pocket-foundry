@@ -8,33 +8,33 @@
   <section class="content pf-view journal-entry-view" data-region="journal-entry-pages" data-entry-uuid="{{uuid}}">
     <section class="section content-group pf-view-section journal-page-list">
       <div class="section-heading content-group-heading pf-view-section-heading journal-page-list-heading">
-        <h2>Journal Pages</h2>
+        <h2>{{localize 'POCKETFOUNDRY.Journal.Pages'}}</h2>
         {{#if canCreatePage}}
-          <button class="journal-create-page-button" type="button" data-action="journal-create-page" data-entry-uuid="{{uuid}}" aria-label="Create journal page" title="Create page">
+          <button class="journal-create-page-button" type="button" data-action="journal-create-page" data-entry-uuid="{{uuid}}" aria-label="{{localize 'POCKETFOUNDRY.Journal.CreatePage'}}" title="{{localize 'POCKETFOUNDRY.Journal.CreatePageShort'}}">
             <i class="fa-solid fa-plus" aria-hidden="true"></i>
-            <span>Create</span>
+            <span>{{localize 'POCKETFOUNDRY.Action.Create'}}</span>
           </button>
         {{/if}}
       </div>
       {{#if hasPages}}
-        <div class="content-table content-list pf-view-list journal-list">
+        <div class="content-table content-list pf-view-list journal-list" data-table-layout="icon-title-source-actions">
           <div class="content-list-head journal-list-head" aria-hidden="true">
-            <span>Name</span>
-            <span>Type</span>
+            <span>{{localize 'POCKETFOUNDRY.Table.Name'}}</span>
+            <span>{{localize 'POCKETFOUNDRY.Table.Type'}}</span>
             <span></span>
           </div>
           {{#each visiblePages}}
             <div class="row content-list-row journal-page-row">
-              <button class="journal-page-row-main" type="button" data-action="journal-open-page" data-entry-uuid="{{../uuid}}" data-page-uuid="{{uuid}}">
+              <button class="journal-page-row-main" data-table-cell-group type="button" data-action="journal-open-page" data-entry-uuid="{{../uuid}}" data-page-uuid="{{uuid}}">
                 <span class="item-icon" aria-hidden="true">{{iconText}}</span>
                 <span class="row-title content-row-title">
                   <strong>{{name}}</strong>
-                  <span>{{#if category}}{{category}}{{else}}Journal Page{{/if}}</span>
+                  <span>{{#if category}}{{category}}{{else}}{{localize 'POCKETFOUNDRY.Document.JournalPage'}}{{/if}}</span>
                 </span>
                 <span class="content-list-value journal-list-value">{{typeLabel}}</span>
               </button>
               {{#if canDelete}}
-                <button class="row-action content-list-action journal-page-delete-button" type="button" data-action="journal-delete-page" data-entry-uuid="{{../uuid}}" data-page-uuid="{{uuid}}" aria-label="Delete {{name}}" title="Delete page">
+                <button class="row-action content-list-action journal-page-delete-button" type="button" data-action="journal-delete-page" data-entry-uuid="{{../uuid}}" data-page-uuid="{{uuid}}" aria-label="{{localize 'POCKETFOUNDRY.Journal.DeletePageNamed' name=name}}" title="{{localize 'POCKETFOUNDRY.Journal.DeletePage'}}">
                   <i class="fa-solid fa-trash" aria-hidden="true"></i>
                 </button>
               {{else}}
@@ -44,7 +44,7 @@
           {{/each}}
         </div>
       {{else}}
-        {{> "modules/pocket-foundry/templates/partials/empty-state.hbs" title="No Visible Pages" body="Pages you can view will appear here."}}
+        {{> "modules/pocket-foundry/templates/partials/empty-state.hbs" title=(localize 'POCKETFOUNDRY.Journal.NoVisiblePages.Title') body=(localize 'POCKETFOUNDRY.Journal.NoVisiblePages.Body')}}
       {{/if}}
     </section>
   </section>

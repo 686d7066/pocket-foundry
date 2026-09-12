@@ -6,7 +6,7 @@ import type { ItemDetailViewModel } from "../../services/item-detail.ts";
 import type { JournalEntrySummaryViewModel, JournalEntryViewModel, JournalPageSummaryViewModel, JournalPageViewModel, UnavailableJournalViewModel } from "../../services/journal.ts";
 import type { RecentsViewModel } from "../../services/recents.ts";
 import { ALL_SEARCH_RESULT_TYPES, type MobileSearchResult, type SearchAdapterError, type SearchResultType } from "../../services/search.ts";
-import type { CharacterSheetNavigationModel, CharacterSheetTemplatePaths } from "../../systems/character-sheet-adapter.ts";
+import type { CharacterSheetHeaderContent, CharacterSheetNavigationModel, CharacterSheetPaneViewModel } from "../../systems/character-sheet-adapter.ts";
 
 
 /**
@@ -168,10 +168,9 @@ export type ShellViewModel = {
   actorSheet?: CharacterSheetNavigationModel & {
     canGoBack: boolean;
     showCharacterBanner: boolean;
-    headerDetails?: Record<string, unknown>;
-    paneTemplatePaths: CharacterSheetTemplatePaths;
+    activePaneContent?: CharacterSheetPaneViewModel;
+    headerContent?: CharacterSheetHeaderContent;
     favorites?: FavoritesModel;
-    [paneContext: string]: unknown;
   };
   journal?: JournalShellViewModel;
   combat?: CombatViewModel;
