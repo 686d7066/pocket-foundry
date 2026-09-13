@@ -191,7 +191,7 @@ export async function buildDnd5eFavoritesViewModel(options: {
     canUpdate,
     helpText: localize("POCKETFOUNDRY.Favorites.HelpText", "Use long-press or right-click to add or remove favorites."),
     emptyTitle: localize("POCKETFOUNDRY.Favorites.Empty.Title", "No Favorites"),
-    emptyBody: localize("POCKETFOUNDRY.Favorites.Empty.Body", "Add favorites from supported skills, tools, inventory, spells, features, effects, and resources."),
+    emptyBody: localize("POCKETFOUNDRY.Favorites.Empty.Body", "Add favorites from supported character sheet entries."),
     groups,
     sections: groups,
     rows,

@@ -84,7 +84,7 @@ test("actor sheet pane list contains every normal dnd5e character pane", () => {
   assert.equal(model.panes[0]?.displayLabel, "★");
   assert.equal(model.panes[0]?.railClass, "icon-only");
   assert.equal(model.actorName, "Arlen Mire");
-  assert.equal(model.classSummary, "Human Warlock 3");
+  assert.equal(model.summary, "Human Warlock 3");
 });
 
 test("limited dnd5e characters render identity only instead of normal sheet panes", () => {
@@ -100,7 +100,7 @@ test("limited dnd5e characters render identity only instead of normal sheet pane
   assert.equal(model.limited, true);
   assert.equal(model.actorName, "Lima Tallow");
   assert.equal(model.portraitImage, "limited.webp");
-  assert.equal(model.classSummary, "");
+  assert.equal(model.summary, "");
   assert.deepEqual(model.panes, []);
   assert.deepEqual(model.headerStats, []);
 });

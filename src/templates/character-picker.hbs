@@ -13,10 +13,13 @@
           <strong>{{name}}</strong>
           {{#if subtitle}}<span>{{subtitle}}</span>{{/if}}
         </span>
-        {{#if showHeaderStats}}
+        {{#if headerStats.length}}
           <span class="header-stats character-picker-header-stats" aria-hidden="true">
-            <span class="header-stat header-stat-ac"><b>{{acLabel}}</b><strong>{{acValue}}</strong></span>
-            <span class="header-stat header-stat-hp"><b>{{hpLabel}}</b><strong>{{hpValue}}</strong></span>
+            {{#each headerStats}}
+              <span class="header-stat" data-stat="{{id}}">
+                <b>{{label}}</b><strong>{{value}}</strong>{{#if suffix}}<em>{{suffix}}</em>{{/if}}
+              </span>
+            {{/each}}
           </span>
         {{/if}}
         {{> "modules/pocket-foundry/templates/partials/favorite-context-menu.hbs"

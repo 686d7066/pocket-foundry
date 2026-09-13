@@ -5,6 +5,7 @@ import { RouteView } from "../../../router/routes.ts";
 import { buildCharacterPickerViewModel, type CharacterPickerActor } from "../../../services/character-picker.ts";
 import { createCharacterPaneRoute } from "../actor-sheet-navigation.ts";
 import { createActor } from "../../../tests/support/character-picker-fixture.ts";
+import { dnd5eCharacterSheetAdapter } from "../dnd5e-character-sheet-adapter.ts";
 const user = { id: "player" };
 
 test("character picker renders limited characters as identity-only rows", () => {
@@ -30,7 +31,8 @@ test("character picker renders limited characters as identity-only rows", () => 
 
   const model = buildCharacterPickerViewModel({
     actors: [limitedCharacter],
-    user
+    user,
+    adapter: dnd5eCharacterSheetAdapter
   });
 
   const character = model.characters[0];
@@ -39,9 +41,7 @@ test("character picker renders limited characters as identity-only rows", () => 
   assert.equal(character?.ownershipLabel, "Limited");
   assert.equal(character?.subtitle, "");
   assert.equal(character?.summary, "");
-  assert.equal(character?.showHeaderStats, false);
-  assert.equal(character?.acValue, "");
-  assert.equal(character?.hpValue, "");
+  assert.deepEqual(character?.headerStats, []);
   assert.deepEqual(character?.chips, []);
   assert.doesNotMatch(JSON.stringify(model), /Human|Warlock|24\/24|"13"|\+2/);
 });
@@ -64,7 +64,8 @@ test("character picker builds dnd5e summary labels and dashboard chips", () => {
         items: [{ name: "Warlock", type: "class", system: { levels: 3 } }]
       })
     ],
-    user
+    user,
+    adapter: dnd5eCharacterSheetAdapter
   });
 
   const character = model.characters[0];
@@ -72,13 +73,28 @@ test("character picker builds dnd5e summary labels and dashboard chips", () => {
   assert.equal(character?.iconText, "AM");
   assert.equal(character?.summary, "Human Warlock 3");
   assert.equal(character?.subtitle, "Warlock 3");
-  assert.equal(character?.acValue, "13");
-  assert.equal(character?.hpValue, "24/24");
+  assert.deepEqual(character?.headerStats, [
+    { id: "ac", label: "AC", value: "13" },
+    { id: "hp", label: "HP", value: "24/24" }
+  ]);
   assert.deepEqual(character?.chips, [
     { id: "hp", label: "HP", value: "24/24" },
     { id: "ac", label: "AC", value: "13" },
     { id: "initiative", label: "Init", value: "+2" }
   ]);
+});
+
+test("dnd5e character picker excludes other actor types", () => {
+  const model = buildCharacterPickerViewModel({
+    actors: [
+      createActor({ uuid: "Actor.character", name: "Character", type: "character" }),
+      createActor({ uuid: "Actor.npc", name: "NPC", type: "npc" })
+    ],
+    user,
+    adapter: dnd5eCharacterSheetAdapter
+  });
+
+  assert.deepEqual(model.characters.map(row => row.uuid), ["Actor.character"]);
 });
 
 test("selecting a character creates the expected character route", async () => {

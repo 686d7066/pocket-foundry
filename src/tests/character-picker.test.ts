@@ -3,11 +3,29 @@ import { readFileSync } from "node:fs";
 import { afterEach, test } from "vitest";
 import { createMobileShellController } from "../core/mobile-shell/controller.ts";
 import { RouteHashKey } from "../router/browser-history.ts";
-import { buildCharacterPickerViewModel } from "../services/character-picker.ts";
+import {
+  buildCharacterPickerViewModel as buildCharacterPickerViewModelWithAdapter,
+  type CharacterPickerEnvironment
+} from "../services/character-picker.ts";
 import { characterPickerFavoritesCodec, createFoundryCharacterPickerFavoritesStorage, readCharacterPickerFavoritesFromStorage, setCharacterPickerFavoriteInStorage } from "../services/character-picker-favorites.ts";
 import { createActor } from "./support/character-picker-fixture.ts";
 
 const user = { id: "player" };
+const testPickerAdapter: CharacterPickerEnvironment["adapter"] = {
+  isCharacterPickerActor: actor => actor.type === "character",
+  buildCharacterPickerPresentation: ({ actor }) => ({
+    typeLabel: "Persona",
+    summary: `Profile for ${actor.name ?? "unknown"}`,
+    subtitle: "Synthetic profile",
+    headerStats: [{ id: "signal", label: "Signal", value: "7" }],
+    chips: [{ id: "origin", label: "Origin", value: "Outer Rim" }]
+  })
+};
+
+/** Builds shared picker test models through an explicitly supplied synthetic adapter. */
+function buildCharacterPickerViewModel(environment: Omit<CharacterPickerEnvironment, "adapter">) {
+  return buildCharacterPickerViewModelWithAdapter({ ...environment, adapter: testPickerAdapter });
+}
 
 afterEach(() => {
   Reflect.deleteProperty(globalThis, "document");
@@ -35,6 +53,63 @@ test("character picker lists only observable player characters", () => {
     ["Visible Character"]
   );
   assert.doesNotMatch(JSON.stringify(model), /Hidden Character|Visible NPC/);
+});
+
+test("character picker carries an unrelated adapter presentation without reading actor system data", () => {
+  const visiblePilot = createActor({
+    uuid: "Actor.pilot",
+    name: "Kei Voss",
+    type: "pilot",
+    system: { plasmaFlux: { current: 91 }, originCode: "RX-7" }
+  });
+  const limitedPilot = {
+    ...createActor({
+      uuid: "Actor.limited-pilot",
+      name: "Hidden Profile",
+      type: "pilot",
+      updateable: false,
+      userLevel: 1,
+      system: { plasmaFlux: { current: 1000 }, originCode: "SECRET" }
+    }),
+    testUserPermission: (_user: unknown, level: unknown) => level === "LIMITED",
+    getUserLevel: () => 1
+  };
+  let presentationCalls = 0;
+  const adapter: CharacterPickerEnvironment["adapter"] = {
+    isCharacterPickerActor: actor => actor.type === "pilot",
+    buildCharacterPickerPresentation: ({ actor }) => {
+      presentationCalls += 1;
+      const flux = (actor.system?.plasmaFlux as { current?: number } | undefined)?.current ?? 0;
+      return {
+        typeLabel: "Void Pilot",
+        summary: "RX-7 expedition lead",
+        subtitle: "Signal runner",
+        headerStats: [
+          { id: "flux", label: "Flux", value: String(flux), suffix: "%" },
+          { id: "resolve", label: "Resolve", value: "4" },
+          { id: "stress", label: "Stress", value: "2" }
+        ],
+        chips: [{ id: "clearance", label: "Clearance", value: "Gamma" }]
+      };
+    }
+  };
+
+  const model = buildCharacterPickerViewModelWithAdapter({ actors: [visiblePilot, limitedPilot], user, adapter });
+
+  assert.equal(presentationCalls, 1);
+  assert.deepEqual(model.characters[0]?.headerStats, [
+    { id: "flux", label: "Flux", value: "91", suffix: "%" },
+    { id: "resolve", label: "Resolve", value: "4" },
+    { id: "stress", label: "Stress", value: "2" }
+  ]);
+  assert.equal(model.characters[0]?.summary, "RX-7 expedition lead");
+  assert.equal(model.characters[0]?.subtitle, "Signal runner");
+  assert.deepEqual(model.characters[0]?.chips, [{ id: "clearance", label: "Clearance", value: "Gamma" }]);
+  const limitedRow = model.characters.find(row => row.uuid === "Actor.limited-pilot");
+  assert.equal(limitedRow?.limited, true);
+  assert.equal(limitedRow?.summary, "");
+  assert.deepEqual(limitedRow?.headerStats, []);
+  assert.doesNotMatch(JSON.stringify(limitedRow), /SECRET|1000/);
 });
 
 test("character picker includes limited characters like the Foundry actor directory", () => {
@@ -91,7 +166,9 @@ test("character picker template preserves regions and Character terminology", ()
   assert.match(template, /class="header-stats character-picker-header-stats"/);
   assert.match(template, /character-picker-row-limited/);
   assert.match(template, /\{\{#if subtitle\}\}<span>\{\{subtitle\}\}<\/span>\{\{\/if\}\}/);
-  assert.match(template, /\{\{#if showHeaderStats\}\}[\s\S]*class="header-stats character-picker-header-stats"/);
+  assert.match(template, /\{\{#if headerStats\.length\}\}[\s\S]*class="header-stats character-picker-header-stats"/);
+  assert.match(template, /\{\{#each headerStats\}\}/);
+  assert.doesNotMatch(template, /acLabel|acValue|hpLabel|hpValue/);
   assert.match(template, /class="character-folder-toggle"/);
   assert.match(template, /data-action="character-picker-toggle-folder"/);
   assert.match(template, /class="character-picker-block-heading character-picker-block-heading-help"/);
@@ -209,7 +286,7 @@ test("character picker anchor clicks prevent browser navigation and use the inte
     value: async (_path: string, data: { activeDestination: string; bottomNav: { items: Array<{ label: string }> } }) => {
       renderedRoute = data.activeDestination;
       assert.equal(data.bottomNav.items[0]?.label, "Characters");
-      return `<a class="row character-picker-row" href="#${RouteHashKey.Character}=Actor.arlen&pane=Details" data-action="open-character" data-uuid="Actor.arlen"></a>`;
+      return `<a class="row character-picker-row" href="#${RouteHashKey.Character}=Actor.arlen&pane=Unavailable" data-action="open-character" data-uuid="Actor.arlen"></a>`;
     }
   });
 
@@ -245,7 +322,7 @@ test("character picker anchor clicks prevent browser navigation and use the inte
   assert.equal(propagationStopped, true);
   assert.equal(immediatePropagationStopped, true);
   assert.equal(renderedRoute, RouteHashKey.Characters);
-  assert.equal(pushedUrl, `http://localhost/game#${RouteHashKey.Character}=Actor.arlen&pane=Details`);
+  assert.equal(pushedUrl, `http://localhost/game#${RouteHashKey.Character}=Actor.arlen&pane=Unavailable`);
   assert.equal(persistedCharacterUuid, "Actor.arlen");
 });
 

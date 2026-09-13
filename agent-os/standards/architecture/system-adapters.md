@@ -17,7 +17,9 @@ System-specific code, templates, constants, action names, view models, helpers, 
 Core code may:
 
 - Ask for the active adapter through `getCharacterSheetAdapter()`.
-- Call adapter methods such as `buildPaneViewModel`, `runPaneAction`, `getPaneContext`, and `getPaneTemplatePaths`.
+- Call adapter methods such as `buildPaneViewModel`, `runPaneAction`, `getPaneContext`, and `getTemplatePaths`.
+- Use `isCharacterPickerActor` for system-owned actor classification and render the labeled summaries and stat lists returned by `buildCharacterPickerPresentation`.
+- Use the optional `getItemDetailCapability` to obtain item presentation while keeping document lookup, permission checks, and safe rich-text enrichment in shared services.
 - Store and route generic mobile state such as active route, selected pane id, drawer state, scroll position, and search input.
 
 Core code must not:
@@ -28,6 +30,16 @@ Core code must not:
 - Know concrete system action names like spell preparation, hit dice, effects, favorites, rest, item use, or similar workflows.
 - Hard-code concrete template paths owned by a system folder.
 - Reach into actor, item, effect, activity, or system data structures for a specific system.
+
+Shared picker code must check visibility before adapter classification and must
+not request system presentation for LIMITED actors. Unsupported systems may
+show permission-checked identity rows without interpreting actor types or system
+fields.
+
+Adapters define their own pane ids and preload template arrays. They do not need
+to provide unrelated panes, header templates, item details, or favorites support.
+Adapter templates can mark rich-text readers with `data-document-links` to use
+the shell's generic document-link navigation.
 
 When adding a new system:
 
