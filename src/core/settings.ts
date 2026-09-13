@@ -50,7 +50,9 @@ export function registerMobileViewSetting(shell: MobileShellController): void {
     type: Boolean,
     default: false,
     onChange: value => {
-      void shell.setMobileViewEnabled(Boolean(value));
+      void shell.setMobileViewEnabled(Boolean(value)).catch(error => {
+        globalThis.console?.error?.(MODULE_ID + " failed to apply the mobile view setting.", error);
+      });
     }
   });
 
@@ -62,7 +64,9 @@ export function registerMobileViewSetting(shell: MobileShellController): void {
     type: Boolean,
     default: true,
     onChange: () => {
-      void shell.refresh();
+      void shell.refresh().catch(error => {
+        globalThis.console?.error?.(MODULE_ID + " failed to refresh the mobile shell after a setting changed.", error);
+      });
     }
   });
 
@@ -74,7 +78,9 @@ export function registerMobileViewSetting(shell: MobileShellController): void {
     type: Boolean,
     default: false,
     onChange: () => {
-      void shell.refresh();
+      void shell.refresh().catch(error => {
+        globalThis.console?.error?.(MODULE_ID + " failed to refresh the mobile shell after a setting changed.", error);
+      });
     }
   });
 

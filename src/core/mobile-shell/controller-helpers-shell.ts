@@ -1,4 +1,5 @@
 import { disposeTableLayout, initializeTableLayout } from "./table-layout.ts";
+import { beginShellRender, isShellRenderDisposed } from "./render-ownership.ts";
 import type { foundry } from "fvtt-types";
 import { type MobileRouter } from "../../router/mobile-router.ts";
 import { createShellRoute, getShellDestination, RouteView, ShellDestination, type CharacterRoute, type MobileRoute } from "../../router/routes.ts";
@@ -40,25 +41,43 @@ type JournalEntryPageClass = typeof foundry.documents.JournalEntryPage & {
 };
 
 
+/** Renders only while this request still owns the mounted root and current route. */
 export async function renderShell(rootElement: HTMLElement, router: MobileRouter, searchState?: SearchUiState): Promise<void> {
-  const handlebars = getFoundryHandlebars();
-  if (!handlebars.renderTemplate) {
-    throw new Error(`${MODULE_ID} cannot render the mobile shell before Foundry's template renderer is available.`);
-  }
+  if (isShellRenderDisposed(rootElement)) return;
+  // Normalization changes the route synchronously; claim that route before
+  // yielding, so a later navigation or render supersedes this entire request.
+  const normalizedRoute = normalizeUnavailableCombatRoute(router);
+  const isCurrent = beginShellRender(rootElement, router);
+  try {
+    const activeRoute = await normalizedRoute;
+    if (!isCurrent()) return;
+    const handlebars = getFoundryHandlebars();
+    if (!handlebars.renderTemplate) {
+      throw new Error(`${MODULE_ID} cannot render the mobile shell before Foundry's template renderer is available.`);
+    }
 
-  const activeRoute = await normalizeUnavailableCombatRoute(router);
-  const selectedCharacterRoute = router.getSelectedCharacterRoute();
-  if (searchState) await prepareSearchForRender(activeRoute, searchState);
-  persistSelectedCharacterRoute(selectedCharacterRoute);
-  await createFoundryRecentsService()?.recordRoute(activeRoute);
-  const html = await handlebars.renderTemplate(SHELL_TEMPLATE, await buildShellViewModel(activeRoute, router.canGoBack(), selectedCharacterRoute, searchState));
-  disposeTableLayout(rootElement);
-  rootElement.innerHTML = html;
-  restoreRouteScroll(rootElement, router.getCurrentRoute());
-  restoreSearchFocus(rootElement, activeRoute);
-  restorePaneSearchFocus(rootElement, activeRoute);
-  restoreCharacterPickerSearchFocus(rootElement, activeRoute);
-  initializeTableLayout(rootElement);
+    const selectedCharacterRoute = router.getSelectedCharacterRoute();
+    if (searchState) await prepareSearchForRender(activeRoute, searchState);
+    if (!isCurrent()) return;
+    persistSelectedCharacterRoute(selectedCharacterRoute);
+    await createFoundryRecentsService()?.recordRoute(activeRoute);
+    if (!isCurrent()) return;
+    const viewModel = await buildShellViewModel(activeRoute, router.canGoBack(), selectedCharacterRoute, searchState);
+    if (!isCurrent()) return;
+    const html = await handlebars.renderTemplate(SHELL_TEMPLATE, viewModel);
+    if (!isCurrent()) return;
+    disposeTableLayout(rootElement);
+    rootElement.innerHTML = html;
+    restoreRouteScroll(rootElement, router.getCurrentRoute(), isCurrent);
+    restoreSearchFocus(rootElement, activeRoute, isCurrent);
+    restorePaneSearchFocus(rootElement, activeRoute, isCurrent);
+    restoreCharacterPickerSearchFocus(rootElement, activeRoute, isCurrent);
+    initializeTableLayout(rootElement);
+  } catch (error) {
+    // An obsolete failure must not open an error dialog on the newer screen.
+    // Current failures still reach the caller's existing error boundary.
+    if (isCurrent()) throw error;
+  }
 }
 
 async function normalizeUnavailableCombatRoute(router: MobileRouter): Promise<MobileRoute> {

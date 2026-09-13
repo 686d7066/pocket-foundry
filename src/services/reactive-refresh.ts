@@ -1,6 +1,7 @@
 import type { foundry } from "fvtt-types";
 import { RouteView, type MobileRoute } from "../router/routes.ts";
 import { getObject, getString } from "../core/utils.ts";
+import { MODULE_ID } from "../core/constants.ts";
 
 type FoundryHookName = Parameters<typeof foundry.helpers.Hooks.on>[0];
 type FoundryHookCallback = (...args: unknown[]) => void;
@@ -71,7 +72,8 @@ export const REACTIVE_REFRESH_HOOKS = [
 
 /**
  * Registers Foundry document lifecycle hooks and coalesces matching route
- * refreshes into one microtask. Foundry v14 fires create/update/delete hooks
+ * refreshes into one microtask, then drains invalidations without overlapping
+ * refreshes. Foundry v14 fires create/update/delete hooks
  * after the database operation on every connected client, so the shell can
  * safely rebuild view models from current documents here without polling.
  */
@@ -93,7 +95,9 @@ export function createReactiveRefreshController(options: ReactiveRefreshControll
   let refreshQueued = false;
   let disposed = false;
 
+  /** Coalesces new invalidations while a queued or running refresh owns the drain. */
   function queueRefresh(invalidation: RefreshInvalidation): void {
+    if (disposed) return;
     const route = options.getRoute();
     if (!shouldRefreshRoute(route, invalidation)) return;
 
@@ -107,22 +111,31 @@ export function createReactiveRefreshController(options: ReactiveRefreshControll
     });
   }
 
+  /** Runs trailing refreshes and contains failures without stranding later work. */
   async function flushRefresh(): Promise<void> {
-    if (disposed || !queuedInvalidation) return;
-
-    const invalidation = queuedInvalidation;
-    const searchInvalidated = queuedSearchInvalidation;
-    queuedInvalidation = undefined;
-    queuedSearchInvalidation = false;
-    refreshQueued = false;
-    options.preserveTransientState?.();
-
-    if (searchInvalidated && options.onSearchInvalidated) {
-      await options.onSearchInvalidated(invalidation);
-      return;
+    try {
+      while (!disposed && queuedInvalidation) {
+        const invalidation = queuedInvalidation;
+        const searchInvalidated = queuedSearchInvalidation;
+        queuedInvalidation = undefined;
+        queuedSearchInvalidation = false;
+        try {
+          // A queued search invalidation may outlive navigation away from Search.
+          const route = options.getRoute();
+          if (!shouldRefreshRoute(route, invalidation)) continue;
+          options.preserveTransientState?.();
+          if (searchInvalidated && shouldInvalidateSearch(route, invalidation) && options.onSearchInvalidated) {
+            await options.onSearchInvalidated(invalidation);
+          } else {
+            await options.onRefresh(invalidation);
+          }
+        } catch (error) {
+          globalThis.console?.error?.(MODULE_ID + " failed to refresh the mobile shell.", error);
+        }
+      }
+    } finally {
+      refreshQueued = false;
     }
-
-    await options.onRefresh(invalidation);
   }
 
   return {

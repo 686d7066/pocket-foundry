@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { afterEach, test } from "vitest";
+import { afterEach, test, vi } from "vitest";
 import { handleReadyMobileLifecycle } from "../src/core/mobile-startup.ts";
 import {
   COLOR_BLIND_MODE_SETTING,
@@ -19,6 +19,34 @@ afterEach(() => {
   Reflect.deleteProperty(globalThis, "game");
   Reflect.deleteProperty(globalThis, "localStorage");
   Reflect.deleteProperty(globalThis, "matchMedia");
+});
+
+test("setting callbacks handle rejected shell work and remain usable afterward", async () => {
+  const callbacks: Array<(value: unknown) => void> = [];
+  const failure = new Error("template failed");
+  let failing = true;
+  let calls = 0;
+  const render = async () => { calls += 1; if (failing) throw failure; };
+  const log = vi.spyOn(console, "error").mockImplementation(() => undefined);
+  Object.defineProperty(globalThis, "game", { configurable: true, value: {
+    settings: { register: (_namespace: string, _key: string, config: { onChange?: (value: unknown) => void }) => {
+      if (config.onChange) callbacks.push(config.onChange);
+    } }
+  } });
+  try {
+    registerMobileViewSetting({ isMounted: () => true, mount: render, unmount: () => undefined, setMobileViewEnabled: render, refresh: render });
+    callbacks.forEach(callback => callback(true));
+    await Promise.resolve();
+    assert.equal(log.mock.calls.length, 3);
+    assert.ok(log.mock.calls.every(call => call[1] === failure));
+    failing = false;
+    callbacks.forEach(callback => callback(false));
+    await Promise.resolve();
+    assert.equal(calls, 6);
+    assert.equal(log.mock.calls.length, 3);
+  } finally {
+    log.mockRestore();
+  }
 });
 
 test("mobile view setting is user scoped and opt-in by default", () => {

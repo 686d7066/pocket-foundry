@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { test } from "vitest";
+import { test, vi } from "vitest";
 import { RouteView, type MobileRoute } from "../src/router/routes.ts";
 import {
   createReactiveRefreshController,
@@ -96,6 +96,90 @@ test("controller coalesces hook bursts, preserves transient route state, and rer
   await settle();
 
   assert.deepEqual(calls, ["preserve:330:Spell:Item.bane", "search:bane:Spell:Item.bane"]);
+});
+
+test("invalidations during an active refresh coalesce into one trailing refresh", async () => {
+  const hooks = createHooksFixture();
+  let complete: () => void = () => undefined;
+  const pending = new Promise<void>(resolve => { complete = resolve; });
+  let calls = 0;
+  const controller = createReactiveRefreshController({
+    hooks: hooks.hooks,
+    getRoute: () => ({ view: RouteView.Characters }),
+    onRefresh: async () => { calls += 1; if (calls === 1) await pending; }
+  });
+  hooks.emit("updateActor", document("Actor.one"));
+  await settle();
+  hooks.emit("updateActor", document("Actor.one"));
+  hooks.emit("updateActor", document("Actor.two"));
+  await settle();
+  assert.equal(calls, 1);
+  complete();
+  await settle();
+  assert.equal(calls, 2);
+  controller.dispose();
+});
+
+test("a rejected refresh is handled and does not strand pending or future invalidations", async () => {
+  const hooks = createHooksFixture();
+  let fail: (error: Error) => void = () => undefined;
+  const pending = new Promise<void>((_resolve, reject) => { fail = reject; });
+  let calls = 0;
+  const log = vi.spyOn(console, "error").mockImplementation(() => undefined);
+  const controller = createReactiveRefreshController({
+    hooks: hooks.hooks,
+    getRoute: () => ({ view: RouteView.Characters }),
+    onRefresh: async () => { calls += 1; if (calls === 1) await pending; }
+  });
+  try {
+    hooks.emit("updateActor", document("Actor.one"));
+    await settle();
+    hooks.emit("updateActor", document("Actor.one"));
+    fail(new Error("refresh failed"));
+    await settle();
+    assert.equal(log.mock.calls.length, 1);
+    assert.equal(calls, 2);
+    hooks.emit("updateActor", document("Actor.one"));
+    await settle();
+    assert.equal(calls, 3);
+  } finally {
+    controller.dispose();
+    log.mockRestore();
+  }
+});
+
+test("disposal drops trailing refreshes while the active callback settles", async () => {
+  const hooks = createHooksFixture();
+  let complete: () => void = () => undefined;
+  const pending = new Promise<void>(resolve => { complete = resolve; });
+  let calls = 0;
+  const controller = createReactiveRefreshController({
+    hooks: hooks.hooks,
+    getRoute: () => ({ view: RouteView.Characters }),
+    onRefresh: async () => { calls += 1; await pending; }
+  });
+  hooks.emit("updateActor", document("Actor.one"));
+  await settle();
+  hooks.emit("updateActor", document("Actor.one"));
+  controller.dispose();
+  complete();
+  await settle();
+  assert.equal(calls, 1);
+  assert.equal(hooks.callbacks.size, 0);
+});
+
+test("a queued search refresh follows the current route after navigation", async () => {
+  const hooks = createHooksFixture();
+  let route: MobileRoute = { view: RouteView.Search, query: "query" };
+  const refresh = vi.fn();
+  const search = vi.fn();
+  const controller = createReactiveRefreshController({ hooks: hooks.hooks, getRoute: () => route, onRefresh: refresh, onSearchInvalidated: search });
+  hooks.emit("updateActor", document("Actor.one"));
+  route = { view: RouteView.Characters };
+  await settle();
+  assert.equal(refresh.mock.calls.length, 1);
+  assert.equal(search.mock.calls.length, 0);
+  controller.dispose();
 });
 
 function document(uuid: string, options: { parent?: Record<string, unknown> } = {}): Record<string, unknown> {
