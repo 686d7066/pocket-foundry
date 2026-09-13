@@ -90,8 +90,7 @@ export function createReactiveRefreshController(options: ReactiveRefreshControll
     return () => hooks.off?.(hookName, typeof id === "number" ? id : callback);
   });
 
-  let queuedInvalidation: RefreshInvalidation | undefined;
-  let queuedSearchInvalidation = false;
+  let queuedInvalidations: RefreshInvalidation[] = [];
   let refreshQueued = false;
   let disposed = false;
 
@@ -101,8 +100,7 @@ export function createReactiveRefreshController(options: ReactiveRefreshControll
     const route = options.getRoute();
     if (!shouldRefreshRoute(route, invalidation)) return;
 
-    queuedSearchInvalidation = queuedSearchInvalidation || shouldInvalidateSearch(route, invalidation);
-    queuedInvalidation = mergeInvalidations(queuedInvalidation, invalidation);
+    queuedInvalidations.push(invalidation);
     if (refreshQueued) return;
 
     refreshQueued = true;
@@ -114,17 +112,15 @@ export function createReactiveRefreshController(options: ReactiveRefreshControll
   /** Runs trailing refreshes and contains failures without stranding later work. */
   async function flushRefresh(): Promise<void> {
     try {
-      while (!disposed && queuedInvalidation) {
-        const invalidation = queuedInvalidation;
-        const searchInvalidated = queuedSearchInvalidation;
-        queuedInvalidation = undefined;
-        queuedSearchInvalidation = false;
+      while (!disposed && queuedInvalidations.length > 0) {
+        const invalidations = queuedInvalidations;
+        queuedInvalidations = [];
         try {
-          // A queued search invalidation may outlive navigation away from Search.
           const route = options.getRoute();
-          if (!shouldRefreshRoute(route, invalidation)) continue;
+          const invalidation = getLatestRelevantInvalidation(route, invalidations);
+          if (!invalidation) continue;
           options.preserveTransientState?.();
-          if (searchInvalidated && shouldInvalidateSearch(route, invalidation) && options.onSearchInvalidated) {
+          if (shouldInvalidateSearch(route, invalidation) && options.onSearchInvalidated) {
             await options.onSearchInvalidated(invalidation);
           } else {
             await options.onRefresh(invalidation);
@@ -141,8 +137,7 @@ export function createReactiveRefreshController(options: ReactiveRefreshControll
   return {
     dispose: () => {
       disposed = true;
-      queuedInvalidation = undefined;
-      queuedSearchInvalidation = false;
+      queuedInvalidations = [];
       refreshQueued = false;
       unsubscribers.forEach(unsubscribe => unsubscribe());
     }
@@ -226,18 +221,18 @@ function shouldInvalidateSearch(route: MobileRoute, invalidation: RefreshInvalid
   return route.view === RouteView.Search && Boolean(invalidation.kind);
 }
 
-function mergeInvalidations(current: RefreshInvalidation | undefined, next: RefreshInvalidation): RefreshInvalidation {
-  if (!current) return next;
-
-  return {
-    hookName: current.hookName === next.hookName ? current.hookName : "multiple",
-    kind: current.kind === next.kind ? current.kind : next.kind,
-    action: current.action === next.action ? current.action : "update",
-    uuid: current.uuid ?? next.uuid,
-    parentUuid: current.parentUuid ?? next.parentUuid,
-    changed: current.changed ?? next.changed,
-    permissionRelated: current.permissionRelated || next.permissionRelated
-  };
+/**
+ * Selects one coherent invalidation for the route from a coalesced hook burst.
+ * Keeping each record intact until this point prevents unrelated UUIDs, parent
+ * UUIDs, and global invalidation kinds from being combined before navigation
+ * settles.
+ */
+function getLatestRelevantInvalidation(route: MobileRoute, invalidations: RefreshInvalidation[]): RefreshInvalidation | undefined {
+  for (let index = invalidations.length - 1; index >= 0; index -= 1) {
+    const invalidation = invalidations[index];
+    if (invalidation && shouldRefreshRoute(route, invalidation)) return invalidation;
+  }
+  return undefined;
 }
 
 /**

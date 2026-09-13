@@ -46,7 +46,13 @@ export function createInitialSearchUiState(): SearchUiState {
  * for restored routes so Back can return to a populated search overlay.
  */
 export async function prepareSearchForRender(route: MobileRoute, searchState: SearchUiState): Promise<void> {
-  if (route.view !== RouteView.Search) return;
+  if (route.view !== RouteView.Search) {
+    if (searchState.debounceTimer) {
+      clearSearchDebounce(searchState);
+      searchState.loading = false;
+    }
+    return;
+  }
 
   const query = route.query ?? "";
   const typeFilter = normalizeSearchTypeFilter(route.typeFilter);
@@ -54,25 +60,46 @@ export async function prepareSearchForRender(route: MobileRoute, searchState: Se
   const stateChanged = searchState.query !== query || searchState.typeFilter !== typeFilter;
 
   if (stateChanged) {
+    supersedeMismatchedSearchWork(searchState, nextKey);
     searchState.query = query;
     searchState.typeFilter = typeFilter;
     searchState.errors = [];
-    if (!hasUsableSearchQuery(query)) {
-      searchState.results = [];
-      searchState.completedKey = nextKey;
-    }
   }
 
-  if (hasUsableSearchQuery(query) && searchState.completedKey !== nextKey && !searchState.loading) {
-    await executeSearch(
-      searchState,
-      createFoundrySearchService({
-        parentPaneForOwnedItems: getCharacterSheetAdapter().getDefaultOwnedItemParentPane(),
-        additionalAdapters: getCharacterSheetSearchAdapters(),
-        compendiumSearch: getCharacterSheetAdapter().getCompendiumSearchCustomization?.()
-      })
-    );
+  if (!hasUsableSearchQuery(query)) {
+    supersedeAllSearchWork(searchState);
+    searchState.results = [];
+    searchState.errors = [];
+    searchState.loading = false;
+    searchState.completedKey = nextKey;
+    return;
   }
+
+  const inFlightRequest = searchState.inFlightRequest;
+  if (inFlightRequest?.key === nextKey) {
+    searchState.loading = true;
+    await inFlightRequest.promise;
+    return;
+  }
+
+  if (searchState.debounceKey === nextKey) {
+    searchState.loading = true;
+    return;
+  }
+
+  if (searchState.completedKey === nextKey) {
+    searchState.loading = false;
+    return;
+  }
+
+  await executeSearch(
+    searchState,
+    createFoundrySearchService({
+      parentPaneForOwnedItems: getCharacterSheetAdapter().getDefaultOwnedItemParentPane(),
+      additionalAdapters: getCharacterSheetSearchAdapters(),
+      compendiumSearch: getCharacterSheetAdapter().getCompendiumSearchCustomization?.()
+    })
+  );
 }
 
 /**
@@ -149,10 +176,13 @@ export function getCharacterSheetSearchAdapters(): SearchAdapter[] {
 }
 
 /**
- * Debounces live search input while preserving the last completed result list.
+ * Debounces live search input while preserving completed results and invalidating
+ * requests that captured an earlier input state.
  */
 export function scheduleSearch(element: HTMLElement, router: MobileRouter, searchState: SearchUiState): void {
   clearSearchDebounce(searchState);
+  searchState.sequence += 1;
+  searchState.inFlightRequest = undefined;
   syncSearchStateFromRoute(router.getCurrentRoute(), searchState);
 
   if (!hasUsableSearchQuery(searchState.query)) {
@@ -165,10 +195,11 @@ export function scheduleSearch(element: HTMLElement, router: MobileRouter, searc
   }
 
   searchState.loading = true;
-  runHandledShellTask(element, renderShell(element, router, searchState), { kind: "render", action: "search-render-loading" });
+  searchState.debounceKey = getSearchRequestKey(searchState.query, searchState.typeFilter);
   searchState.debounceTimer = globalThis.setTimeout(() => {
     runHandledShellTask(element, runSearchImmediately(element, router, searchState), { kind: "search", action: "search-debounce" });
   }, SEARCH_DEBOUNCE_MS);
+  runHandledShellTask(element, renderShell(element, router, searchState), { kind: "render", action: "search-render-loading" });
 }
 
 /**
@@ -176,9 +207,15 @@ export function scheduleSearch(element: HTMLElement, router: MobileRouter, searc
  */
 export async function runSearchImmediately(element: HTMLElement, router: MobileRouter, searchState: SearchUiState): Promise<void> {
   clearSearchDebounce(searchState);
-  syncSearchStateFromRoute(router.getCurrentRoute(), searchState);
+  const route = router.getCurrentRoute();
+  if (route.view !== RouteView.Search) {
+    searchState.loading = false;
+    return;
+  }
+  syncSearchStateFromRoute(route, searchState);
 
   if (!hasUsableSearchQuery(searchState.query)) {
+    supersedeAllSearchWork(searchState);
     searchState.results = [];
     searchState.errors = [];
     searchState.loading = false;
@@ -199,23 +236,39 @@ export async function runSearchImmediately(element: HTMLElement, router: MobileR
 }
 
 /**
- * Executes a search with sequence-based stale result protection.
+ * Executes a fresh search with sequence-based stale result protection and
+ * exposes its keyed promise to render preparation successors.
  */
 export async function executeSearch(searchState: SearchUiState, service: MobileSearchService): Promise<void> {
+  const requestKey = getSearchRequestKey(searchState.query, searchState.typeFilter);
   const sequence = searchState.sequence + 1;
   searchState.sequence = sequence;
   searchState.loading = true;
   const query = searchState.query;
   const typeFilter = searchState.typeFilter;
-  const requestKey = getSearchRequestKey(query, typeFilter);
+  const request = (async (): Promise<void> => {
+    try {
+      const response = await service.searchWithDiagnostics({ query, typeFilter });
+      if (sequence !== searchState.sequence || requestKey !== getSearchRequestKey(searchState.query, searchState.typeFilter)) return;
 
-  const response = await service.searchWithDiagnostics({ query, typeFilter });
-  if (sequence !== searchState.sequence || requestKey !== getSearchRequestKey(searchState.query, searchState.typeFilter)) return;
+      searchState.results = response.results;
+      searchState.errors = response.errors;
+      searchState.loading = false;
+      searchState.completedKey = requestKey;
+    } catch (error) {
+      if (sequence === searchState.sequence && requestKey === getSearchRequestKey(searchState.query, searchState.typeFilter)) {
+        searchState.loading = false;
+      }
+      throw error;
+    }
+  })();
+  searchState.inFlightRequest = { key: requestKey, promise: request };
 
-  searchState.results = response.results;
-  searchState.errors = response.errors;
-  searchState.loading = false;
-  searchState.completedKey = requestKey;
+  try {
+    await request;
+  } finally {
+    if (searchState.inFlightRequest?.promise === request) searchState.inFlightRequest = undefined;
+  }
 }
 
 /**
@@ -454,10 +507,31 @@ export function syncSearchStateFromRoute(route: MobileRoute, searchState: Search
   searchState.typeFilter = normalizeSearchTypeFilter(route.typeFilter);
 }
 
+/** Clears the debounce timer and its request-key ownership together. */
 export function clearSearchDebounce(searchState: SearchUiState): void {
-  if (!searchState.debounceTimer) return;
-
-  globalThis.clearTimeout(searchState.debounceTimer);
+  if (searchState.debounceTimer) globalThis.clearTimeout(searchState.debounceTimer);
   searchState.debounceTimer = undefined;
+  searchState.debounceKey = undefined;
+}
+
+/** Invalidates pending work that cannot satisfy the newly restored search key. */
+function supersedeMismatchedSearchWork(searchState: SearchUiState, nextKey: string): void {
+  const requestMismatched = Boolean(searchState.inFlightRequest && searchState.inFlightRequest.key !== nextKey);
+  const debounceMismatched = Boolean(searchState.debounceKey && searchState.debounceKey !== nextKey);
+  if (!requestMismatched && !debounceMismatched) return;
+
+  searchState.sequence += 1;
+  if (requestMismatched) searchState.inFlightRequest = undefined;
+  if (debounceMismatched) clearSearchDebounce(searchState);
+  searchState.loading = false;
+}
+
+/** Invalidates all asynchronous search work after the current query is cleared. */
+function supersedeAllSearchWork(searchState: SearchUiState): void {
+  if (!searchState.inFlightRequest && !searchState.debounceTimer && !searchState.debounceKey) return;
+
+  searchState.sequence += 1;
+  searchState.inFlightRequest = undefined;
+  clearSearchDebounce(searchState);
 }
 
