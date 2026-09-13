@@ -67,6 +67,12 @@ Useful scripts:
 - `npm run check:unused` - TypeScript no-unused checks
 - `npm run test` - type checks + Vitest suite
 
+## Automatic Issue Linking
+
+After `.github/workflows/link-pr-issue.yml` is present on the default branch, pull request branches named `<issue-number>-<description>` automatically receive a closing reference in their description. For example, opening a pull request from `37-recover-search-loading-state` appends `Closes #37` after verifying that #37 is an open issue in this repository.
+
+The workflow runs when a pull request is opened, reopened, edited, or receives a new push, so existing pull requests are handled on their next matching event. GitHub closes the linked issue when the pull request is merged into the default branch; closing an unmerged pull request does not close the issue.
+
 ## Install
 
 ### Manual local install (recommended for development)
@@ -81,5 +87,7 @@ Useful scripts:
 
 - `src/` - module source (TypeScript, templates, styles)
 - `scripts/` - build and deployment scripts
-- `tests/` - automated tests
+- `src/tests/` - shared-module tests and system-neutral fixtures
+- `src/systems/<system-id>/tests/` - system-specific tests
+- `tests/` - build-script and workflow tests
 - `dist/pocket-foundry/` - built module output
