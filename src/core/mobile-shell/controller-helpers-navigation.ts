@@ -433,6 +433,7 @@ function getEncounterBackgroundImagePath(): string | null {
   return `/modules/${MODULE_ID}/systems/${systemId}/assets/images/encounter_bg.png`;
 }
 
+/** Probes the optional background and handles refresh failures in image callbacks. */
 function getEncounterBackgroundImageState(path: string): "ready" | "missing" | "checking" {
   const cached = encounterBackgroundImageStatus.get(path);
   if (cached) return cached;
@@ -443,11 +444,15 @@ function getEncounterBackgroundImageState(path: string): "ready" | "missing" | "
   const probe = new Image();
   probe.onload = () => {
     encounterBackgroundImageStatus.set(path, "ready");
-    void globalThis.window?.pocketFoundry?.mobileShell?.refresh?.();
+    void globalThis.window?.pocketFoundry?.mobileShell?.refresh?.().catch(error => {
+      globalThis.console?.error?.(MODULE_ID + " failed to refresh the mobile shell after loading its background.", error);
+    });
   };
   probe.onerror = () => {
     encounterBackgroundImageStatus.set(path, "missing");
-    void globalThis.window?.pocketFoundry?.mobileShell?.refresh?.();
+    void globalThis.window?.pocketFoundry?.mobileShell?.refresh?.().catch(error => {
+      globalThis.console?.error?.(MODULE_ID + " failed to refresh the mobile shell after loading its background.", error);
+    });
   };
   probe.src = path;
 
@@ -618,7 +623,8 @@ export function getCenteredNumberWheelOption(wheel: HTMLElement): HTMLElement | 
 /**
  * Restores the current route's saved vertical scroll after template rendering.
  */
-export function restoreRouteScroll(element: HTMLElement, route: MobileRoute): void {
+export function restoreRouteScroll(element: HTMLElement, route: MobileRoute, isCurrent: () => boolean = () => true): void {
+  if (!isCurrent()) return;
   const shellElement = getShellScrollElement(element);
   restoreExpandedDrawerState(shellElement, route);
   const scrollTop = route.scrollTop ?? 0;
@@ -628,6 +634,7 @@ export function restoreRouteScroll(element: HTMLElement, route: MobileRoute): vo
   }
 
   globalThis.requestAnimationFrame(() => {
+    if (!isCurrent()) return;
     shellElement.scrollTop = scrollTop;
     // Keep the active pane button visible in the horizontally-scrollable rail.
     const activePane = shellElement.querySelector<HTMLElement>(".pane-rail .active");
@@ -831,7 +838,8 @@ export function createFoundryRecentsService(): ReturnType<typeof createMobileRec
 /**
  * Focuses the search input after rendering the search destination.
  */
-export function restoreSearchFocus(element: HTMLElement, route: MobileRoute): void {
+export function restoreSearchFocus(element: HTMLElement, route: MobileRoute, isCurrent: () => boolean = () => true): void {
+  if (!isCurrent()) return;
   if (route.view !== RouteView.Search) return;
 
   const input = element.querySelector<HTMLInputElement>("[data-search-input]");
@@ -843,6 +851,7 @@ export function restoreSearchFocus(element: HTMLElement, route: MobileRoute): vo
   }
 
   globalThis.requestAnimationFrame(() => {
+    if (!isCurrent()) return;
     input.focus();
     const cursorPosition = input.value.length;
     input.setSelectionRange?.(cursorPosition, cursorPosition);
@@ -853,25 +862,28 @@ export function restoreSearchFocus(element: HTMLElement, route: MobileRoute): vo
  * Pane-local search re-renders the character sheet as filters change. Restore
  * focus so typing continues naturally after each filtered render.
  */
-export function restorePaneSearchFocus(element: HTMLElement, route: MobileRoute): void {
+export function restorePaneSearchFocus(element: HTMLElement, route: MobileRoute, isCurrent: () => boolean = () => true): void {
   if (route.view !== RouteView.Character) return;
 
   const pane = getCharacterSheetAdapter().normalizePane(route.pane);
   if (!getPaneSearchQuery(route, pane)) return;
-  focusPaneSearchInput(element, pane);
+  focusPaneSearchInput(element, pane, isCurrent);
 }
 
-export function restoreCharacterPickerSearchFocus(element: HTMLElement, route: MobileRoute): void {
+/** Restores picker focus only while the originating render is still current. */
+export function restoreCharacterPickerSearchFocus(element: HTMLElement, route: MobileRoute, isCurrent: () => boolean = () => true): void {
   if (route.view !== RouteView.Characters) return;
   if (!normalizeCharacterPickerSearchQuery(route.query).length) return;
-  focusCharacterPickerSearchInput(element);
+  focusCharacterPickerSearchInput(element, isCurrent);
 }
 
-function focusPaneSearchInput(element: HTMLElement, pane: ActorSheetPaneId): void {
+/** Schedules pane input focus guarded by the originating render's ownership. */
+function focusPaneSearchInput(element: HTMLElement, pane: ActorSheetPaneId, isCurrent: () => boolean = () => true): void {
   const input = element.querySelector<HTMLInputElement>(`[data-pane-search-input="${CSS.escape(pane)}"]`);
   if (!input) return;
 
   const focus = () => {
+    if (!isCurrent()) return;
     input.focus();
     const cursorPosition = input.value.length;
     input.setSelectionRange?.(cursorPosition, cursorPosition);
@@ -885,11 +897,13 @@ function focusPaneSearchInput(element: HTMLElement, pane: ActorSheetPaneId): voi
   globalThis.requestAnimationFrame(focus);
 }
 
-function focusCharacterPickerSearchInput(element: HTMLElement): void {
+/** Schedules picker input focus guarded by the originating render's ownership. */
+function focusCharacterPickerSearchInput(element: HTMLElement, isCurrent: () => boolean = () => true): void {
   const input = element.querySelector<HTMLInputElement>("[data-character-picker-search-input]");
   if (!input) return;
 
   const focus = () => {
+    if (!isCurrent()) return;
     input.focus();
     const cursorPosition = input.value.length;
     input.setSelectionRange?.(cursorPosition, cursorPosition);

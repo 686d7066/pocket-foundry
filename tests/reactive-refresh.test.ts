@@ -1,11 +1,12 @@
 import assert from "node:assert/strict";
-import { test } from "vitest";
+import { test, vi } from "vitest";
 import { RouteView, type MobileRoute } from "../src/router/routes.ts";
 import {
   createReactiveRefreshController,
   createRefreshInvalidation,
   REACTIVE_REFRESH_HOOKS,
   shouldRefreshRoute,
+  type RefreshInvalidation,
   type ReactiveRefreshHooks
 } from "../src/services/reactive-refresh.ts";
 
@@ -96,6 +97,202 @@ test("controller coalesces hook bursts, preserves transient route state, and rer
   await settle();
 
   assert.deepEqual(calls, ["preserve:330:Spell:Item.bane", "search:bane:Spell:Item.bane"]);
+});
+
+test("invalidations during an active refresh coalesce into one trailing refresh", async () => {
+  const hooks = createHooksFixture();
+  let complete: () => void = () => undefined;
+  const pending = new Promise<void>(resolve => { complete = resolve; });
+  let calls = 0;
+  const controller = createReactiveRefreshController({
+    hooks: hooks.hooks,
+    getRoute: () => ({ view: RouteView.Characters }),
+    onRefresh: async () => { calls += 1; if (calls === 1) await pending; }
+  });
+  hooks.emit("updateActor", document("Actor.one"));
+  await settle();
+  hooks.emit("updateActor", document("Actor.one"));
+  hooks.emit("updateActor", document("Actor.two"));
+  await settle();
+  assert.equal(calls, 1);
+  complete();
+  await settle();
+  assert.equal(calls, 2);
+  controller.dispose();
+});
+
+test("trailing invalidations follow the current actor after navigation during an active refresh", async () => {
+  const hooks = createHooksFixture();
+  let route: MobileRoute = { view: RouteView.Character, actorUuid: "Actor.a" };
+  let complete: () => void = () => undefined;
+  const pending = new Promise<void>(resolve => { complete = resolve; });
+  const calls: RefreshInvalidation[] = [];
+  const controller = createReactiveRefreshController({
+    hooks: hooks.hooks,
+    getRoute: () => route,
+    onRefresh: async invalidation => {
+      calls.push(invalidation);
+      if (calls.length === 1) await pending;
+    }
+  });
+
+  hooks.emit("updateActor", document("Actor.a"));
+  await settle();
+  hooks.emit("updateActor", document("Actor.a"));
+  route = { view: RouteView.Character, actorUuid: "Actor.b" };
+  hooks.emit("updateActor", document("Actor.b"));
+  complete();
+  await settle();
+
+  assert.deepEqual(calls.map(invalidation => invalidation.uuid), ["Actor.a", "Actor.b"]);
+  controller.dispose();
+});
+
+test("a global combat invalidation survives a mixed trailing burst", async () => {
+  const hooks = createHooksFixture();
+  let route: MobileRoute = { view: RouteView.Character, actorUuid: "Actor.a" };
+  let complete: () => void = () => undefined;
+  const pending = new Promise<void>(resolve => { complete = resolve; });
+  const calls: RefreshInvalidation[] = [];
+  const controller = createReactiveRefreshController({
+    hooks: hooks.hooks,
+    getRoute: () => route,
+    onRefresh: async invalidation => {
+      calls.push(invalidation);
+      if (calls.length === 1) await pending;
+    }
+  });
+
+  hooks.emit("updateActor", document("Actor.a"));
+  await settle();
+  hooks.emit("updateCombat", document("Combat.main"));
+  route = { view: RouteView.Character, actorUuid: "Actor.b" };
+  hooks.emit("updateActor", document("Actor.b"));
+  route = { view: RouteView.Settings };
+  complete();
+  await settle();
+
+  assert.deepEqual(calls.map(invalidation => invalidation.kind), ["actor", "combat"]);
+  controller.dispose();
+});
+
+test("coalesced mixed target bursts retain journal, owned-document, and document-detail invalidations", async () => {
+  const hooks = createHooksFixture();
+  let route: MobileRoute = { view: RouteView.OwnedDocument, actorUuid: "Actor.a", documentUuid: "Item.sword", parentPane: "Inventory" };
+  const calls: RefreshInvalidation[] = [];
+  const controller = createReactiveRefreshController({
+    hooks: hooks.hooks,
+    getRoute: () => route,
+    onRefresh: invalidation => { calls.push(invalidation); }
+  });
+
+  hooks.emit("updateItem", document("Item.sword", { parent: document("Actor.a") }));
+  route = { view: RouteView.Journal, entryUuid: "JournalEntry.quest" };
+  hooks.emit("updateJournalEntryPage", document("JournalEntryPage.clue", { parent: document("JournalEntry.quest") }));
+  await settle();
+  assert.equal(calls.at(-1)?.uuid, "JournalEntryPage.clue");
+
+  hooks.emit("updateJournalEntryPage", document("JournalEntryPage.clue", { parent: document("JournalEntry.quest") }));
+  route = { view: RouteView.OwnedDocument, actorUuid: "Actor.a", documentUuid: "Item.sword", parentPane: "Inventory" };
+  hooks.emit("updateItem", document("Item.sword", { parent: document("Actor.a") }));
+  await settle();
+  assert.equal(calls.at(-1)?.uuid, "Item.sword");
+
+  hooks.emit("updateItem", document("Item.sword", { parent: document("Actor.a") }));
+  route = { view: RouteView.DocumentDetail, documentUuid: "Item.potion", documentType: "item" };
+  hooks.emit("updateItem", document("Item.potion"));
+  await settle();
+  assert.equal(calls.at(-1)?.uuid, "Item.potion");
+  assert.equal(calls.length, 3);
+  controller.dispose();
+});
+
+test("a rejected refresh is handled and does not strand pending or future invalidations", async () => {
+  const hooks = createHooksFixture();
+  let fail: (error: Error) => void = () => undefined;
+  const pending = new Promise<void>((_resolve, reject) => { fail = reject; });
+  let calls = 0;
+  const log = vi.spyOn(console, "error").mockImplementation(() => undefined);
+  const controller = createReactiveRefreshController({
+    hooks: hooks.hooks,
+    getRoute: () => ({ view: RouteView.Characters }),
+    onRefresh: async () => { calls += 1; if (calls === 1) await pending; }
+  });
+  try {
+    hooks.emit("updateActor", document("Actor.one"));
+    await settle();
+    hooks.emit("updateActor", document("Actor.one"));
+    fail(new Error("refresh failed"));
+    await settle();
+    assert.equal(log.mock.calls.length, 1);
+    assert.equal(calls, 2);
+    hooks.emit("updateActor", document("Actor.one"));
+    await settle();
+    assert.equal(calls, 3);
+  } finally {
+    controller.dispose();
+    log.mockRestore();
+  }
+});
+
+test("disposal drops trailing refreshes while the active callback settles", async () => {
+  const hooks = createHooksFixture();
+  let complete: () => void = () => undefined;
+  const pending = new Promise<void>(resolve => { complete = resolve; });
+  let calls = 0;
+  const controller = createReactiveRefreshController({
+    hooks: hooks.hooks,
+    getRoute: () => ({ view: RouteView.Characters }),
+    onRefresh: async () => { calls += 1; await pending; }
+  });
+  hooks.emit("updateActor", document("Actor.one"));
+  await settle();
+  hooks.emit("updateActor", document("Actor.one"));
+  controller.dispose();
+  complete();
+  await settle();
+  assert.equal(calls, 1);
+  assert.equal(hooks.callbacks.size, 0);
+});
+
+test("a queued search refresh follows the current route after navigation", async () => {
+  const hooks = createHooksFixture();
+  let route: MobileRoute = { view: RouteView.Search, query: "query" };
+  const refresh = vi.fn();
+  const search = vi.fn();
+  const controller = createReactiveRefreshController({ hooks: hooks.hooks, getRoute: () => route, onRefresh: refresh, onSearchInvalidated: search });
+  hooks.emit("updateActor", document("Actor.one"));
+  route = { view: RouteView.Characters };
+  await settle();
+  assert.equal(refresh.mock.calls.length, 1);
+  assert.equal(search.mock.calls.length, 0);
+  controller.dispose();
+});
+
+test("a queued document refresh invalidates search after navigation into search", async () => {
+  const hooks = createHooksFixture();
+  let route: MobileRoute = { view: RouteView.Character, actorUuid: "Actor.one" };
+  const refresh = vi.fn();
+  const search = vi.fn();
+  const controller = createReactiveRefreshController({ hooks: hooks.hooks, getRoute: () => route, onRefresh: refresh, onSearchInvalidated: search });
+  hooks.emit("updateActor", document("Actor.one"));
+  route = { view: RouteView.Search, query: "query" };
+  await settle();
+  assert.equal(refresh.mock.calls.length, 0);
+  assert.equal(search.mock.calls.length, 1);
+  controller.dispose();
+});
+
+test("a queued invalidation is skipped after navigation to an unaffected route", async () => {
+  const hooks = createHooksFixture();
+  let route: MobileRoute = { view: RouteView.Character, actorUuid: "Actor.one" };
+  const refresh = vi.fn();
+  const controller = createReactiveRefreshController({ hooks: hooks.hooks, getRoute: () => route, onRefresh: refresh });
+  hooks.emit("updateActor", document("Actor.one"));
+  route = { view: RouteView.Character, actorUuid: "Actor.two" };
+  await settle();
+  assert.equal(refresh.mock.calls.length, 0);
+  controller.dispose();
 });
 
 function document(uuid: string, options: { parent?: Record<string, unknown> } = {}): Record<string, unknown> {

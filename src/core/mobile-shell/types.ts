@@ -98,6 +98,11 @@ export type SearchUiState = {
   completedKey: string;
   sequence: number;
   debounceTimer?: ReturnType<typeof globalThis.setTimeout>;
+  debounceKey?: string;
+  inFlightRequest?: {
+    key: string;
+    promise: Promise<void>;
+  };
 };
 
 export type ConfirmationDialogOptions = {

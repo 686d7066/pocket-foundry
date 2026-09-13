@@ -1,6 +1,7 @@
 import type { foundry } from "fvtt-types";
 import { RouteView, type MobileRoute } from "../router/routes.ts";
 import { getObject, getString } from "../core/utils.ts";
+import { MODULE_ID } from "../core/constants.ts";
 
 type FoundryHookName = Parameters<typeof foundry.helpers.Hooks.on>[0];
 type FoundryHookCallback = (...args: unknown[]) => void;
@@ -71,7 +72,8 @@ export const REACTIVE_REFRESH_HOOKS = [
 
 /**
  * Registers Foundry document lifecycle hooks and coalesces matching route
- * refreshes into one microtask. Foundry v14 fires create/update/delete hooks
+ * refreshes into one microtask, then drains invalidations without overlapping
+ * refreshes. Foundry v14 fires create/update/delete hooks
  * after the database operation on every connected client, so the shell can
  * safely rebuild view models from current documents here without polling.
  */
@@ -88,17 +90,17 @@ export function createReactiveRefreshController(options: ReactiveRefreshControll
     return () => hooks.off?.(hookName, typeof id === "number" ? id : callback);
   });
 
-  let queuedInvalidation: RefreshInvalidation | undefined;
-  let queuedSearchInvalidation = false;
+  let queuedInvalidations: RefreshInvalidation[] = [];
   let refreshQueued = false;
   let disposed = false;
 
+  /** Coalesces new invalidations while a queued or running refresh owns the drain. */
   function queueRefresh(invalidation: RefreshInvalidation): void {
+    if (disposed) return;
     const route = options.getRoute();
     if (!shouldRefreshRoute(route, invalidation)) return;
 
-    queuedSearchInvalidation = queuedSearchInvalidation || shouldInvalidateSearch(route, invalidation);
-    queuedInvalidation = mergeInvalidations(queuedInvalidation, invalidation);
+    queuedInvalidations.push(invalidation);
     if (refreshQueued) return;
 
     refreshQueued = true;
@@ -107,29 +109,35 @@ export function createReactiveRefreshController(options: ReactiveRefreshControll
     });
   }
 
+  /** Runs trailing refreshes and contains failures without stranding later work. */
   async function flushRefresh(): Promise<void> {
-    if (disposed || !queuedInvalidation) return;
-
-    const invalidation = queuedInvalidation;
-    const searchInvalidated = queuedSearchInvalidation;
-    queuedInvalidation = undefined;
-    queuedSearchInvalidation = false;
-    refreshQueued = false;
-    options.preserveTransientState?.();
-
-    if (searchInvalidated && options.onSearchInvalidated) {
-      await options.onSearchInvalidated(invalidation);
-      return;
+    try {
+      while (!disposed && queuedInvalidations.length > 0) {
+        const invalidations = queuedInvalidations;
+        queuedInvalidations = [];
+        try {
+          const route = options.getRoute();
+          const invalidation = getLatestRelevantInvalidation(route, invalidations);
+          if (!invalidation) continue;
+          options.preserveTransientState?.();
+          if (shouldInvalidateSearch(route, invalidation) && options.onSearchInvalidated) {
+            await options.onSearchInvalidated(invalidation);
+          } else {
+            await options.onRefresh(invalidation);
+          }
+        } catch (error) {
+          globalThis.console?.error?.(MODULE_ID + " failed to refresh the mobile shell.", error);
+        }
+      }
+    } finally {
+      refreshQueued = false;
     }
-
-    await options.onRefresh(invalidation);
   }
 
   return {
     dispose: () => {
       disposed = true;
-      queuedInvalidation = undefined;
-      queuedSearchInvalidation = false;
+      queuedInvalidations = [];
       refreshQueued = false;
       unsubscribers.forEach(unsubscribe => unsubscribe());
     }
@@ -213,18 +221,18 @@ function shouldInvalidateSearch(route: MobileRoute, invalidation: RefreshInvalid
   return route.view === RouteView.Search && Boolean(invalidation.kind);
 }
 
-function mergeInvalidations(current: RefreshInvalidation | undefined, next: RefreshInvalidation): RefreshInvalidation {
-  if (!current) return next;
-
-  return {
-    hookName: current.hookName === next.hookName ? current.hookName : "multiple",
-    kind: current.kind === next.kind ? current.kind : next.kind,
-    action: current.action === next.action ? current.action : "update",
-    uuid: current.uuid ?? next.uuid,
-    parentUuid: current.parentUuid ?? next.parentUuid,
-    changed: current.changed ?? next.changed,
-    permissionRelated: current.permissionRelated || next.permissionRelated
-  };
+/**
+ * Selects one coherent invalidation for the route from a coalesced hook burst.
+ * Keeping each record intact until this point prevents unrelated UUIDs, parent
+ * UUIDs, and global invalidation kinds from being combined before navigation
+ * settles.
+ */
+function getLatestRelevantInvalidation(route: MobileRoute, invalidations: RefreshInvalidation[]): RefreshInvalidation | undefined {
+  for (let index = invalidations.length - 1; index >= 0; index -= 1) {
+    const invalidation = invalidations[index];
+    if (invalidation && shouldRefreshRoute(route, invalidation)) return invalidation;
+  }
+  return undefined;
 }
 
 /**

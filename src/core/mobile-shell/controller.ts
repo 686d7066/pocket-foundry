@@ -1,4 +1,5 @@
 import { disposeTableLayout } from "./table-layout.ts";
+import { disposeShellRendering } from "./render-ownership.ts";
 import { getPocketFoundryRouteFromHash } from "../../router/browser-history.ts";
 import { createMobileRouter } from "../../router/mobile-router.ts";
 import { createReactiveRefreshController, type ReactiveRefreshController, type ReactiveRefreshHooks } from "../../services/reactive-refresh.ts";
@@ -33,6 +34,7 @@ export function createMobileShellController(): MobileShellController {
   const searchState = createInitialSearchUiState();
   let reactiveRefresh: ReactiveRefreshController | undefined;
   let unbindBrowserBack: (() => void) | undefined;
+  let pendingMount: Promise<void> | undefined;
 
   async function synchronizeInitialRouteFromCurrentHash(): Promise<void> {
     const hashRoute = getPocketFoundryRouteFromHash(globalThis.location?.hash ?? "");
@@ -44,7 +46,20 @@ export function createMobileShellController(): MobileShellController {
     await router.replace(route);
   }
 
+  /** Coalesces mount requests while initialization is still pending. */
   async function mount(): Promise<void> {
+    if (pendingMount) return pendingMount;
+    const task = mountRoot();
+    pendingMount = task;
+    try {
+      await task;
+    } finally {
+      if (pendingMount === task) pendingMount = undefined;
+    }
+  }
+
+  /** Initializes one root without allowing retired work to attach after unmount. */
+  async function mountRoot(): Promise<void> {
     if (rootElement) {
       if (!unbindBrowserBack) unbindBrowserBack = bindBrowserBack(router, () => rootElement, searchState);
       viewportOwnership.acquire();
@@ -57,11 +72,14 @@ export function createMobileShellController(): MobileShellController {
     rootElement = document.createElement("div");
     rootElement.id = MODULE_ID + "-root";
     rootElement.dataset.pocketFoundryShell = "active";
+    const element = rootElement;
 
     try {
       await synchronizeInitialRouteFromCurrentHash();
-      await renderShell(rootElement, router, searchState);
-      document.body.append(rootElement);
+      if (rootElement !== element) return;
+      await renderShell(element, router, searchState);
+      if (rootElement !== element) return;
+      document.body.append(element);
       unbindBrowserBack = bindBrowserBack(router, () => rootElement, searchState);
       bindEvents(rootElement);
       reactiveRefresh = createReactiveRefreshController({
@@ -80,10 +98,11 @@ export function createMobileShellController(): MobileShellController {
       activateBrowserHistory(router);
       viewportOwnership.acquire();
     } catch (error) {
-      disposeTableLayout(rootElement);
-      rootElement.remove();
-      rootElement = undefined;
-      viewportOwnership.release();
+      disposeShellRendering(element);
+      disposeTableLayout(element);
+      element.remove();
+      if (rootElement !== element) return;
+      unmount();
       globalThis.console?.error?.(MODULE_ID + " failed to render the mobile shell.", error);
       throw error;
     }
@@ -95,7 +114,10 @@ export function createMobileShellController(): MobileShellController {
     bindMobileShellEvents({ element, abortController, router, searchState });
   }
 
+  /** Invalidates async renders before removing listeners and the owned DOM root. */
   function unmount(): void {
+    if (rootElement) disposeShellRendering(rootElement);
+    pendingMount = undefined;
     abortController?.abort();
     abortController = undefined;
     reactiveRefresh?.dispose();
