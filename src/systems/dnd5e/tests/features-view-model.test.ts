@@ -136,13 +136,13 @@ test("feature controls require update permission and call dnd5e document APIs", 
     getUserLevel: () => 2
   });
 
-  assert.deepEqual(await useFeatureItem(actor, user, "lay-on-hands"), { ok: true });
-  assert.deepEqual(await useFeatureActivity(actor, user, "channel-divinity", "turn-undead"), { ok: true });
+  assert.deepEqual(await useFeatureItem(actor, user, "lay-on-hands"), { ok: true, changed: false });
+  assert.deepEqual(await useFeatureActivity(actor, user, "channel-divinity", "turn-undead"), { ok: true, changed: false });
   assert.deepEqual(await adjustFeatureRemainingUses(actor, user, "lay-on-hands", -1), { ok: true });
   assert.deepEqual(await rechargeFeature(actor, user, "mystic-step"), { ok: true });
   assert.deepEqual(await setFeatureFavorite(actor, user, "lay-on-hands", true), { ok: true });
   assert.deepEqual(await setFeatureFavorite(actor, user, "lay-on-hands", false), { ok: true });
-  assert.deepEqual(await endFeatureConcentration(actor, user, "mystic-step"), { ok: true });
+  assert.deepEqual(await endFeatureConcentration(actor, user, "mystic-step"), { ok: true, changed: false });
 
   assert.equal(getItem(actor, "lay-on-hands")?.uses, 1);
   assert.equal(getActivity(actor, "channel-divinity", "turn-undead")?.useCalls, 1);
@@ -160,6 +160,62 @@ test("feature controls require update permission and call dnd5e document APIs", 
   assert.deepEqual(await setFeatureFavorite(denied, user, "lay-on-hands", true), { ok: false, reason: "forbidden" });
   assert.deepEqual(await endFeatureConcentration(denied, user, "mystic-step"), { ok: false, reason: "forbidden" });
   assert.deepEqual(denied.embeddedUpdates, []);
+});
+
+test("feature controls reject cancelled dnd5e workflows and empty document acknowledgements while accepting void legacy persistence", async () => {
+  const actor = createFeaturesActor({
+    updateEmbeddedDocuments: async () => [],
+    endConcentration: async () => []
+  });
+  const item = getItem(actor, "lay-on-hands");
+  const activity = getActivity(actor, "channel-divinity", "turn-undead");
+  const rechargeable = getItem(actor, "mystic-step");
+  assert.ok(item && activity && rechargeable);
+  item.use = async () => undefined;
+  activity.use = async () => undefined;
+  (rechargeable.system.uses as Record<string, unknown>).spent = 1;
+  (rechargeable.system.uses as Record<string, unknown>).rollRecharge = async () => ({
+    rolls: [{}],
+    updates: { "system.uses.spent": 0 }
+  });
+  assert.ok(actor.system);
+  actor.system.addFavorite = async () => undefined;
+  const rejected = { ok: false, reason: "rejected", failure: "rejected", retry: "safe" };
+
+  assert.deepEqual(await useFeatureItem(actor, user, "lay-on-hands"), rejected);
+  assert.deepEqual(await useFeatureActivity(actor, user, "channel-divinity", "turn-undead"), rejected);
+  assert.deepEqual(await adjustFeatureRemainingUses(actor, user, "lay-on-hands", -1), rejected);
+  assert.deepEqual(await rechargeFeature(actor, user, "mystic-step"), rejected);
+  assert.deepEqual(await setFeatureFavorite(actor, user, "lay-on-hands", true), { ok: true });
+  assert.deepEqual(await endFeatureConcentration(actor, user, "mystic-step"), rejected);
+
+  Object.defineProperty(actor, "toObject", { value: () => ({ system: { marker: 1 } }) });
+  item.use = async () => ({ itemId: item.id });
+  activity.use = async () => ({ activityId: activity.id });
+  actor.endConcentration = async () => [rechargeable];
+  assert.deepEqual(await useFeatureItem(actor, user, "lay-on-hands"), { ok: true, changed: false });
+  assert.deepEqual(await useFeatureActivity(actor, user, "channel-divinity", "turn-undead"), { ok: true, changed: false });
+  assert.deepEqual(await endFeatureConcentration(actor, user, "mystic-step"), { ok: true, changed: false });
+});
+
+test("feature favorite callbacks reject only explicit false and propagate errors", async () => {
+  const actor = createFeaturesActor();
+  assert.ok(actor.system);
+  actor.system.addFavorite = async () => false;
+  actor.system.removeFavorite = async () => undefined;
+
+  assert.deepEqual(await setFeatureFavorite(actor, user, "lay-on-hands", true), {
+    ok: false,
+    reason: "rejected",
+    failure: "rejected",
+    retry: "safe"
+  });
+  assert.deepEqual(await setFeatureFavorite(actor, user, "lay-on-hands", false), { ok: true });
+
+  actor.system.addFavorite = async () => {
+    throw new Error("legacy feature favorite failed");
+  };
+  await assert.rejects(setFeatureFavorite(actor, user, "lay-on-hands", true), /legacy feature favorite failed/);
 });
 
 test("features template and styles preserve required regions without create or delete controls", () => {
@@ -255,9 +311,11 @@ function createFeaturesActor(overrides: Partial<TestFeaturesActor> = {}): TestFe
       concentration: { itemId: "mystic-step" },
       addFavorite: async (item: TestFeaturesItem) => {
         actor.favoriteCalls.push(["add", item.id]);
+        return actor;
       },
       removeFavorite: async (item: TestFeaturesItem) => {
         actor.favoriteCalls.push(["remove", item.id]);
+        return actor;
       },
       details: {}
     },
@@ -275,6 +333,7 @@ function createFeaturesActor(overrides: Partial<TestFeaturesActor> = {}): TestFe
     },
     endConcentration: async item => {
       actor.concentrationEnded.push(item.id ?? "");
+      return [item];
     },
     ...overrides
   };
@@ -310,6 +369,7 @@ function createFeaturesActor(overrides: Partial<TestFeaturesActor> = {}): TestFe
       use: async () => {
         const item = getItem(actor, "lay-on-hands");
         if (item) item.uses = (item.uses ?? 0) + 1;
+        return { item };
       }
     }),
     createItem(actor, {
@@ -358,8 +418,11 @@ function createFeaturesActor(overrides: Partial<TestFeaturesActor> = {}): TestFe
         uses: {
           value: 0,
           max: 1,
+          spent: 1,
           rollRecharge: async () => {
             actor.recharged += 1;
+            ((getItem(actor, "mystic-step")?.system.uses as Record<string, unknown>)).spent = 0;
+            return { rolls: [{}], updates: { "system.uses.spent": 0 } };
           }
         },
         activities: [createActivity("teleport", "Teleport", { activation: "Bonus Action" })]
@@ -378,6 +441,8 @@ function createFeaturesActor(overrides: Partial<TestFeaturesActor> = {}): TestFe
       getUserLevel: () => 0
     })
   ];
+
+  Object.defineProperty(actor, "toObject", { configurable: true, value: () => ({ system: { marker: 1 } }) });
 
   return actor;
 }
@@ -403,6 +468,7 @@ function createActivity(id: string, name: string, options: { activation?: string
     canUse: true,
     use: async () => {
       activity.useCalls = (activity.useCalls ?? 0) + 1;
+      return { activity };
     },
     prepareSheetContext: () => ({
       _id: id,

@@ -123,6 +123,12 @@
   .pocket-foundry-root.mf-app,
   .pocket-foundry-root .mf-app { @apply mx-auto min-h-screen max-w-[920px] bg-mf-surface pb-[calc(var(--pf-bottom-nav-height)+env(safe-area-inset-bottom))] shadow-mf-shell; }
   .pocket-foundry-root .actor-sheet-shell { @apply relative min-h-screen bg-mf-surface; isolation: isolate; }
+  .pocket-foundry-root .character-mutation-status { @apply mx-2 mb-2 rounded-md border border-mf-line bg-mf-panel px-2.5 py-1.5 text-[.76rem] font-extrabold text-mf-text; overflow-wrap: anywhere; }
+  .pocket-foundry-root .character-mutation-status[hidden] { @apply hidden; }
+  .pocket-foundry-root .character-mutation-status[data-state="saved"] { @apply border-mf-good bg-mf-good-surface text-mf-good; }
+  .pocket-foundry-root .character-mutation-status[data-state="failed"],
+  .pocket-foundry-root .character-mutation-status[data-state="disconnected"] { @apply border-mf-danger text-mf-danger; }
+  .pocket-foundry-root .character-mutation-status[data-state="recovering"] { @apply border-mf-warning bg-mf-warning-surface text-mf-warning; }
   .pocket-foundry-root .limited-character-view { @apply place-items-center p-4; min-height: calc(100vh - var(--pf-header-height) - var(--pf-bottom-nav-height)); }
   .pocket-foundry-root .limited-character-identity { @apply grid justify-items-center gap-3 text-center; }
   .pocket-foundry-root .limited-character-identity img,

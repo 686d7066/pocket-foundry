@@ -16,6 +16,12 @@ import { buildDnd5eFeaturesViewModel, type Dnd5eFeatureItemViewModel } from "./f
 import { buildDnd5eInventoryViewModel, type Dnd5eInventoryItemViewModel } from "./inventory-view-model.ts";
 import { buildDnd5eSpellsViewModel, type Dnd5eSpellRowViewModel, type Dnd5eSpellSlotTrackViewModel } from "./spells-view-model.ts";
 import { canViewOwnedDocument, clampNumber, formatNumber, getConfigLabel } from "./view-model-helpers.ts";
+import {
+  acknowledgeDnd5eAction,
+  getDnd5eWorkflowOutcome,
+  hasDnd5eActionAcknowledgement,
+  snapshotDnd5eMutationState
+} from "./action-outcome.ts";
 
 export type Dnd5eFavoritesActor = PermissionCheckedDocument
   & FoundryDocumentMutationApi
@@ -153,7 +159,10 @@ export type Dnd5eFavoritesModel = Dnd5eFavoritesViewModel | UnavailableDnd5eFavo
 
 export type Dnd5eFavoritesControlResult = {
   ok: boolean;
-  reason?: "unavailable" | "forbidden" | "unsupported";
+  reason?: "unavailable" | "forbidden" | "unsupported" | "rejected";
+  failure?: "rejected" | "uncertain";
+  retry?: "safe" | "review";
+  changed?: boolean;
 };
 
 const SORT_DENSITY = 100000;
@@ -262,14 +271,12 @@ export async function useFavorite(
 
   if (type === "skill") {
     if (typeof actor.rollSkill !== "function") return { ok: false, reason: "unsupported" };
-    await actor.rollSkill({ event, skill: favoriteId });
-    return { ok: true };
+    return acknowledgeDnd5eAction(hasDnd5eActionAcknowledgement(await actor.rollSkill({ event, skill: favoriteId })));
   }
 
   if (type === "tool") {
     if (typeof actor.rollToolCheck !== "function") return { ok: false, reason: "unsupported" };
-    await actor.rollToolCheck({ event, tool: favoriteId });
-    return { ok: true };
+    return acknowledgeDnd5eAction(hasDnd5eActionAcknowledgement(await actor.rollToolCheck({ event, tool: favoriteId })));
   }
 
   if (type === "slots" || type === "resource") return { ok: false, reason: "unsupported" };
@@ -278,14 +285,14 @@ export async function useFavorite(
   if (!target || !canViewFavoriteTarget(actor, target, user)) return { ok: false, reason: "unavailable" };
   if (type === "effect") {
     if (typeof target.update !== "function") return { ok: false, reason: "unsupported" };
-    await target.update({ disabled: !target.disabled });
-    return { ok: true };
+    return acknowledgeDnd5eAction(hasDnd5eActionAcknowledgement(await target.update({ disabled: !target.disabled })));
   }
 
   const usable = type === "activity" ? target : target;
   if (usable.canUse === false || typeof usable.use !== "function") return { ok: false, reason: "unsupported" };
-  await usable.use({ event }, { options: { sheet: null } });
-  return { ok: true };
+  const before = snapshotDnd5eMutationState(actor);
+  const result = await usable.use({ event }, { options: { sheet: null } });
+  return getDnd5eWorkflowOutcome(result, before, snapshotDnd5eMutationState(actor));
 }
 
 /**
@@ -309,8 +316,7 @@ export async function adjustFavoriteValue(
     const max = getNumber(resourceObject?.max);
     const value = getNumber(resourceObject?.value);
     if (max === null || value === null || typeof actor.update !== "function") return { ok: false, reason: "unsupported" };
-    await actor.update({ [`system.resources.${resourceKey}.value`]: clampNumber(Math.trunc(value + delta), 0, max) });
-    return { ok: true };
+    return acknowledgeDnd5eAction(hasDnd5eActionAcknowledgement(await actor.update({ [`system.resources.${resourceKey}.value`]: clampNumber(Math.trunc(value + delta), 0, max) })));
   }
 
   const target = await fromUuid(favoriteId, { relative: actor });
@@ -324,8 +330,7 @@ export async function adjustFavoriteValue(
 
   const updater = type === "activity" ? target.item ?? target : target;
   if (typeof updater.update !== "function") return { ok: false, reason: "unsupported" };
-  await updater.update({ [name]: clampNumber(Math.trunc(value + delta), 0, max) });
-  return { ok: true };
+  return acknowledgeDnd5eAction(hasDnd5eActionAcknowledgement(await updater.update({ [name]: clampNumber(Math.trunc(value + delta), 0, max) })));
 }
 
 export async function removeFavorite(
@@ -345,10 +350,10 @@ export async function setContextFavorite(
 ): Promise<Dnd5eFavoritesControlResult> {
   if (!actor) return { ok: false, reason: "unavailable" };
   if (!canUpdateDocument(actor, user)) return { ok: false, reason: "forbidden" };
-  return (await setFavoriteEntry(actor, type, favoriteId, favorite, {
+  return acknowledgeDnd5eAction(await setFavoriteEntry(actor, type, favoriteId, favorite, {
     fallbackEntries: getObject(actor.system)?.favorites,
     legacyToggle: (nextFavorite, target) => toggleLegacyFavorite(actor, nextFavorite, target)
-  })) ? { ok: true } : { ok: false, reason: "unsupported" };
+  }));
 }
 
 function buildLegacyResourceRows(actor: Dnd5eFavoritesActor, canUpdate: boolean): Dnd5eFavoriteRowViewModel[] {
@@ -608,11 +613,14 @@ function getFavoriteEntries(actor: Dnd5eFavoritesActor): Dnd5eFavoriteEntry[] {
   return getStoredFavoriteEntries(actor, { fallbackEntries: getObject(actor.system)?.favorites });
 }
 
-async function toggleLegacyFavorite(actor: Dnd5eFavoritesActor, favorite: boolean, target: unknown): Promise<unknown> {
+/**
+ * Runs a legacy dnd5e favorite callback, treating void as success and only explicit false as rejection.
+ */
+async function toggleLegacyFavorite(actor: Dnd5eFavoritesActor, favorite: boolean, target: unknown): Promise<boolean> {
   const system = getObject(actor.system);
   const action = favorite ? system?.addFavorite : system?.removeFavorite;
   if (typeof action !== "function") return false;
-  return (action as (favoriteTarget: unknown) => Promise<unknown>).call(system, target);
+  return await (action as (favoriteTarget: unknown) => Promise<unknown>).call(system, target) !== false;
 }
 
 function canViewFavoriteTarget(actor: Dnd5eFavoritesActor, target: Dnd5eFavoriteDocument, user: FoundryUserLike): boolean {

@@ -3,18 +3,21 @@ import { disposeShellRendering } from "./render-ownership.ts";
 import { getPocketFoundryRouteFromHash } from "../../router/browser-history.ts";
 import { createMobileRouter } from "../../router/mobile-router.ts";
 import { createReactiveRefreshController, type ReactiveRefreshController, type ReactiveRefreshHooks } from "../../services/reactive-refresh.ts";
+import { createConnectionRecoveryController, type ConnectionRecoveryController, type ConnectionSocket } from "../../services/connection-recovery.ts";
+import { refreshDocumentFromDatabase } from "../../services/document-recovery.ts";
 import { RouteView, type MobileRoute } from "../../router/routes.ts";
 import { getCharacterSheetAdapter } from "../../systems/character-sheet-adapter-registry.ts";
 import { MODULE_ID } from "../constants.ts";
 import { getFoundryRuntime } from "../foundry-globals.ts";
 import { createViewportOwnershipController } from "../viewport-ownership.ts";
-import { createFoundryRecentsService, createFoundryRoutePermissionResolver, getStoredSelectedCharacterRoute, rememberCurrentRouteScroll } from "./controller-helpers-navigation.ts";
+import { createFoundryRecentsService, createFoundryRoutePermissionResolver, getActorByUuid, getStoredSelectedCharacterRoute, rememberCurrentRouteScroll } from "./controller-helpers-navigation.ts";
 import { clearSearchDebounce, createInitialSearchUiState, runSearchImmediately } from "./controller-helpers-search.ts";
 import { normalizeCharacterRoutePanes, renderShell } from "./controller-helpers-shell.ts";
 import { activateBrowserHistory, bindBrowserBack, uninstallLeaveGameConfirmGuard, writeBrowserHistory } from "./controller-helpers-browser-history.ts";
-import { reportShellActionError } from "./controller-helpers-ui.ts";
+import { reportShellActionDiagnostic, reportShellActionError } from "./controller-helpers-ui.ts";
 import { bindMobileShellEvents } from "./events.ts";
 import type { MobileShellController } from "./types.ts";
+import { disposeCharacterMutationCoordinator, getCharacterMutationCoordinator } from "./character-mutation-coordinator.ts";
 
 export type { MobileShellController } from "./types.ts";
 
@@ -35,6 +38,8 @@ export function createMobileShellController(): MobileShellController {
   const viewportOwnership = createViewportOwnershipController();
   const searchState = createInitialSearchUiState();
   let reactiveRefresh: ReactiveRefreshController | undefined;
+  let connectionRecovery: ConnectionRecoveryController | undefined;
+  let unsubscribeConnectionRouteRecovery: (() => void) | undefined;
   let unsubscribeRecentRouteRecording: (() => void) | undefined;
   let lastVisitedRoute: string | undefined;
   let unbindBrowserBack: (() => void) | undefined;
@@ -97,12 +102,86 @@ export function createMobileShellController(): MobileShellController {
           if (rootElement) rememberCurrentRouteScroll(rootElement, router, { writeHistory: false });
         },
         onRefresh: async () => {
-          if (rootElement) await renderShell(rootElement, router, searchState);
+          const route = router.getCurrentRoute();
+          const actorUuid = route.view === RouteView.Character || route.view === RouteView.OwnedDocument ? route.actorUuid : undefined;
+          if (rootElement && !(actorUuid && getCharacterMutationCoordinator(rootElement).isPending(actorUuid))) {
+            await renderShell(rootElement, router, searchState);
+          }
         },
         onSearchInvalidated: async () => {
           if (rootElement) await runSearchImmediately(rootElement, router, searchState);
         }
       });
+      const mutationCoordinator = getCharacterMutationCoordinator(element);
+      const socket = getFoundryRuntime().game?.socket as ConnectionSocket | undefined;
+      const isSocketConnected = (): boolean => socket?.connected !== false;
+      let recoveryChain = Promise.resolve();
+      let connectionGeneration = 0;
+      let lastRecoveryRouteActor = getActiveActorUuid(router.getCurrentRoute());
+      const requestActorRecovery = (actorUuid: string, isCurrent: () => boolean, connectionResume = false): Promise<void> => {
+        const generation = connectionGeneration;
+        /** Preserves recovery exceptions without mutating a retired shell. */
+        const reportRecoveryError = (error: unknown): void => {
+          reportShellActionDiagnostic(error, { action: "refresh character after connection recovery" });
+        };
+        const task = recoveryChain.then(async () => {
+          if (rootElement !== element || !isSocketConnected() || generation !== connectionGeneration || !isCurrent()) return;
+          mutationCoordinator.beginRecovery(actorUuid, connectionResume);
+          const actor = getActorByUuid(actorUuid);
+          const refreshed = await refreshDocumentFromDatabase(actor, {
+            isCurrent: () => rootElement === element && isSocketConnected()
+              && generation === connectionGeneration && isCurrent(),
+            onError: reportRecoveryError
+          });
+          if (rootElement !== element || !isSocketConnected() || generation !== connectionGeneration || !isCurrent()) return;
+          mutationCoordinator.completeRecovery(actorUuid, refreshed);
+          if (refreshed) {
+            const route = router.getCurrentRoute();
+            if ((route.view === RouteView.Character || route.view === RouteView.OwnedDocument) && route.actorUuid === actorUuid) {
+              await renderShell(element, router, searchState, { preserveOpenCharacterDialog: true });
+              mutationCoordinator.syncStatus();
+            }
+          }
+        });
+        recoveryChain = task.catch(reportRecoveryError);
+        return task;
+      };
+      mutationCoordinator.setReconcileHandler(actorUuid => {
+        if (isSocketConnected()) void requestActorRecovery(actorUuid, () => rootElement === element);
+      });
+      connectionRecovery = createConnectionRecoveryController({
+        socket,
+        document: globalThis.document,
+        window: globalThis.window,
+        onDisconnected: () => {
+          connectionGeneration += 1;
+          mutationCoordinator.markDisconnected();
+        },
+        onRecoveryRequested: isCurrent => {
+          const route = router.getCurrentRoute();
+          const actorUuid = route.view === RouteView.Character || route.view === RouteView.OwnedDocument ? route.actorUuid : undefined;
+          if (!actorUuid) {
+            mutationCoordinator.markResumeRequired();
+            return;
+          }
+          return requestActorRecovery(actorUuid, isCurrent, true);
+        }
+      });
+      unsubscribeConnectionRouteRecovery = router.subscribe(route => {
+        const actorUuid = getActiveActorUuid(route);
+        if (actorUuid === lastRecoveryRouteActor) return;
+        lastRecoveryRouteActor = actorUuid;
+        if (actorUuid && isSocketConnected() && mutationCoordinator.isBlocked(actorUuid)) {
+          void requestActorRecovery(actorUuid, () => rootElement === element);
+        }
+      });
+      const routeAfterMount = router.getCurrentRoute();
+      const actorAfterMount = routeAfterMount.view === RouteView.Character || routeAfterMount.view === RouteView.OwnedDocument
+        ? routeAfterMount.actorUuid
+        : undefined;
+      if (actorAfterMount && mutationCoordinator.isBlocked(actorAfterMount) && isSocketConnected()) {
+        void requestActorRecovery(actorAfterMount, () => rootElement === element);
+      }
       activateBrowserHistory(router);
       viewportOwnership.acquire();
     } catch (error) {
@@ -150,13 +229,20 @@ export function createMobileShellController(): MobileShellController {
     abortController = undefined;
     reactiveRefresh?.dispose();
     reactiveRefresh = undefined;
+    connectionRecovery?.dispose();
+    connectionRecovery = undefined;
+    unsubscribeConnectionRouteRecovery?.();
+    unsubscribeConnectionRouteRecovery = undefined;
     unsubscribeRecentRouteRecording?.();
     unsubscribeRecentRouteRecording = undefined;
     lastVisitedRoute = undefined;
     clearSearchDebounce(searchState);
     unbindBrowserBack?.();
     unbindBrowserBack = undefined;
-    if (rootElement) disposeTableLayout(rootElement);
+    if (rootElement) {
+      disposeTableLayout(rootElement);
+      disposeCharacterMutationCoordinator(rootElement);
+    }
     rootElement?.remove();
     rootElement = undefined;
     uninstallLeaveGameConfirmGuard();
@@ -186,3 +272,7 @@ export function createMobileShellController(): MobileShellController {
   };
 }
 
+/** Returns the actor whose authoritative state is displayed by the active route. */
+function getActiveActorUuid(route: MobileRoute): string | undefined {
+  return route.view === RouteView.Character || route.view === RouteView.OwnedDocument ? route.actorUuid : undefined;
+}

@@ -23,6 +23,14 @@ import {
   uniqueStrings
 } from "./view-model-helpers.ts";
 import { buildOptionalDnd5eFavoriteToggleState, hasDnd5eFavoriteReference, setDnd5eFavoriteEntry } from "./favorites-storage.ts";
+import {
+  acknowledgeDnd5eAction,
+  getDnd5eRechargeOutcome,
+  getDnd5eWorkflowOutcome,
+  hasDnd5eActionAcknowledgement,
+  hasDnd5eEmbeddedDocumentAcknowledgement,
+  snapshotDnd5eMutationState
+} from "./action-outcome.ts";
 
 export type Dnd5eInventoryActor = PermissionCheckedDocument
   & FoundryDocumentMutationApi
@@ -211,7 +219,10 @@ export type Dnd5eInventoryModel = Dnd5eInventoryViewModel | UnavailableDnd5eInve
 
 export type Dnd5eInventoryControlResult = {
   ok: boolean;
-  reason?: "unavailable" | "forbidden" | "unsupported";
+  reason?: "unavailable" | "forbidden" | "unsupported" | "rejected";
+  failure?: "rejected" | "uncertain";
+  retry?: "safe" | "review";
+  changed?: boolean;
 };
 
 const CURRENCY_ORDER = ["pp", "gp", "ep", "sp", "cp"] as const;
@@ -363,8 +374,8 @@ export async function rechargeInventoryItem(actor: Dnd5eInventoryActor | null | 
   const rollRecharge = uses?.rollRecharge;
   if (item.hasRecharge !== true || typeof rollRecharge !== "function") return { ok: false, reason: "unsupported" };
 
-  await (rollRecharge as (options: { apply: boolean }) => Promise<unknown>).call(uses, { apply: true });
-  return { ok: true };
+  const result = await (rollRecharge as (options: { apply: boolean }) => Promise<unknown>).call(uses, { apply: true });
+  return getDnd5eRechargeOutcome(result, getObject(item.system)?.uses);
 }
 
 export async function setInventoryFavorite(
@@ -378,7 +389,7 @@ export async function setInventoryFavorite(
   if (!canUpdateOwnedItem(actor, item, user)) return { ok: false, reason: "forbidden" };
 
   const favoriteId = getItemUuid(item);
-  return (await setDnd5eFavoriteEntry(actor, "item", favoriteId, favorite)) ? { ok: true } : { ok: false, reason: "unsupported" };
+  return acknowledgeDnd5eAction(await setDnd5eFavoriteEntry(actor, "item", favoriteId, favorite));
 }
 
 export async function setInventoryCurrency(
@@ -397,9 +408,8 @@ export async function setInventoryCurrency(
     update[`system.currency.${id}`] = Math.max(0, Math.trunc(value as number));
   }
 
-  if (Object.keys(update).length === 0) return { ok: true };
-  await actor.update(update);
-  return { ok: true };
+  if (Object.keys(update).length === 0) return acknowledgeDnd5eAction(false);
+  return acknowledgeDnd5eAction(hasDnd5eActionAcknowledgement(await actor.update(update)));
 }
 
 async function updateOwnedItem(
@@ -415,12 +425,11 @@ async function updateOwnedItem(
   const id = item.id ?? item._id;
   if (!id) return { ok: false, reason: "unavailable" };
   if (actor.updateEmbeddedDocuments) {
-    await actor.updateEmbeddedDocuments("Item", [{ _id: id, ...update }]);
-    return { ok: true };
+    const updated = await actor.updateEmbeddedDocuments("Item", [{ _id: id, ...update }]);
+    return acknowledgeDnd5eAction(hasDnd5eEmbeddedDocumentAcknowledgement(updated, id));
   }
   if (item.update) {
-    await item.update(update);
-    return { ok: true };
+    return acknowledgeDnd5eAction(hasDnd5eActionAcknowledgement(await item.update(update)));
   }
   return { ok: false, reason: "unsupported" };
 }
@@ -543,8 +552,12 @@ export async function useInventoryItem(actor: Dnd5eInventoryActor | null | undef
   if (!hasUsableInventoryActivity(item) || !item.use) return { ok: false, reason: "unsupported" };
   // The mobile shell hides the canvas. Skip both the desktop confirmation and
   // template placement; dnd5e still owns activity selection and consumption.
-  await item.use({ create: { measuredTemplate: false } }, { configure: false, options: { sheet: null } });
-  return { ok: true };
+  const before = snapshotDnd5eMutationState(actor);
+  const result = await item.use(
+    { create: { measuredTemplate: false } },
+    { configure: false, options: { sheet: null } }
+  );
+  return getDnd5eWorkflowOutcome(result, before, snapshotDnd5eMutationState(actor));
 }
 
 /** Gives each contained item type its own table with matching column headings. */

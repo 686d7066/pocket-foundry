@@ -180,8 +180,8 @@ test("favorite play actions check permissions and call dnd5e document APIs", asy
   });
   const resolver = createResolver(actor);
 
-  assert.deepEqual(await useFavorite(actor, user, ".Item.dagger", "item", undefined, resolver), { ok: true });
-  assert.deepEqual(await useFavorite(actor, user, ".Item.hex.Activity.curse", "activity", undefined, resolver), { ok: true });
+  assert.deepEqual(await useFavorite(actor, user, ".Item.dagger", "item", undefined, resolver), { ok: true, changed: false });
+  assert.deepEqual(await useFavorite(actor, user, ".Item.hex.Activity.curse", "activity", undefined, resolver), { ok: true, changed: false });
   assert.deepEqual(await useFavorite(actor, user, ".ActiveEffect.devils-sight", "effect", undefined, resolver), { ok: true });
   assert.deepEqual(await useFavorite(actor, user, "arc", "skill", undefined, resolver), { ok: true });
   assert.deepEqual(await useFavorite(actor, user, "thieves", "tool", undefined, resolver), { ok: true });
@@ -210,6 +210,49 @@ test("favorite play actions check permissions and call dnd5e document APIs", asy
   assert.deepEqual(await useFavorite(denied, user, ".Item.dagger", "item", undefined, createResolver(denied)), { ok: false, reason: "forbidden" });
   assert.deepEqual(await adjustFavoriteValue(denied, user, "resources.primary", "resource", -1, createResolver(denied)), { ok: false, reason: "forbidden" });
   assert.deepEqual(await removeFavorite(denied, user, ".Item.dagger"), { ok: false, reason: "forbidden" });
+});
+
+test("favorite controls reject cancelled rolls, uses, and updates while accepting void legacy persistence", async () => {
+  const actor = createFavoritesActor();
+  const item = getItem(actor, "dagger");
+  const effect = getEffect(actor, "devils-sight");
+  assert.ok(item && effect);
+  actor.rollSkill = async () => null;
+  actor.update = async () => undefined;
+  item.use = async () => undefined;
+  effect.update = async () => undefined;
+  actor.system.addFavorite = async () => undefined;
+  const resolver = createResolver(actor);
+  const rejected = { ok: false, reason: "rejected", failure: "rejected", retry: "safe" };
+
+  assert.deepEqual(await useFavorite(actor, user, "arc", "skill", undefined, resolver), rejected);
+  assert.deepEqual(await useFavorite(actor, user, ".Item.dagger", "item", undefined, resolver), rejected);
+  assert.deepEqual(await useFavorite(actor, user, ".ActiveEffect.devils-sight", "effect", undefined, resolver), rejected);
+  assert.deepEqual(await adjustFavoriteValue(actor, user, "resources.primary", "resource", -1, resolver), rejected);
+  assert.deepEqual(await setContextFavorite(actor, user, "item", ".Item.dagger", true), { ok: true });
+
+  Object.defineProperty(actor, "toObject", { value: () => ({ system: { marker: 1 } }) });
+  item.use = async () => ({ itemId: item.id });
+  assert.deepEqual(await useFavorite(actor, user, ".Item.dagger", "item", undefined, resolver), { ok: true, changed: false });
+});
+
+test("legacy favorite callbacks reject only explicit false and propagate errors", async () => {
+  const actor = createFavoritesActor();
+  actor.system.addFavorite = async () => false;
+  actor.system.removeFavorite = async () => undefined;
+
+  assert.deepEqual(await setContextFavorite(actor, user, "item", ".Item.dagger", true), {
+    ok: false,
+    reason: "rejected",
+    failure: "rejected",
+    retry: "safe"
+  });
+  assert.deepEqual(await removeFavorite(actor, user, ".Item.dagger"), { ok: true });
+
+  actor.system.addFavorite = async () => {
+    throw new Error("legacy favorite failed");
+  };
+  await assert.rejects(setContextFavorite(actor, user, "item", ".Item.dagger", true), /legacy favorite failed/);
 });
 
 test("favorites template, styles, and shell wiring preserve required regions", () => {
@@ -345,11 +388,11 @@ function createFavoritesActor(overrides: Partial<TestFavoritesActor> = {}): Test
       },
       addFavorite(favorite: unknown) {
         actor.favoriteCalls.push(["add", favorite]);
-        return Promise.resolve();
+        return Promise.resolve({ id: "arlen" });
       },
       removeFavorite(id: string) {
         actor.favoriteCalls.push(["remove", id]);
-        return Promise.resolve();
+        return Promise.resolve({ id: "arlen" });
       }
     },
     items: [],
@@ -364,15 +407,15 @@ function createFavoritesActor(overrides: Partial<TestFavoritesActor> = {}): Test
     update(data: Record<string, unknown>) {
       actor.actorUpdates.push(data);
       if ("system.resources.primary.value" in data) actor.system.resources.primary = { ...(actor.system.resources.primary as object), value: data["system.resources.primary.value"] };
-      return Promise.resolve();
+      return Promise.resolve({ id: "arlen" });
     },
     rollSkill({ skill }: { skill: string }) {
       actor.skillRolls.push(skill);
-      return Promise.resolve();
+      return Promise.resolve([{}]);
     },
     rollToolCheck({ tool }: { tool: string }) {
       actor.toolRolls.push(tool);
-      return Promise.resolve();
+      return Promise.resolve([{}]);
     },
     ...overrides
   } satisfies TestFavoritesActor;
@@ -458,11 +501,11 @@ function createFavoriteDocument(actor: TestFavoritesActor, data: Partial<TestFav
     getUserLevel: () => 3,
     use() {
       document.used = (document.used ?? 0) + 1;
-      return Promise.resolve();
+      return Promise.resolve({ id: data.id ?? "" });
     },
     update(update: Record<string, unknown>) {
       document.updates?.push(update);
-      return Promise.resolve();
+      return Promise.resolve({ id: data.id ?? "" });
     },
     ...data
   } satisfies TestFavoriteDocument;

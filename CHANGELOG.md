@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## [14.11.5] - Save/connection feedback
+
+- Added save/connection feedback, duplicate prevention, recovery, and draft protection.
+
 ## [14.11.4] - Move system-specific sheet behavior out of core and shared services
 
 - Moved picker and item-detail interpretation into adapters.

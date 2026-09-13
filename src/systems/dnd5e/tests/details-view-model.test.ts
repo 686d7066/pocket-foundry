@@ -399,6 +399,17 @@ test("details play controls require update permission and use Actor.update paths
   assert.deepEqual(denied.updates, []);
 });
 
+test("details controls report cancelled document updates as rejected", async () => {
+  const actor = createDetailsActor({ update: async () => undefined });
+
+  assert.deepEqual(await applyDetailsHpDelta(actor, user, -1), {
+    ok: false,
+    reason: "rejected",
+    failure: "rejected",
+    retry: "safe"
+  });
+});
+
 test("details rest controls use dnd5e actor rest workflow and default rest permissions", async () => {
   const previousConfig = Object.getOwnPropertyDescriptor(globalThis, "CONFIG");
   const previousGame = Object.getOwnPropertyDescriptor(globalThis, "game");
@@ -438,8 +449,28 @@ test("details rest controls use dnd5e actor rest workflow and default rest permi
       { type: "long", label: "Long Rest", icon: "fa-solid fa-campground", canRest: true }
     ]);
 
-    assert.deepEqual(await applyDetailsRest(actor, user, { type: "short", dialog: false, autoHD: true }), { ok: true });
-    assert.deepEqual(await applyDetailsRest(actor, user, { type: "long", dialog: false, newDay: true, recoverTemp: true, recoverTempMax: true }), { ok: true });
+    assert.deepEqual(await applyDetailsRest(actor, user, { type: "short", dialog: false, autoHD: true }), { ok: true, changed: false });
+    assert.deepEqual(await applyDetailsRest(actor, user, { type: "long", dialog: false, newDay: true, recoverTemp: true, recoverTempMax: true }), { ok: true, changed: false });
+    const cancelled = createDetailsActor({ initiateRest: async () => undefined });
+    assert.deepEqual(await applyDetailsRest(cancelled, user, { type: "short", dialog: false }), {
+      ok: false,
+      reason: "rejected",
+      failure: "rejected",
+      retry: "safe"
+    });
+    const vetoedRest = createDetailsActor({ initiateRest: async () => ({ updateData: { "system.attributes.hp.value": 24 } }) });
+    Object.defineProperty(vetoedRest, "toObject", { value: () => ({ system: { marker: 1 } }) });
+    assert.deepEqual(await applyDetailsRest(vetoedRest, user, { type: "short", dialog: false }), { ok: true, changed: false });
+
+    const vetoedHitDie = createDetailsActor({
+      rollHitDie: async () => [{ total: 7, formula: "1d8 + 2" }]
+    });
+    Object.defineProperty(vetoedHitDie, "toObject", { value: () => ({ system: { marker: 1 } }) });
+    assert.deepEqual(await applyDetailsHitDieRoll(vetoedHitDie, user, "d8"), {
+      ok: true,
+      changed: false,
+      roll: { denomination: "d8", total: 7, formula: "1d8 + 2", hpBefore: 18, hpAfter: 18, hpDelta: 0 }
+    });
     assert.deepEqual(await applyDetailsHitDieRoll(actor, user, "d8"), {
       ok: true,
       roll: { denomination: "d8", total: 7, formula: "1d8 + 2", hpBefore: 18, hpAfter: 24, hpDelta: 6 }
@@ -714,6 +745,8 @@ function createDetailsActor(overrides: Partial<TestDetailsActor> = {}): TestDeta
     },
     ...overrides
   };
+
+  Object.defineProperty(actor, "toObject", { configurable: true, value: () => ({ system: actor.system }) });
 
   return actor;
 }

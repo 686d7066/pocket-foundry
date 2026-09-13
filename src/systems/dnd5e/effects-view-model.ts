@@ -17,6 +17,12 @@ import {
   uniqueStrings
 } from "./view-model-helpers.ts";
 import { buildDnd5eFavoriteToggleState, hasDnd5eFavoriteReference, setDnd5eFavoriteEntry } from "./favorites-storage.ts";
+import {
+  acknowledgeDnd5eAction,
+  getDnd5eWorkflowOutcome,
+  hasDnd5eActionAcknowledgement,
+  snapshotDnd5eMutationState
+} from "./action-outcome.ts";
 
 export type Dnd5eEffectsActor = PermissionCheckedDocument
   & FoundryDocumentMutationApi
@@ -153,7 +159,10 @@ export type Dnd5eEffectsModel = Dnd5eEffectsViewModel | UnavailableDnd5eEffectsV
 
 export type Dnd5eEffectsControlResult = {
   ok: boolean;
-  reason?: "unavailable" | "forbidden" | "unsupported";
+  reason?: "unavailable" | "forbidden" | "unsupported" | "rejected";
+  failure?: "rejected" | "uncertain";
+  retry?: "safe" | "review";
+  changed?: boolean;
 };
 
 type EffectCategory = {
@@ -228,8 +237,7 @@ export async function toggleEffectDisabled(
   if (!isEffectToggleable(actor, effect, normalizeConfig())) return { ok: false, reason: "unsupported" };
   if (typeof effect.update !== "function") return { ok: false, reason: "unsupported" };
 
-  await effect.update({ disabled: !effect.disabled });
-  return { ok: true };
+  return acknowledgeDnd5eAction(hasDnd5eActionAcknowledgement(await effect.update({ disabled: !effect.disabled })));
 }
 
 export async function toggleCondition(
@@ -247,8 +255,7 @@ export async function toggleCondition(
 
   if (!activeEffectImplementation?.fromStatusEffect || !activeEffectImplementation.create) return { ok: false, reason: "unsupported" };
   const effectData = await activeEffectImplementation.fromStatusEffect(conditionId);
-  await activeEffectImplementation.create(effectData, { parent: actor, keepId: true });
-  return { ok: true };
+  return acknowledgeDnd5eAction(hasDnd5eActionAcknowledgement(await activeEffectImplementation.create(effectData, { parent: actor, keepId: true })));
 }
 
 export async function deleteTemporaryEffect(
@@ -262,8 +269,7 @@ export async function deleteTemporaryEffect(
   if (effect.isTemporary !== true) return { ok: false, reason: "unsupported" };
   if (typeof effect.delete !== "function") return { ok: false, reason: "unsupported" };
 
-  await effect.delete();
-  return { ok: true };
+  return acknowledgeDnd5eAction(hasDnd5eActionAcknowledgement(await effect.delete()));
 }
 
 export async function setEffectFavorite(
@@ -277,7 +283,7 @@ export async function setEffectFavorite(
   if (!canUpdateEffect(actor, effect, user)) return { ok: false, reason: "forbidden" };
 
   const favoriteId = getEffectFavoriteId(actor, effect);
-  return (await setDnd5eFavoriteEntry(actor, "effect", favoriteId, favorite)) ? { ok: true } : { ok: false, reason: "unsupported" };
+  return acknowledgeDnd5eAction(await setDnd5eFavoriteEntry(actor, "effect", favoriteId, favorite));
 }
 
 export async function endEffectConcentration(
@@ -291,8 +297,9 @@ export async function endEffectConcentration(
   if (!isConcentrationEffect(actor, effect, normalizeConfig())) return { ok: false, reason: "unsupported" };
   if (typeof actor.endConcentration !== "function") return { ok: false, reason: "unsupported" };
 
-  await actor.endConcentration(effect);
-  return { ok: true };
+  const before = snapshotDnd5eMutationState(actor);
+  const result = await actor.endConcentration(effect);
+  return getDnd5eWorkflowOutcome(result, before, snapshotDnd5eMutationState(actor));
 }
 
 async function buildEffectSections(

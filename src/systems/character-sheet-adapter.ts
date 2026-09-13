@@ -45,6 +45,17 @@ export type CharacterSheetActionResult = {
   ok: boolean;
   reason?: string;
   data?: Record<string, unknown>;
+  /** False when an acknowledged action completed without changing character data. */
+  changed?: boolean;
+  /** Whether a failed action was definitely rejected or may have reached Foundry. */
+  failure?: "rejected" | "uncertain";
+  /** Manual retry guidance. Uncertain writes must be reviewed before retrying. */
+  retry?: "safe" | "review";
+};
+
+/** System-neutral description of an adapter action that changes character data. */
+export type CharacterSheetMutationDescriptor = {
+  label: string;
 };
 
 /**
@@ -268,6 +279,10 @@ export type CharacterSheetActionHelpers = {
     closeDialogs?: boolean;
     onSuccess?: (result: CharacterSheetActionResult) => Promise<void> | void;
   }): Promise<void>;
+  /** Runs an adapter-owned write through the shell's actor-wide mutation guard. */
+  runMutation(label: string, operation: () => Promise<CharacterSheetActionResult>): Promise<CharacterSheetActionResult>;
+  /** Whether another character write still owns the actor-wide mutation lease. */
+  isMutationPending(): boolean;
   clearTransientState(): void;
   closeFavoriteContextMenu(): void;
 };
@@ -313,6 +328,8 @@ export type CharacterSheetAdapter = {
   handleShellAction?(options: CharacterSheetShellActionContext): boolean | Promise<boolean>;
   shouldCloseDialogsAfterAction?(action: string): boolean;
   runPaneAction(options: CharacterSheetActionContext): Promise<CharacterSheetActionResult> | CharacterSheetActionResult;
+  /** Identifies pane actions that perform character writes before they execute. */
+  describePaneAction?(options: CharacterSheetActionContext): CharacterSheetMutationDescriptor | null;
   onPaneActionResult?(options: {
     actionContext: CharacterSheetActionContext;
     result: CharacterSheetActionResult;

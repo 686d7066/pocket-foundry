@@ -3,11 +3,12 @@ import { afterEach, test } from "vitest";
 import { createMobileRouter } from "../router/mobile-router.ts";
 import { RouteView } from "../router/routes.ts";
 import { handleCharacterSheetClickAction } from "../core/mobile-shell/actions-character-sheet.ts";
+import { runCharacterSheetAction, runCharacterSheetMutation } from "../core/mobile-shell/controller-helpers-navigation.ts";
 import { createInitialSearchUiState } from "../core/mobile-shell/controller-helpers-search.ts";
 import { buildShellViewModel } from "../core/mobile-shell/controller-helpers-shell.ts";
 import { buildCharacterPickerViewModel } from "../services/character-picker.ts";
 import { getCharacterSheetAdapter, registerCharacterSheetAdapter } from "../systems/character-sheet-adapter-registry.ts";
-import type { CharacterSheetAdapter, CharacterSheetActionContext } from "../systems/character-sheet-adapter.ts";
+import type { CharacterSheetActionResult, CharacterSheetAdapter, CharacterSheetActionContext } from "../systems/character-sheet-adapter.ts";
 import { createDocument, createElement, createInput, installShellFixtureRuntime } from "./support/search-ui-fixture.ts";
 
 afterEach(() => {
@@ -153,6 +154,94 @@ test("shared shell rendering and action dispatch use a minimal synthetic adapter
   assert.deepEqual(dispatchedAction?.data, { action: "synthetic-pulse", channel: "violet" });
 });
 
+test("a superseded action cannot commit its deferred render over a newer mutation on the same route", async () => {
+  const renderStarted = deferred<void>();
+  const finishRender = deferred<string>();
+  const finishSecondMutation = deferred<CharacterSheetActionResult>();
+  let renderCount = 0;
+  const adapter = createMockAdapter({
+    mutationActions: ["first-write"],
+    onRunAction: () => ({ ok: true })
+  });
+  registerCharacterSheetAdapter("synthetic-action-race", adapter);
+  const root = createElement();
+  const actor = createDocument({ uuid: "Actor.pilot", name: "Kei Voss", documentName: "Actor", type: "pilot" });
+  installShellFixtureRuntime({
+    root,
+    searchInput: createInput(),
+    actors: [actor],
+    systemId: "synthetic-action-race",
+    renderTemplate: async () => {
+      renderCount += 1;
+      if (renderCount === 1) {
+        renderStarted.resolve();
+        return finishRender.promise;
+      }
+      return "current state after rejection";
+    }
+  });
+  const router = createMobileRouter({ initialRoute: { view: RouteView.Character, actorUuid: actor.uuid, pane: "OverviewX" } });
+  const searchState = createInitialSearchUiState();
+  const first = runCharacterSheetAction(root as unknown as HTMLElement, router, searchState, "first-write");
+  await renderStarted.promise;
+
+  const second = runCharacterSheetMutation(
+    root as unknown as HTMLElement,
+    router,
+    actor.uuid,
+    "inventory",
+    () => finishSecondMutation.promise
+  );
+  root.innerHTML = "newer mutation input";
+  finishRender.resolve("obsolete first action");
+  await first;
+  assert.equal(root.innerHTML, "newer mutation input");
+
+  finishSecondMutation.resolve({ ok: false, reason: "rejected" });
+  await second;
+  assert.equal(root.innerHTML, "current state after rejection");
+});
+
+test("a rejected pane action commits current state after superseding an older action render", async () => {
+  const firstRenderStarted = deferred<void>();
+  const terminalRenderStarted = deferred<void>();
+  const finishFirstRender = deferred<string>();
+  let renderCount = 0;
+  const adapter = createMockAdapter({
+    mutationActions: ["first-write", "rejected-write"],
+    onRunAction: context => context.action === "rejected-write" ? { ok: false, reason: "rejected" } : { ok: true }
+  });
+  registerCharacterSheetAdapter("synthetic-pane-action-race", adapter);
+  const root = createElement();
+  const actor = createDocument({ uuid: "Actor.pilot", name: "Kei Voss", documentName: "Actor", type: "pilot" });
+  installShellFixtureRuntime({
+    root,
+    searchInput: createInput(),
+    actors: [actor],
+    systemId: "synthetic-pane-action-race",
+    renderTemplate: async () => {
+      renderCount += 1;
+      if (renderCount === 1) {
+        firstRenderStarted.resolve();
+        return finishFirstRender.promise;
+      }
+      terminalRenderStarted.resolve();
+      return "current state after pane rejection";
+    }
+  });
+  const router = createMobileRouter({ initialRoute: { view: RouteView.Character, actorUuid: actor.uuid, pane: "OverviewX" } });
+  const searchState = createInitialSearchUiState();
+  const first = runCharacterSheetAction(root as unknown as HTMLElement, router, searchState, "first-write");
+  await firstRenderStarted.promise;
+
+  const rejected = runCharacterSheetAction(root as unknown as HTMLElement, router, searchState, "rejected-write");
+  await terminalRenderStarted.promise;
+  finishFirstRender.resolve("obsolete first action");
+  await Promise.all([first, rejected]);
+
+  assert.equal(root.innerHTML, "current state after pane rejection");
+});
+
 test("unsupported systems list any permitted actor as identity only and keep shared navigation available", () => {
   Object.defineProperty(globalThis, "game", {
     configurable: true,
@@ -183,8 +272,9 @@ test("unsupported systems list any permitted actor as identity only and keep sha
 });
 
 function createMockAdapter(options?: {
-  onRunAction?: (context: CharacterSheetActionContext) => { ok: boolean; reason?: string; data?: Record<string, unknown> };
+  onRunAction?: (context: CharacterSheetActionContext) => CharacterSheetActionResult | Promise<CharacterSheetActionResult>;
   onActionResult?: () => void;
+  mutationActions?: readonly string[];
 }): CharacterSheetAdapter {
   return {
     isCharacterPickerActor: actor => actor.type === "pilot",
@@ -236,6 +326,7 @@ function createMockAdapter(options?: {
       data: { renderedBy: "mock-adapter" }
     }),
     runPaneAction: context => options?.onRunAction?.(context) ?? { ok: true },
+    describePaneAction: context => options?.mutationActions?.includes(context.action) ? { label: "synthetic change" } : null,
     onPaneActionResult: () => {
       options?.onActionResult?.();
     },
@@ -266,5 +357,11 @@ function createMockAdapter(options?: {
     isInteractiveSwipeTarget: () => false,
     isCharacterRoute: route => route.view === RouteView.Character
   };
+}
+
+function deferred<T>() {
+  let resolve: (value: T) => void = () => undefined;
+  const promise = new Promise<T>(done => { resolve = done; });
+  return { promise, resolve };
 }
 

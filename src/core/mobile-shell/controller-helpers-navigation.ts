@@ -27,6 +27,7 @@ import {
 } from "../../services/search.ts";
 import { getCharacterSheetAdapter } from "../../systems/character-sheet-adapter-registry.ts";
 import type {
+    CharacterSheetActionResult,
     CharacterSheetNavigationActor
 } from "../../systems/character-sheet-adapter.ts";
 import { MODULE_ID } from "../constants.ts";
@@ -35,12 +36,15 @@ import { localize } from "../localization.ts";
 import { getCollectionContents, getInitials } from "../utils.ts";
 import { createPaneSearchDrawer, getPaneSearchQuery } from "./controller-helpers-search.ts";
 import { createFoundryJournalService, getJournalPageIconText, getJournalPageTypeLabel, renderShell } from "./controller-helpers-shell.ts";
+import { getCharacterMutationCoordinator, type CharacterMutationRunResult } from "./character-mutation-coordinator.ts";
+import { invalidateShellRender, isShellRenderDisposed } from "./render-ownership.ts";
 import type { BottomNavItem, JournalShellViewModel, SearchResultViewModel, SearchTypeFilterViewModel, SearchUiState, ShellViewModel } from "./types.ts";
 
 const SELECTED_CHARACTER_STORAGE_NAMESPACE = "selectedCharacterUuid";
 const DEFAULT_DYNAMIC_WHEEL_CHUNK_SIZE = 20;
 const DYNAMIC_WHEEL_EDGE_THRESHOLD = 4;
 const encounterBackgroundImageStatus = new Map<string, "ready" | "missing" | "checking">();
+const characterActionContinuations = new WeakMap<HTMLElement, Map<string, number>>();
 
 export function clearSearchDebounce(searchState: SearchUiState): void {
   if (!searchState.debounceTimer) return;
@@ -313,6 +317,60 @@ type CharacterSheetActionOptions = {
   onSuccess?: (result: { ok: boolean; reason?: string; data?: Record<string, unknown> }) => Promise<void> | void;
 };
 
+/** Runs one character write under the shell's actor-wide execution lease. */
+export async function runCharacterSheetMutation(
+  element: HTMLElement,
+  router: MobileRouter,
+  actorUuid: string,
+  label: string,
+  operation: () => Promise<CharacterSheetActionResult> | CharacterSheetActionResult
+): Promise<CharacterMutationRunResult> {
+  const guard = createCharacterActionGuard(element, router);
+  try {
+    const mutationCoordinator = getCharacterMutationCoordinator(element);
+    if (mutationCoordinator.isBlocked(actorUuid)) {
+      return { started: false, current: false, result: { ok: false, reason: "busy", failure: "rejected" } };
+    }
+    const isLatestAction = claimCharacterActionContinuation(element, actorUuid);
+    const execution = await mutationCoordinator.run({
+      actorUuid,
+      label,
+      operation,
+      isCurrent: () => guard.isCurrent() && isLatestAction()
+    });
+    if (execution.started && execution.current && !execution.result.ok) {
+      await renderShell(element, router, undefined, {
+        isExternalOwnerCurrent: () => guard.isCurrent() && isLatestAction(),
+        preserveOpenCharacterDialog: true
+      });
+    }
+    return execution;
+  } finally {
+    guard.release();
+  }
+}
+
+/** Tracks one action across navigation while ignoring scroll-only route state. */
+function createCharacterActionGuard(element: HTMLElement, router: MobileRouter): { isCurrent: () => boolean; release: () => void } {
+  const routeKey = getCharacterActionRouteKey(router.getCurrentRoute());
+  let current = !isShellRenderDisposed(element);
+  const unsubscribe = router.subscribe(route => {
+    if (getCharacterActionRouteKey(route) !== routeKey) current = false;
+  });
+  return {
+    isCurrent: () => current && !isShellRenderDisposed(element),
+    release: () => {
+      current = false;
+      unsubscribe();
+    }
+  };
+}
+
+function getCharacterActionRouteKey(route: MobileRoute): string {
+  return JSON.stringify(route, (key, value: unknown) =>
+    key === "scrollTop" || key === "expandedDetailKeys" ? undefined : value);
+}
+
 /**
  * Executes a character pane action through the active adapter and refreshes the
  * shell when the action reports success.
@@ -339,17 +397,57 @@ export async function runCharacterSheetAction(
     data: options.data,
     event: options.event
   };
-  const result = await characterSheetAdapter.runPaneAction(actionContext);
-  characterSheetAdapter.onPaneActionResult?.({ actionContext, result });
+  const guard = createCharacterActionGuard(element, router);
+  try {
+    const mutation = characterSheetAdapter.describePaneAction?.(actionContext);
+    const mutationCoordinator = getCharacterMutationCoordinator(element);
+    if (mutation && mutationCoordinator.isBlocked(activeRoute.actorUuid)) return;
+    const isLatestAction = claimCharacterActionContinuation(element, activeRoute.actorUuid);
+    const isCurrentAction = (): boolean => guard.isCurrent() && isLatestAction();
+    const execution = mutation
+      ? await mutationCoordinator.run({
+          actorUuid: activeRoute.actorUuid,
+          label: mutation.label,
+          operation: () => characterSheetAdapter.runPaneAction(actionContext),
+          isCurrent: isCurrentAction
+        })
+      : {
+          started: true,
+          current: isCurrentAction(),
+          result: await characterSheetAdapter.runPaneAction(actionContext)
+        };
+    if (!execution.started || !execution.current || !isCurrentAction()) return;
+    const result = execution.result;
+    characterSheetAdapter.onPaneActionResult?.({ actionContext, result });
 
-  if (!result.ok) {
-    notifyCharacterSheetActionUnavailable(result.reason);
-    return;
+    if (!result.ok) {
+      notifyCharacterSheetActionUnavailable(result.reason);
+      await renderShell(element, router, searchState, {
+        isExternalOwnerCurrent: isCurrentAction,
+        preserveOpenCharacterDialog: true
+      });
+      return;
+    }
+
+    if (options.closeDialogs && isCurrentAction()) setNumberDialogOpen(element, undefined, false);
+    if (!isCurrentAction()) return;
+    await options.onSuccess?.(result);
+    if (!isCurrentAction()) return;
+    await renderShell(element, router, searchState, { isExternalOwnerCurrent: isCurrentAction });
+    if (isCurrentAction()) mutationCoordinator.syncStatus();
+  } finally {
+    guard.release();
   }
+}
 
-  if (options.closeDialogs) setNumberDialogOpen(element, undefined, false);
-  await options.onSuccess?.(result);
-  await renderShell(element, router, searchState);
+/** Claims post-action callbacks and rendering for the newest action on an actor. */
+function claimCharacterActionContinuation(element: HTMLElement, actorUuid: string): () => boolean {
+  invalidateShellRender(element);
+  const actorVersions = characterActionContinuations.get(element) ?? new Map<string, number>();
+  characterActionContinuations.set(element, actorVersions);
+  const version = (actorVersions.get(actorUuid) ?? 0) + 1;
+  actorVersions.set(actorUuid, version);
+  return () => actorVersions.get(actorUuid) === version;
 }
 
 export async function runJournalControl(

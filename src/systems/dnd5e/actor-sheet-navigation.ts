@@ -13,6 +13,7 @@ import { canViewDocument, canViewLimitedDocument, type FoundryUserLike } from ".
 import type {
     CharacterSheetActionContext,
     CharacterSheetActionResult,
+    CharacterSheetMutationDescriptor,
     CharacterSheetHeaderContent,
     CharacterSheetHeaderStat, CharacterSheetNavigationActor, CharacterSheetNavigationViewModel, CharacterSheetPaneItem, CharacterSheetPaneSpec,
     CharacterSheetPaneViewModel, CharacterSheetVisualMetadata, CharacterSheetShellActionContext, PaneSwipeGesture, UnavailableCharacterSheetNavigationViewModel
@@ -528,6 +529,34 @@ export function runCharacterSheetPaneAction(options: CharacterSheetActionContext
     default:
       return { ok: false, reason: "unsupported" };
   }
+}
+
+const DND5E_MUTATION_ACTIONS = new Set([
+  "details-toggle-inspiration", "details-confirm-hp-delta", "details-confirm-temp-hp-delta",
+  "details-death-save-pip", "details-exhaustion-pip", "details-confirm-rest", "details-roll-hit-die",
+  "inventory-confirm-quantity-delta", "inventory-confirm-set-quantity-delta", "inventory-confirm-charges-delta",
+  "inventory-confirm-currency", "inventory-toggle-equipped", "inventory-use", "inventory-toggle-attuned",
+  "inventory-toggle-prepared", "inventory-remove-container", "inventory-recharge", "inventory-add-favorite",
+  "inventory-remove-favorite", "features-confirm-uses-delta", "features-use-item", "features-use-activity",
+  "features-recharge", "features-add-favorite", "features-remove-favorite", "features-end-concentration",
+  "spells-toggle-slot-pip", "spells-set-primary", "spells-confirm-uses-delta", "spells-use-item",
+  "spells-use-activity", "spells-toggle-prepared", "spells-recharge", "spells-add-favorite",
+  "spells-remove-favorite", "effects-toggle-disabled", "effects-toggle-condition", "effects-delete-temporary",
+  "effects-add-favorite", "effects-remove-favorite", "effects-end-concentration", "favorites-confirm-value-delta",
+  "favorites-use", "favorites-remove-context", "context-add-favorite", "context-remove-favorite"
+]);
+
+/** Describes dnd5e write actions without exposing their identifiers to shared code. */
+export function describeDnd5ePaneAction(options: CharacterSheetActionContext): CharacterSheetMutationDescriptor | null {
+  if (!DND5E_MUTATION_ACTIONS.has(options.action)) return null;
+  if (options.action === "favorites-use" && (options.data?.favoriteType === "skill" || options.data?.favoriteType === "tool")) return null;
+  const label = options.action.startsWith("details-") ? localizeSystemKey("DND5E.Character", "character")
+    : options.action.startsWith("inventory-") ? localizeSystemKey("DND5E.Inventory", "inventory")
+      : options.action.startsWith("features-") ? localizeSystemKey("DND5E.Feature", "feature")
+        : options.action.startsWith("spells-") ? localizeSystemKey("DND5E.Spell", "spell")
+          : options.action.startsWith("effects-") ? localizeSystemKey("DND5E.Effect", "effect")
+            : localizeSystemKey("DND5E.Favorite", "favorite");
+  return { label };
 }
 
 /**

@@ -230,8 +230,8 @@ test("spell controls require update permission and call dnd5e document APIs", as
   const actor = createSpellsActor();
   const denied = createSpellsActor({ canUserModify: () => false, getUserLevel: () => 2 });
 
-  assert.deepEqual(await useSpellItem(actor, user, "eldritch-blast"), { ok: true });
-  assert.deepEqual(await useSpellActivity(actor, user, "hex", "hex-save"), { ok: true });
+  assert.deepEqual(await useSpellItem(actor, user, "eldritch-blast"), { ok: true, changed: false });
+  assert.deepEqual(await useSpellActivity(actor, user, "hex", "hex-save"), { ok: true, changed: false });
   assert.deepEqual(await toggleSpellPrepared(actor, user, "hex", config), { ok: true });
   assert.deepEqual(await adjustSpellRemainingUses(actor, user, "hex", -1), { ok: true });
   assert.deepEqual(await rechargeSpell(actor, user, "hellish-rebuke"), { ok: true });
@@ -259,6 +259,38 @@ test("spell controls require update permission and call dnd5e document APIs", as
   assert.deepEqual(await setSpellcastingAbility(denied, user, "cha"), { ok: false, reason: "forbidden" });
   assert.deepEqual(await setSpellFavorite(denied, user, "hex", true), { ok: false, reason: "forbidden" });
   assert.deepEqual(denied.embeddedUpdates, []);
+});
+
+test("spell controls reject cancelled dnd5e workflows and empty document acknowledgements", async () => {
+  const actor = createSpellsActor({
+    update: async () => undefined,
+    updateEmbeddedDocuments: async () => []
+  });
+  const item = getSpell(actor, "eldritch-blast");
+  const activity = getActivity(actor, "hex", "hex-save");
+  const rechargeable = getSpell(actor, "hellish-rebuke");
+  assert.ok(item && activity && rechargeable);
+  item.use = async () => undefined;
+  activity.use = async () => undefined;
+  (rechargeable.system?.uses as Record<string, unknown>).spent = 1;
+  (rechargeable.system?.uses as Record<string, unknown>).rollRecharge = async () => ({
+    rolls: [{}],
+    updates: { "system.uses.spent": 0 }
+  });
+  const rejected = { ok: false, reason: "rejected", failure: "rejected", retry: "safe" };
+
+  assert.deepEqual(await toggleSpellSlotPip(actor, user, "pact", 2), rejected);
+  assert.deepEqual(await useSpellItem(actor, user, "eldritch-blast"), rejected);
+  assert.deepEqual(await useSpellActivity(actor, user, "hex", "hex-save"), rejected);
+  assert.deepEqual(await toggleSpellPrepared(actor, user, "hex", config), rejected);
+  assert.deepEqual(await rechargeSpell(actor, user, "hellish-rebuke"), rejected);
+  assert.deepEqual(await setSpellcastingAbility(actor, user, "cha"), rejected);
+
+  Object.defineProperty(actor, "toObject", { value: () => ({ system: { marker: 1 } }) });
+  item.use = async () => ({ itemId: item.id });
+  activity.use = async () => ({ activityId: activity.id });
+  assert.deepEqual(await useSpellItem(actor, user, "eldritch-blast"), { ok: true, changed: false });
+  assert.deepEqual(await useSpellActivity(actor, user, "hex", "hex-save"), { ok: true, changed: false });
 });
 
 test("spells template and styles preserve required regions without create or delete controls", () => {
@@ -349,11 +381,11 @@ function createSpellsActor(overrides: Partial<TestSpellActor> = {}): TestSpellAc
       favorites: [],
       addFavorite(item: TestSpellItem) {
         actor.favoriteCalls.push(["add", item.id ?? ""]);
-        return Promise.resolve();
+        return Promise.resolve({ id: "arlen" });
       },
       removeFavorite(item: TestSpellItem) {
         actor.favoriteCalls.push(["remove", item.id ?? ""]);
-        return Promise.resolve();
+        return Promise.resolve({ id: "arlen" });
       }
     },
     spellcastingClasses: {
@@ -378,11 +410,11 @@ function createSpellsActor(overrides: Partial<TestSpellActor> = {}): TestSpellAc
       actor.actorUpdates.push(data);
       const spells = ((actor.system as { spells: { pact: { value: number } } }).spells);
       if ("system.spells.pact.value" in data) spells.pact.value = data["system.spells.pact.value"] as number;
-      return Promise.resolve();
+      return Promise.resolve({ id: "arlen" });
     },
     updateEmbeddedDocuments(embeddedName: "Item", updates: Array<Record<string, unknown>>) {
       actor.embeddedUpdates.push({ embeddedName, updates });
-      return Promise.resolve();
+      return Promise.resolve(updates);
     },
     ...overrides
   } satisfies TestSpellActor;
@@ -416,7 +448,7 @@ function createSpellsActor(overrides: Partial<TestSpellActor> = {}): TestSpellAc
             save: { ability: "wis", dc: 13 },
             use() {
               this.useCalls = (this.useCalls ?? 0) + 1;
-              return Promise.resolve();
+              return Promise.resolve({ activity: this });
             }
           } as TestSpellActivity
         ]
@@ -455,9 +487,11 @@ function createSpellsActor(overrides: Partial<TestSpellActor> = {}): TestSpellAc
         uses: {
           max: 1,
           value: 0,
-          rollRecharge() {
+          spent: 1,
+          rollRecharge(this: { spent: number }) {
             actor.recharged += 1;
-            return Promise.resolve();
+            this.spent = 0;
+            return Promise.resolve({ rolls: [{}], updates: { "system.uses.spent": 0 } });
           }
         },
         activities: []
@@ -473,6 +507,8 @@ function createSpellsActor(overrides: Partial<TestSpellActor> = {}): TestSpellAc
     }),
     createSpell(actor, { id: "patron", name: "Fiend Patron", type: "feat", system: {} })
   ];
+
+  Object.defineProperty(actor, "toObject", { configurable: true, value: () => ({ system: actor.system }) });
 
   return actor;
 }
@@ -500,11 +536,11 @@ function createSpell(actor: TestSpellActor, data: Partial<TestSpellItem>): TestS
     },
     use() {
       item.useCalls = (item.useCalls ?? 0) + 1;
-      return Promise.resolve();
+      return Promise.resolve({ item });
     },
     update(updateData: Record<string, unknown>) {
       actor.embeddedUpdates.push({ embeddedName: "Item", updates: [{ _id: item.id, ...updateData }] });
-      return Promise.resolve();
+      return Promise.resolve(item);
     },
     ...data
   };

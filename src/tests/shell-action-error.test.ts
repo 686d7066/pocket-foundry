@@ -3,6 +3,7 @@ import { afterEach, test } from "vitest";
 import {
   closeShellActionErrorDialog,
   getShellActionErrorMessage,
+  reportShellActionDiagnostic,
   reportShellActionError
 } from "../core/mobile-shell/controller-helpers-ui.ts";
 
@@ -61,6 +62,31 @@ test("shell action error dialogs can be closed by the delegated shell action", (
 
   closeShellActionErrorDialog(root as unknown as HTMLElement);
 
+  assert.equal(root.querySelectorAll("[data-shell-action-error-dialog='shell-action-error']").length, 0);
+});
+
+test("diagnostic-only reporting preserves the original error without opening user-facing UI", () => {
+  const root = createElement("div");
+  const notifications: string[] = [];
+  const calls: unknown[][] = [];
+  const failure = new Error("Recovery exploded");
+  installDom();
+  Object.defineProperty(globalThis, "ui", {
+    configurable: true,
+    value: { notifications: { error: (message: string) => notifications.push(message) } }
+  });
+  Object.defineProperty(globalThis, "console", {
+    configurable: true,
+    value: { error: (...args: unknown[]) => calls.push(args) }
+  });
+
+  reportShellActionDiagnostic(failure, { action: "refresh character after connection recovery" });
+
+  assert.equal(calls.length, 1);
+  assert.match(String(calls[0]?.[0]), /refresh character after connection recovery failed/);
+  assert.equal(calls[0]?.[1], failure);
+  assert.match(failure.stack ?? "", /Recovery exploded/);
+  assert.deepEqual(notifications, []);
   assert.equal(root.querySelectorAll("[data-shell-action-error-dialog='shell-action-error']").length, 0);
 });
 

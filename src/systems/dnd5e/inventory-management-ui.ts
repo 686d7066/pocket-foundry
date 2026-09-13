@@ -87,14 +87,19 @@ function editor(title: string, context: CharacterSheetShellActionContext) {
     form.addEventListener("submit", event => {
       if (closed || !context.helpers.isCurrentRoute()) { event.preventDefault(); close(); return; }
       event.preventDefault(); if (busy || !form.reportValidity()) return;
-      busy = true; submit.disabled = true; cancel.disabled = true;
+      busy = true;
+      const controls = Array.from(form.elements ?? []).filter((control): control is HTMLInputElement | HTMLSelectElement | HTMLButtonElement =>
+        "disabled" in control);
+      const disabledBefore = controls.map(control => control.disabled);
+      controls.forEach(control => { control.disabled = true; });
       status.textContent = text("Saving", "Saving…");
       void (async () => {
         try {
-          const result = await operation();
+          const result = await context.helpers.runMutation(text("MutationLabel", "inventory"), operation);
           if (closed || !context.helpers.isCurrentRoute()) { close(); return; }
           if (!result.ok) {
-            status.textContent = result.reason === "contents-changed" ? text("Changed", "The bag contents changed. Close this dialog and review them again.")
+            status.textContent = result.failure === "uncertain" ? text("Failed", "The operation failed or its result is uncertain. Check the current inventory before retrying; some changes may have reached Foundry.")
+              : result.reason === "contents-changed" ? text("Changed", "The bag contents changed. Close this dialog and review them again.")
               : result.reason === "cycle" || result.reason === "depth" ? text("Nesting", "That move would create invalid or excessively deep nesting.")
               : result.reason === "bag-quantity" ? text("BagQuantity", "Add one bag at a time. Each bag has its own contents.")
               : text("Rejected", "The change could not be completed. Check permissions and current inventory before trying again.");
@@ -104,7 +109,10 @@ function editor(title: string, context: CharacterSheetShellActionContext) {
           await context.helpers.runAction("inventory-management-refresh");
         } catch {
           status.textContent = text("Failed", "The operation failed or its result is uncertain. Check the current inventory before retrying; some changes may have reached Foundry.");
-        } finally { busy = false; submit.disabled = false; cancel.disabled = false; }
+        } finally {
+          busy = false;
+          controls.forEach((control, index) => { control.disabled = disabledBefore[index] ?? false; });
+        }
       })();
     });
   };

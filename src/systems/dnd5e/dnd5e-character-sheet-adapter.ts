@@ -7,6 +7,7 @@ import {
   clearDnd5eTransientState,
   createCharacterPaneRoute,
   createOwnedDocumentRoute,
+  describeDnd5ePaneAction,
   DND5E_PANE_PARTIAL_PATHS,
   DND5E_PANE_SPECS,
   DND5E_PANE_TEMPLATE_PATHS,
@@ -49,6 +50,7 @@ export const dnd5eCharacterSheetAdapter: CharacterSheetAdapter = {
   handleShellAction: options => handleDnd5eShellAction(options),
   shouldCloseDialogsAfterAction: action => shouldCloseDnd5eDialogsAfterAction(action),
   runPaneAction: options => runCharacterSheetPaneAction(options),
+  describePaneAction: options => describeDnd5ePaneAction(options),
   onPaneActionResult: ({ actionContext, result }) => {
     if (actionContext.route.view !== RouteView.Character || !result.ok || actionContext.action !== "details-roll-hit-die") return;
     const roll = result.data?.shortRestRoll;

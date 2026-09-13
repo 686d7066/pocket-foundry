@@ -21,6 +21,14 @@ import {
   uniqueStrings
 } from "./view-model-helpers.ts";
 import { buildDnd5eFavoriteToggleState, hasDnd5eFavoriteReference, setDnd5eFavoriteEntry } from "./favorites-storage.ts";
+import {
+  acknowledgeDnd5eAction,
+  getDnd5eRechargeOutcome,
+  getDnd5eWorkflowOutcome,
+  hasDnd5eActionAcknowledgement,
+  hasDnd5eEmbeddedDocumentAcknowledgement,
+  snapshotDnd5eMutationState
+} from "./action-outcome.ts";
 
 export type Dnd5eFeaturesActor = PermissionCheckedDocument
   & FoundryDocumentMutationApi
@@ -172,7 +180,10 @@ export type Dnd5eFeaturesModel = Dnd5eFeaturesViewModel | UnavailableDnd5eFeatur
 
 export type Dnd5eFeaturesControlResult = {
   ok: boolean;
-  reason?: "unavailable" | "forbidden" | "unsupported";
+  reason?: "unavailable" | "forbidden" | "unsupported" | "rejected";
+  failure?: "rejected" | "uncertain";
+  retry?: "safe" | "review";
+  changed?: boolean;
 };
 
 /**
@@ -231,8 +242,9 @@ export async function useFeatureItem(actor: Dnd5eFeaturesActor | null | undefine
   const activities = getUsableActivities(item);
   if (activities.length > 1) return { ok: false, reason: "unsupported" };
 
-  await item.use(undefined, { options: { sheet: null } });
-  return { ok: true };
+  const before = snapshotDnd5eMutationState(actor);
+  const result = await item.use(undefined, { options: { sheet: null } });
+  return getDnd5eWorkflowOutcome(result, before, snapshotDnd5eMutationState(actor));
 }
 
 export async function useFeatureActivity(
@@ -247,8 +259,9 @@ export async function useFeatureActivity(
   if (!canUpdateOwnedItem(actor, item, user)) return { ok: false, reason: "forbidden" };
   if (activity.canUse === false || typeof activity.use !== "function") return { ok: false, reason: "unsupported" };
 
-  await activity.use(undefined, { options: { sheet: null } });
-  return { ok: true };
+  const before = snapshotDnd5eMutationState(actor);
+  const result = await activity.use(undefined, { options: { sheet: null } });
+  return getDnd5eWorkflowOutcome(result, before, snapshotDnd5eMutationState(actor));
 }
 
 export async function adjustFeatureRemainingUses(
@@ -291,8 +304,8 @@ export async function rechargeFeature(actor: Dnd5eFeaturesActor | null | undefin
   const rollRecharge = uses?.rollRecharge;
   if (item.hasRecharge !== true || typeof rollRecharge !== "function") return { ok: false, reason: "unsupported" };
 
-  await (rollRecharge as (options: { apply: boolean }) => Promise<unknown>).call(uses, { apply: true });
-  return { ok: true };
+  const result = await (rollRecharge as (options: { apply: boolean }) => Promise<unknown>).call(uses, { apply: true });
+  return getDnd5eRechargeOutcome(result, getObject(item.system)?.uses);
 }
 
 export async function setFeatureFavorite(
@@ -305,7 +318,7 @@ export async function setFeatureFavorite(
   if (!actor || !item) return { ok: false, reason: "unavailable" };
   if (!canUpdateOwnedItem(actor, item, user)) return { ok: false, reason: "forbidden" };
 
-  return (await setDnd5eFavoriteEntry(actor, "item", getItemUuid(item), favorite, { legacyAddTarget: item, legacyRemoveTarget: item })) ? { ok: true } : { ok: false, reason: "unsupported" };
+  return acknowledgeDnd5eAction(await setDnd5eFavoriteEntry(actor, "item", getItemUuid(item), favorite, { legacyAddTarget: item, legacyRemoveTarget: item }));
 }
 
 export async function endFeatureConcentration(
@@ -318,8 +331,9 @@ export async function endFeatureConcentration(
   if (!canUpdateOwnedItem(actor, item, user)) return { ok: false, reason: "forbidden" };
   if (typeof actor.endConcentration !== "function") return { ok: false, reason: "unsupported" };
 
-  await actor.endConcentration(item);
-  return { ok: true };
+  const before = snapshotDnd5eMutationState(actor);
+  const result = await actor.endConcentration(item);
+  return getDnd5eWorkflowOutcome(result, before, snapshotDnd5eMutationState(actor));
 }
 
 async function updateOwnedItem(
@@ -335,12 +349,11 @@ async function updateOwnedItem(
   const id = item.id ?? item._id;
   if (!id) return { ok: false, reason: "unavailable" };
   if (actor.updateEmbeddedDocuments) {
-    await actor.updateEmbeddedDocuments("Item", [{ _id: id, ...update }]);
-    return { ok: true };
+    const updated = await actor.updateEmbeddedDocuments("Item", [{ _id: id, ...update }]);
+    return acknowledgeDnd5eAction(hasDnd5eEmbeddedDocumentAcknowledgement(updated, id));
   }
   if (item.update) {
-    await item.update(update);
-    return { ok: true };
+    return acknowledgeDnd5eAction(hasDnd5eActionAcknowledgement(await item.update(update)));
   }
   return { ok: false, reason: "unsupported" };
 }

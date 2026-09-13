@@ -33,9 +33,17 @@ export function reportShellActionError(
 ): void {
   const message = options.userMessage ?? getShellActionErrorMessage(options.kind ?? "unknown");
   const detail = formatShellActionErrorDetail(error);
-  globalThis.console?.error?.(`${MODULE_ID} ${options.action ?? "shell action"} failed.`, error);
+  reportShellActionDiagnostic(error, options);
   notifyShellActionError(message);
   if (root) openShellActionErrorDialog(root, message, detail);
+}
+
+/** Logs an unexpected shell failure without changing user-owned UI state. */
+export function reportShellActionDiagnostic(
+  error: unknown,
+  options: { action?: string } = {}
+): void {
+  globalThis.console?.error?.(`${MODULE_ID} ${options.action ?? "shell action"} failed.`, error);
 }
 
 /**
@@ -274,5 +282,29 @@ export function openConfirmationDialog(root: HTMLElement, options: ConfirmationD
 
 export function closeConfirmationDialog(root: HTMLElement, id: string): void {
   root.querySelectorAll<HTMLElement>(`[data-confirm-dialog='${CSS.escape(id)}']`).forEach(dialog => dialog.remove());
+}
+
+/**
+ * Retains the currently open template dialog so a recovery render preserves
+ * its entered values without replaying the submitted operation.
+ */
+export type CapturedCharacterDialog = {
+  restore(): void;
+};
+
+export function captureOpenCharacterDialog(root: HTMLElement): CapturedCharacterDialog | undefined {
+  const dialog = root.querySelector<HTMLElement>(".mock-dialog.open");
+  if (!dialog) return undefined;
+  const dialogId = dialog.id;
+  return {
+    restore: () => {
+      const replacement = dialogId ? root.querySelector<HTMLElement>(`#${CSS.escape(dialogId)}`) : null;
+      if (dialogId) {
+        if (replacement && replacement !== dialog && typeof replacement.replaceWith === "function") replacement.replaceWith(dialog);
+        return;
+      }
+      (root.querySelector<HTMLElement>(".pocket-foundry-root") ?? root).append(dialog);
+    }
+  };
 }
 

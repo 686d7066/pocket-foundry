@@ -210,6 +210,7 @@ test("currency confirmation applies centered deltas to the absolute actor values
 type TestActor = Dnd5eDetailsActor & {
   rests: Dnd5eDetailsRestConfig[];
   hitDieRolls: Array<{ denomination: string | undefined; configure: boolean | undefined; create: boolean | undefined }>;
+  toObject(source?: boolean): Record<string, unknown>;
 };
 
 /** Creates an updateable dnd5e actor that records rest and hit-die API calls. */
@@ -234,6 +235,7 @@ function createActor(): TestActor {
     getUserLevel: () => 3,
     rests: [],
     hitDieRolls: [],
+    toObject: () => ({ system: actor.system }),
     update: async data => {
       const nextHp = data["system.attributes.hp.value"];
       const hp = getRecord(getRecord(actor.system)?.attributes)?.hp;
@@ -243,6 +245,9 @@ function createActor(): TestActor {
     },
     initiateRest: async config => {
       actor.rests.push(config);
+      const hp = getRecord(getRecord(actor.system)?.attributes)?.hp;
+      const hpRecord = getRecord(hp);
+      if (typeof hpRecord?.value === "number") hpRecord.value += 1;
       return actor;
     },
     rollHitDie: async (config, dialog, message) => {
@@ -302,6 +307,8 @@ function createActionHarness(
         const result = await execute(action, options?.data);
         if (result.ok) await options?.onSuccess?.(result);
       },
+      runMutation: async (_label, operation) => operation(),
+      isMutationPending: () => false,
       clearTransientState: () => {
         transientClearCount += 1;
       },
