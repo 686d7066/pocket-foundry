@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { afterEach, test } from "vitest";
 import { createMobileRouter } from "../router/mobile-router.ts";
 import { RouteView, type MobileRoute } from "../router/routes.ts";
+import { RECENT_ROUTES_SETTING } from "../core/settings.ts";
 import { createFoundryRecentRouteRecordStorage, createRecentRoutesStorageKey, createMobileRecentsService, getRecentRouteId } from "../services/recents.ts";
 import type { FoundryDocumentLike } from "../services/document-lookup.ts";
 
@@ -184,6 +185,37 @@ test("Foundry recents storage is scoped by current system and user inside the se
   assert.equal((await fixtureSystemService.listRows()).length, 1);
 });
 
+test("concurrent recents from separate storage wrappers preserve both visits in order", async () => {
+  const fixture = installDeferredRecentSettings();
+  const firstService = createMobileRecentsService({ storage: createFoundryRecentRouteRecordStorage() });
+  const secondService = createMobileRecentsService({ storage: createFoundryRecentRouteRecordStorage() });
+
+  const first = firstService.recordRoute({ view: RouteView.Character, actorUuid: "Actor.first", pane: "Details" }, 1);
+  await fixture.firstWriteStarted.promise;
+  const second = secondService.recordRoute({ view: RouteView.Character, actorUuid: "Actor.second", pane: "Inventory" }, 2);
+  fixture.releaseFirstWrite.resolve();
+  await Promise.all([first, second]);
+
+  assert.deepEqual(readPersistedRecentRoutes(fixture.values).map(record => record.route), [
+    { view: RouteView.Character, actorUuid: "Actor.second", pane: "Inventory" },
+    { view: RouteView.Character, actorUuid: "Actor.first", pane: "Details" }
+  ]);
+});
+
+test("clearing recents after a pending visit leaves the persisted list empty", async () => {
+  const fixture = installDeferredRecentSettings();
+  const recordingService = createMobileRecentsService({ storage: createFoundryRecentRouteRecordStorage() });
+  const clearingService = createMobileRecentsService({ storage: createFoundryRecentRouteRecordStorage() });
+
+  const recording = recordingService.recordRoute({ view: RouteView.Character, actorUuid: "Actor.first", pane: "Details" }, 1);
+  await fixture.firstWriteStarted.promise;
+  const clearing = clearingService.clearRoutes();
+  fixture.releaseFirstWrite.resolve();
+  await Promise.all([recording, clearing]);
+
+  assert.deepEqual(readPersistedRecentRoutes(fixture.values), []);
+});
+
 test("opening a recent entry goes through the internal mobile router", async () => {
   const router = createMobileRouter({ initialRoute: { view: RouteView.Recents } });
   const route: MobileRoute = { view: RouteView.Character, actorUuid: "Actor.arlen", pane: "Inventory", scrollTop: 10 };
@@ -239,6 +271,53 @@ function createFixtureRecentsService(documents: FoundryDocumentLike[]) {
       fromUuid: async uuid => documentMap.get(uuid) ?? null
     }
   });
+}
+
+/** Installs a Foundry backend whose first recents write waits on an explicit gate. */
+function installDeferredRecentSettings() {
+  const values = new Map<string, unknown>();
+  const firstWriteStarted = deferred<void>();
+  const releaseFirstWrite = deferred<void>();
+  let writes = 0;
+  Object.defineProperty(globalThis, "game", {
+    configurable: true,
+    value: {
+      user: { id: "User1" },
+      system: { id: "fixtureSystem" },
+      world: { id: "World1" },
+      settings: {
+        get: (_namespace: string, key: string) => values.get(key) ?? {},
+        set: async (_namespace: string, key: string, value: unknown) => {
+          writes += 1;
+          if (writes === 1) {
+            firstWriteStarted.resolve();
+            await releaseFirstWrite.promise;
+          }
+          values.set(key, value);
+        }
+      }
+    }
+  });
+  return { values, firstWriteStarted, releaseFirstWrite };
+}
+
+/** Reads the current user's normalized recents from the persisted setting root. */
+function readPersistedRecentRoutes(values: Map<string, unknown>): Array<{ route: MobileRoute; lastOpened: number }> {
+  const root = values.get(RECENT_ROUTES_SETTING) as Record<string, Record<string, unknown>> | undefined;
+  const records = root?.fixtureSystem?.User1;
+  assert.ok(Array.isArray(records));
+  return records as Array<{ route: MobileRoute; lastOpened: number }>;
+}
+
+/** Creates an explicit promise gate without relying on timing delays. */
+function deferred<T>() {
+  let resolve: (value: T | PromiseLike<T>) => void = () => undefined;
+  let reject: (reason?: unknown) => void = () => undefined;
+  const promise = new Promise<T>((accept, fail) => {
+    resolve = accept;
+    reject = fail;
+  });
+  return { promise, resolve, reject };
 }
 
 function createDocument(options: {

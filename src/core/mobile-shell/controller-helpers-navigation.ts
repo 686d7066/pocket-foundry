@@ -818,13 +818,14 @@ export function getSelectedCharacterStorageKey(): LocalStorageKey<string> {
 }
 
 /**
- * Creates the Foundry settings backed recents service when UUID lookup is available.
+ * Creates the recents service when UUID lookup and an active settings, system,
+ * and user scope are available.
  */
 export function createFoundryRecentsService(): ReturnType<typeof createMobileRecentsService> | null {
   const runtime = getFoundryRuntime();
   const fromUuid = runtime.foundry?.utils?.fromUuid;
   const user = runtime.game?.user;
-  if (!user?.id || !fromUuid) return null;
+  if (!runtime.game?.settings || !runtime.game.system?.id?.trim() || !user?.id?.trim() || !fromUuid) return null;
 
   return createMobileRecentsService({
     storage: createFoundryRecentRouteRecordStorage(),

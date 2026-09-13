@@ -32,7 +32,7 @@ export type RecentsViewModel = {
 };
 
 export type MobileRecentsService = {
-  recordRoute: (route: MobileRoute, openedAt?: number) => Promise<void>;
+  recordRoute: (route: MobileRoute, openedAt?: number) => Promise<boolean>;
   clearRoutes: () => Promise<void>;
   listRows: () => Promise<RecentRouteRowViewModel[]>;
   getRouteById: (id: string) => Promise<MobileRoute | null>;
@@ -92,22 +92,24 @@ export function createMobileRecentsService(options: {
 
   return {
     recordRoute: async (route, openedAt = now()) => {
-      if (!isRecentableRoute(route)) return;
+      if (!isRecentableRoute(route)) return false;
 
-      const records = dedupeRecentRouteRecords(storage.read());
       const identity = getRecentRouteIdentity(route);
-      const nextRecords = [
-        {
-          route: cloneRoute(route),
-          lastOpened: openedAt
-        },
-        ...records.filter(record => getRecentRouteIdentity(record.route) !== identity)
-      ].slice(0, MAX_RECENT_ROUTES);
-
-      await storage.write(nextRecords);
+      const routeSnapshot = cloneRoute(route);
+      await storage.update(value => {
+        const records = dedupeRecentRouteRecords(value);
+        return [
+          {
+            route: routeSnapshot,
+            lastOpened: openedAt
+          },
+          ...records.filter(record => getRecentRouteIdentity(record.route) !== identity)
+        ].slice(0, MAX_RECENT_ROUTES);
+      });
+      return true;
     },
     clearRoutes: async () => {
-      await storage.write([]);
+      await storage.update(() => []);
     },
     listRows: async () => {
       const records = dedupeRecentRouteRecords(storage.read());
@@ -140,13 +142,16 @@ export function getRecentRouteId(route: MobileRoute): string {
 }
 
 function createLocalRecentRouteRecordStorage(storageKey: LocalStorageKey<RecentRouteRecord[]> | undefined): RecentRouteRecordStorage {
-  return {
+  const storage: RecentRouteRecordStorage = {
     read: () => storageKey ? readLocalStorage(storageKey) ?? [] : [],
-    write: async value => {
+    write: value => storage.update(() => value),
+    update: async transform => {
+      const value = normalizeRecentRouteRecords(transform(storage.read()));
       if (storageKey) writeLocalStorage(storageKey, value);
-      return normalizeRecentRouteRecords(value);
+      return value;
     }
   };
+  return storage;
 }
 
 function dedupeRecentRouteRecords(records: RecentRouteRecord[]): RecentRouteRecord[] {

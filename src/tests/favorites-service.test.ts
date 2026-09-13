@@ -81,6 +81,54 @@ test("generic favorites add and remove while preserving existing sort order", as
   );
 });
 
+test("concurrent favorite additions preserve both updates", async () => {
+  const values = new Map<string, unknown>();
+  const firstWriteStarted = deferred<void>();
+  const releaseFirstWrite = deferred<void>();
+  let writes = 0;
+  Object.defineProperty(globalThis, "game", {
+    configurable: true,
+    value: {
+      user: { id: "User1" },
+      system: { id: "fixtureSystem" },
+      world: { id: "World1" },
+      settings: {
+        get: (_namespace: string, key: string) => values.get(key) ?? {},
+        set: async (_namespace: string, key: string, value: unknown) => {
+          writes += 1;
+          if (writes === 1) {
+            firstWriteStarted.resolve();
+            await releaseFirstWrite.promise;
+          }
+          values.set(key, value);
+        }
+      }
+    }
+  });
+
+  const first = setFavoriteEntry({ uuid: "Actor.arlen" }, "item", "Item.first", true);
+  await firstWriteStarted.promise;
+  const second = setFavoriteEntry({ uuid: "Actor.arlen" }, "item", "Item.second", true);
+  releaseFirstWrite.resolve();
+  await Promise.all([first, second]);
+
+  assert.deepEqual(getFavoriteEntries({ uuid: "Actor.arlen" }).map(entry => entry.id), ["Item.first", "Item.second"]);
+});
+
+test("a rejected favorite write propagates without reporting success or changing stored state", async () => {
+  const values = installFoundrySettings(new Map());
+  const runtime = globalThis as typeof globalThis & {
+    game: { settings: { set: (_namespace: string, key: string, value: unknown) => Promise<void> } };
+  };
+  runtime.game.settings.set = async () => {
+    throw new Error("favorite setting denied");
+  };
+
+  await assert.rejects(setFavoriteEntry({ uuid: "Actor.arlen" }, "item", "Item.denied", true), /favorite setting denied/);
+  assert.deepEqual(getFavoriteEntries({ uuid: "Actor.arlen" }), []);
+  assert.equal(values.has(FAVORITES_SETTING), false);
+});
+
 test("generic favorites fall back to legacy entries and callbacks outside Foundry settings", async () => {
   const calls: Array<[boolean, unknown]> = [];
   const fallbackEntries = [
@@ -128,4 +176,15 @@ function installFoundrySettings(settingValues: Map<string, unknown>): Map<string
     }
   });
   return settingValues;
+}
+
+/** Creates an explicit promise gate without relying on timing delays. */
+function deferred<T>() {
+  let resolve: (value: T | PromiseLike<T>) => void = () => undefined;
+  let reject: (reason?: unknown) => void = () => undefined;
+  const promise = new Promise<T>((accept, fail) => {
+    resolve = accept;
+    reject = fail;
+  });
+  return { promise, resolve, reject };
 }

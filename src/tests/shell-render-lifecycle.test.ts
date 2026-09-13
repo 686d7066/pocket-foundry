@@ -6,14 +6,15 @@ import { disposeShellRendering } from "../core/mobile-shell/render-ownership.ts"
 import { createMobileRouter } from "../router/mobile-router.ts";
 import { RouteView } from "../router/routes.ts";
 import { createReactiveRefreshController } from "../services/reactive-refresh.ts";
-import { createElement, createInput, installShellFixtureRuntime, settle } from "./support/search-ui-fixture.ts";
+import { RECENT_ROUTES_SETTING } from "../core/settings.ts";
+import { createDocument, createElement, createInput, installShellFixtureRuntime, settle } from "./support/search-ui-fixture.ts";
 
 const cleanups: Array<() => void> = [];
 afterEach(() => {
   cleanups.splice(0).forEach(cleanup => cleanup());
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
-  for (const key of ["document", "Element", "addEventListener", "removeEventListener", "game", "history", "location", "localStorage", "renderTemplate", "foundry"]) {
+  for (const key of ["document", "Element", "addEventListener", "removeEventListener", "game", "history", "location", "localStorage", "renderTemplate", "foundry", "ui"]) {
     Reflect.deleteProperty(globalThis, key);
   }
 });
@@ -27,12 +28,12 @@ function deferred<T>() {
 }
 
 /** Real shell models and routing with only Foundry's asynchronous template boundary replaced. */
-function fixture() {
+function fixture(options: { actors?: unknown; systemId?: string } = {}) {
   const root = Object.assign(Object.create(null) as HTMLElement, createElement());
   const input = createInput();
   const requests: Array<ReturnType<typeof deferred<string>> & { model: object }> = [];
   let nextRequest = deferred<void>();
-  installShellFixtureRuntime({ root, searchInput: input, renderTemplate: (_path, model) => {
+  installShellFixtureRuntime({ root, searchInput: input, actors: options.actors, systemId: options.systemId, renderTemplate: (_path, model) => {
     const request = { ...deferred<string>(), model };
     requests.push(request);
     nextRequest.resolve();
@@ -135,6 +136,143 @@ test("current render restores focus and the latest scroll state", async () => {
   frames.forEach(frame => frame(0));
   assert.equal(f.root.scrollTop, 75);
   assert.equal(f.input.focused, true);
+});
+
+test("rendering a recentable route does not write recents", async () => {
+  const f = fixture({ systemId: "fixtureSystem" });
+  const runtime = globalThis as typeof globalThis & {
+    game: { world?: { id: string }; settings: { set: (_namespace: string, key: string, value: unknown) => Promise<void> } };
+  };
+  runtime.game.world = { id: "World1" };
+  let writes = 0;
+  runtime.game.settings.set = async () => { writes += 1; };
+  const router = createMobileRouter({
+    initialRoute: { view: RouteView.Character, actorUuid: "Actor.arlen", pane: "Details" }
+  });
+
+  const rendering = renderShell(f.root, router);
+  (await f.request()).resolve("character");
+  await rendering;
+
+  assert.equal(writes, 0);
+});
+
+test("navigation records one visit without delaying render or rewriting it on refresh", async () => {
+  const actor = createDocument({ uuid: "Actor.arlen", name: "Arlen", documentName: "Actor" });
+  const f = fixture({ actors: [actor], systemId: "fixtureSystem" });
+  const runtime = globalThis as typeof globalThis & {
+    game: {
+      world?: { id: string };
+      settings: {
+        get: (_namespace: string, key: string) => unknown;
+        set: (_namespace: string, key: string, value: unknown) => Promise<void>;
+      };
+    };
+  };
+  runtime.game.world = { id: "World1" };
+  const settingValues = new Map<string, unknown>();
+  const saveStarted = deferred<void>();
+  const releaseSave = deferred<void>();
+  let writes = 0;
+  runtime.game.settings.get = (_namespace, key) => settingValues.get(key) ?? {};
+  runtime.game.settings.set = async (_namespace, key, value) => {
+    writes += 1;
+    saveStarted.resolve();
+    await releaseSave.promise;
+    settingValues.set(key, value);
+  };
+
+  const controller = createMobileShellController();
+  cleanups.push(controller.unmount);
+  const mounting = controller.mount();
+  (await f.request()).resolve("characters");
+  await mounting;
+
+  f.root.dispatch("click", {
+    preventDefault: () => undefined,
+    stopPropagation: () => undefined,
+    stopImmediatePropagation: () => undefined,
+    target: {
+      closest: () => ({ dataset: { action: "open-character", uuid: "Actor.arlen" } })
+    }
+  });
+  const navigationRender = await f.request();
+  await saveStarted.promise;
+  assert.equal(writes, 1);
+  navigationRender.resolve("character");
+  await settle();
+
+  f.root.dispatch("click", {
+    preventDefault: () => undefined,
+    stopPropagation: () => undefined,
+    stopImmediatePropagation: () => undefined,
+    target: {
+      closest: () => ({ dataset: { action: "open-character", uuid: "Actor.arlen" } })
+    }
+  });
+  const repeatedNavigationRender = await f.request();
+  repeatedNavigationRender.resolve("same character");
+  await settle();
+  assert.equal(writes, 1);
+
+  const refreshing = controller.refresh();
+  (await f.request()).resolve("refreshed character");
+  await refreshing;
+  assert.equal(writes, 1);
+
+  releaseSave.resolve();
+  await settle();
+  const root = settingValues.get(RECENT_ROUTES_SETTING) as Record<string, Record<string, unknown>>;
+  const records = root.fixtureSystem?.player;
+  assert.ok(Array.isArray(records));
+  assert.equal(records.length, 1);
+  assert.deepEqual(records[0], {
+    route: { view: RouteView.Character, actorUuid: "Actor.arlen", pane: "Details" },
+    lastOpened: (records[0] as { lastOpened: number }).lastOpened
+  });
+});
+
+test("a late recents write failure is ignored after the owning shell unmounts", async () => {
+  const actor = createDocument({ uuid: "Actor.arlen", name: "Arlen", documentName: "Actor" });
+  const f = fixture({ actors: [actor], systemId: "fixtureSystem" });
+  const runtime = globalThis as typeof globalThis & {
+    game: {
+      world?: { id: string };
+      settings: {
+        get: (_namespace: string, key: string) => unknown;
+        set: (_namespace: string, key: string, value: unknown) => Promise<void>;
+      };
+    };
+  };
+  runtime.game.world = { id: "World1" };
+  const saveStarted = deferred<void>();
+  const save = deferred<void>();
+  runtime.game.settings.get = () => ({});
+  runtime.game.settings.set = async () => {
+    saveStarted.resolve();
+    await save.promise;
+  };
+  const log = vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+  const controller = createMobileShellController();
+  const mounting = controller.mount();
+  (await f.request()).resolve("characters");
+  await mounting;
+  f.root.dispatch("click", {
+    preventDefault: () => undefined,
+    stopPropagation: () => undefined,
+    stopImmediatePropagation: () => undefined,
+    target: {
+      closest: () => ({ dataset: { action: "open-character", uuid: "Actor.arlen" } })
+    }
+  });
+  (await f.request()).resolve("character");
+  await saveStarted.promise;
+  controller.unmount();
+  save.reject(new Error("late recents failure"));
+  await settle();
+
+  assert.equal(log.mock.calls.length, 0);
 });
 
 test("failed render preserves committed content and a later render recovers", async () => {
