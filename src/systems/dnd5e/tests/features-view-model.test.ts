@@ -162,7 +162,7 @@ test("feature controls require update permission and call dnd5e document APIs", 
   assert.deepEqual(denied.embeddedUpdates, []);
 });
 
-test("feature controls reject cancelled dnd5e workflows and empty document acknowledgements", async () => {
+test("feature controls reject cancelled dnd5e workflows and empty document acknowledgements while accepting void legacy persistence", async () => {
   const actor = createFeaturesActor({
     updateEmbeddedDocuments: async () => [],
     endConcentration: async () => []
@@ -186,7 +186,7 @@ test("feature controls reject cancelled dnd5e workflows and empty document ackno
   assert.deepEqual(await useFeatureActivity(actor, user, "channel-divinity", "turn-undead"), rejected);
   assert.deepEqual(await adjustFeatureRemainingUses(actor, user, "lay-on-hands", -1), rejected);
   assert.deepEqual(await rechargeFeature(actor, user, "mystic-step"), rejected);
-  assert.deepEqual(await setFeatureFavorite(actor, user, "lay-on-hands", true), rejected);
+  assert.deepEqual(await setFeatureFavorite(actor, user, "lay-on-hands", true), { ok: true });
   assert.deepEqual(await endFeatureConcentration(actor, user, "mystic-step"), rejected);
 
   Object.defineProperty(actor, "toObject", { value: () => ({ system: { marker: 1 } }) });
@@ -196,6 +196,26 @@ test("feature controls reject cancelled dnd5e workflows and empty document ackno
   assert.deepEqual(await useFeatureItem(actor, user, "lay-on-hands"), { ok: true, changed: false });
   assert.deepEqual(await useFeatureActivity(actor, user, "channel-divinity", "turn-undead"), { ok: true, changed: false });
   assert.deepEqual(await endFeatureConcentration(actor, user, "mystic-step"), { ok: true, changed: false });
+});
+
+test("feature favorite callbacks reject only explicit false and propagate errors", async () => {
+  const actor = createFeaturesActor();
+  assert.ok(actor.system);
+  actor.system.addFavorite = async () => false;
+  actor.system.removeFavorite = async () => undefined;
+
+  assert.deepEqual(await setFeatureFavorite(actor, user, "lay-on-hands", true), {
+    ok: false,
+    reason: "rejected",
+    failure: "rejected",
+    retry: "safe"
+  });
+  assert.deepEqual(await setFeatureFavorite(actor, user, "lay-on-hands", false), { ok: true });
+
+  actor.system.addFavorite = async () => {
+    throw new Error("legacy feature favorite failed");
+  };
+  await assert.rejects(setFeatureFavorite(actor, user, "lay-on-hands", true), /legacy feature favorite failed/);
 });
 
 test("features template and styles preserve required regions without create or delete controls", () => {

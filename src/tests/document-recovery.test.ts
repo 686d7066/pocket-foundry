@@ -74,6 +74,8 @@ test("recovery fails closed when public database APIs are unavailable or ownersh
 });
 
 test("recovery reports failure when source conversion or application throws", async () => {
+  const failure = new Error("invalid source");
+  const reported: unknown[] = [];
   class ActorDocument {
     static database = { get: async () => [new ActorDocument(true)] };
     id = "hero";
@@ -83,7 +85,30 @@ test("recovery reports failure when source conversion or application throws", as
       if (this.fresh) return { _id: "hero", value: 2 };
       return { _id: "hero", value: 1 };
     }
-    updateSource() { throw new Error("invalid source"); }
+    updateSource() { throw failure; }
   }
-  assert.equal(await refreshDocumentFromDatabase(new ActorDocument(), { isCurrent: () => true }), false);
+  assert.equal(await refreshDocumentFromDatabase(new ActorDocument(), {
+    isCurrent: () => true,
+    onError: error => reported.push(error)
+  }), false);
+  assert.deepEqual(reported, [failure]);
+});
+
+test("recovery preserves a database rejection for diagnostics", async () => {
+  const failure = new Error("database unavailable");
+  const reported: unknown[] = [];
+  class ActorDocument {
+    static database = { get: async () => { throw failure; } };
+    id = "hero";
+    documentName = "Actor";
+    toObject() { return { _id: "hero" }; }
+    updateSource() { return undefined; }
+  }
+
+  assert.equal(await refreshDocumentFromDatabase(new ActorDocument(), {
+    isCurrent: () => true,
+    onError: error => reported.push(error)
+  }), false);
+  assert.deepEqual(reported, [failure]);
+  assert.match(failure.stack ?? "", /database unavailable/);
 });

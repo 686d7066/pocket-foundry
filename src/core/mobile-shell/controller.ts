@@ -14,7 +14,7 @@ import { createFoundryRecentsService, createFoundryRoutePermissionResolver, getA
 import { clearSearchDebounce, createInitialSearchUiState, runSearchImmediately } from "./controller-helpers-search.ts";
 import { normalizeCharacterRoutePanes, renderShell } from "./controller-helpers-shell.ts";
 import { activateBrowserHistory, bindBrowserBack, uninstallLeaveGameConfirmGuard, writeBrowserHistory } from "./controller-helpers-browser-history.ts";
-import { reportShellActionError } from "./controller-helpers-ui.ts";
+import { reportShellActionDiagnostic, reportShellActionError } from "./controller-helpers-ui.ts";
 import { bindMobileShellEvents } from "./events.ts";
 import type { MobileShellController } from "./types.ts";
 import { disposeCharacterMutationCoordinator, getCharacterMutationCoordinator } from "./character-mutation-coordinator.ts";
@@ -120,13 +120,18 @@ export function createMobileShellController(): MobileShellController {
       let lastRecoveryRouteActor = getActiveActorUuid(router.getCurrentRoute());
       const requestActorRecovery = (actorUuid: string, isCurrent: () => boolean, connectionResume = false): Promise<void> => {
         const generation = connectionGeneration;
+        /** Preserves recovery exceptions without mutating a retired shell. */
+        const reportRecoveryError = (error: unknown): void => {
+          reportShellActionDiagnostic(error, { action: "refresh character after connection recovery" });
+        };
         const task = recoveryChain.then(async () => {
           if (rootElement !== element || !isSocketConnected() || generation !== connectionGeneration || !isCurrent()) return;
           mutationCoordinator.beginRecovery(actorUuid, connectionResume);
           const actor = getActorByUuid(actorUuid);
           const refreshed = await refreshDocumentFromDatabase(actor, {
             isCurrent: () => rootElement === element && isSocketConnected()
-              && generation === connectionGeneration && isCurrent()
+              && generation === connectionGeneration && isCurrent(),
+            onError: reportRecoveryError
           });
           if (rootElement !== element || !isSocketConnected() || generation !== connectionGeneration || !isCurrent()) return;
           mutationCoordinator.completeRecovery(actorUuid, refreshed);
@@ -138,7 +143,7 @@ export function createMobileShellController(): MobileShellController {
             }
           }
         });
-        recoveryChain = task.catch(() => undefined);
+        recoveryChain = task.catch(reportRecoveryError);
         return task;
       };
       mutationCoordinator.setReconcileHandler(actorUuid => {

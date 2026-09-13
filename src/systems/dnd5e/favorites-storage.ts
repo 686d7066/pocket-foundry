@@ -93,6 +93,9 @@ export function buildOptionalDnd5eFavoriteToggleState(
   return state.canToggleFavorite ? state : {};
 }
 
+/**
+ * Runs a legacy dnd5e favorite callback, treating void as success and only explicit false as rejection.
+ */
 async function setLegacyDnd5eFavoriteEntry(
   actor: Dnd5eFavoriteActorReference,
   favorite: boolean,
@@ -102,7 +105,7 @@ async function setLegacyDnd5eFavoriteEntry(
   const action = favorite ? system?.addFavorite : system?.removeFavorite;
   if (typeof action !== "function") return false;
 
-  return Boolean(await (action as (favoriteTarget: unknown) => Promise<unknown>).call(system, target));
+  return await (action as (favoriteTarget: unknown) => Promise<unknown>).call(system, target) !== false;
 }
 
 function hasLegacyFavoriteApi(actor: Dnd5eFavoriteActorReference): boolean {

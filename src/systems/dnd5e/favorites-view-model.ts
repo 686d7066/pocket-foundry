@@ -613,11 +613,14 @@ function getFavoriteEntries(actor: Dnd5eFavoritesActor): Dnd5eFavoriteEntry[] {
   return getStoredFavoriteEntries(actor, { fallbackEntries: getObject(actor.system)?.favorites });
 }
 
-async function toggleLegacyFavorite(actor: Dnd5eFavoritesActor, favorite: boolean, target: unknown): Promise<unknown> {
+/**
+ * Runs a legacy dnd5e favorite callback, treating void as success and only explicit false as rejection.
+ */
+async function toggleLegacyFavorite(actor: Dnd5eFavoritesActor, favorite: boolean, target: unknown): Promise<boolean> {
   const system = getObject(actor.system);
   const action = favorite ? system?.addFavorite : system?.removeFavorite;
   if (typeof action !== "function") return false;
-  return Boolean(await (action as (favoriteTarget: unknown) => Promise<unknown>).call(system, target));
+  return await (action as (favoriteTarget: unknown) => Promise<unknown>).call(system, target) !== false;
 }
 
 function canViewFavoriteTarget(actor: Dnd5eFavoritesActor, target: Dnd5eFavoriteDocument, user: FoundryUserLike): boolean {

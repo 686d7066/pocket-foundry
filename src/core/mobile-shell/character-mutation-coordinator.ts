@@ -1,5 +1,6 @@
 import { localize } from "../localization.ts";
 import type { CharacterSheetActionResult } from "../../systems/character-sheet-adapter.ts";
+import { reportShellActionDiagnostic } from "./controller-helpers-ui.ts";
 
 export type CharacterMutationStatusKind = "idle" | "saving" | "saved" | "completed" | "failed" | "disconnected" | "recovering";
 
@@ -146,7 +147,8 @@ export function createCharacterMutationCoordinator(element: HTMLElement): Charac
     let result: CharacterSheetActionResult;
     try {
       result = await options.operation();
-    } catch {
+    } catch (error) {
+      reportShellActionDiagnostic(error, { action: `character mutation (${options.label})` });
       result = { ok: false, reason: "failed", failure: "uncertain", retry: "review" };
     }
 

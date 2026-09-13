@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { test } from "vitest";
+import { afterEach, test, vi } from "vitest";
 import { createCharacterMutationCoordinator } from "../core/mobile-shell/character-mutation-coordinator.ts";
 import { runCharacterSheetMutation } from "../core/mobile-shell/controller-helpers-navigation.ts";
 import { createMobileRouter } from "../router/mobile-router.ts";
@@ -13,9 +13,12 @@ function rootFixture() {
 
 function deferred<T>() {
   let resolve: (value: T) => void = () => undefined;
-  const promise = new Promise<T>(done => { resolve = done; });
-  return { promise, resolve };
+  let reject: (reason: unknown) => void = () => undefined;
+  const promise = new Promise<T>((done, fail) => { resolve = done; reject = fail; });
+  return { promise, resolve, reject };
 }
+
+afterEach(() => vi.restoreAllMocks());
 
 test("slow character writes expose saving state and reject duplicate actor submissions without queuing", async () => {
   const fixture = rootFixture();
@@ -63,17 +66,23 @@ test("definite rejection permits manual retry while uncertain failure requires r
   const uncertainFixture = rootFixture();
   const uncertain = createCharacterMutationCoordinator(uncertainFixture.root);
   const reconcile: string[] = [];
+  const failure = new Error("connection lost");
+  const log = vi.spyOn(console, "error").mockImplementation(() => undefined);
   uncertain.setReconcileHandler(actorUuid => reconcile.push(actorUuid));
   const uncertainResult = await uncertain.run({
     actorUuid: "Actor.uncertain",
     label: "resource",
-    operation: () => { throw new Error("connection lost"); },
+    operation: () => { throw failure; },
     isCurrent: () => true
   });
   assert.equal(uncertainResult.current, false);
   assert.equal(uncertainResult.result.failure, "uncertain");
   assert.equal(uncertain.isBlocked("Actor.uncertain"), true);
   assert.deepEqual(reconcile, ["Actor.uncertain"]);
+  assert.equal(log.mock.calls.length, 1);
+  assert.match(String(log.mock.calls[0]?.[0]), /character mutation \(resource\) failed/);
+  assert.equal(log.mock.calls[0]?.[1], failure);
+  assert.match(failure.stack ?? "", /connection lost/);
   uncertain.beginRecovery("Actor.uncertain");
   uncertain.completeRecovery("Actor.uncertain", true);
   assert.equal(uncertain.isBlocked("Actor.uncertain"), false);
@@ -271,6 +280,35 @@ test("disposing a shell retires callbacks without releasing an unsettled actor l
   secondCoordinator.completeRecovery("Actor.remount", true);
   assert.equal(secondCoordinator.isBlocked("Actor.remount"), false);
   secondCoordinator.dispose();
+});
+
+test("a late rejected mutation preserves its error without touching newer UI", async () => {
+  const fixture = rootFixture();
+  const coordinator = createCharacterMutationCoordinator(fixture.root);
+  const write = deferred<{ ok: true }>();
+  const failure = new Error("late retired mutation failure");
+  const log = vi.spyOn(console, "error").mockImplementation(() => undefined);
+  let current = true;
+  const pending = coordinator.run({
+    actorUuid: "Actor.retired",
+    label: "inventory",
+    operation: () => write.promise,
+    isCurrent: () => current
+  });
+
+  current = false;
+  fixture.status.dataset.state = "newer-screen";
+  fixture.status.textContent = "Newer screen content";
+  write.reject(failure);
+  const result = await pending;
+
+  assert.equal(result.current, false);
+  assert.equal(result.result.failure, "uncertain");
+  assert.equal(log.mock.calls.length, 1);
+  assert.equal(log.mock.calls[0]?.[1], failure);
+  assert.equal(fixture.status.dataset.state, "newer-screen");
+  assert.equal(fixture.status.textContent, "Newer screen content");
+  coordinator.dispose();
 });
 
 test("mutation ownership survives scroll state updates but is permanently retired by away-and-back navigation", async () => {

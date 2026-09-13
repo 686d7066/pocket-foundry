@@ -24,7 +24,7 @@ type DocumentDatabase = {
  */
 export async function refreshDocumentFromDatabase(
   document: unknown,
-  options: { isCurrent: () => boolean; attempts?: number }
+  options: { isCurrent: () => boolean; attempts?: number; onError?: (error: unknown) => void }
 ): Promise<boolean> {
   const retained = getRootDocument(document);
   if (!retained || !options.isCurrent()) return false;
@@ -41,7 +41,7 @@ export async function refreshDocumentFromDatabase(
   const attempts = Math.max(1, Math.min(options.attempts ?? 2, 3));
   for (let attempt = 0; attempt < attempts; attempt += 1) {
     if (!options.isCurrent()) return false;
-    const before = sourceFingerprint(retained);
+    const before = sourceFingerprint(retained, options.onError);
     if (before === null) return false;
 
     let response: unknown;
@@ -51,12 +51,15 @@ export async function refreshDocumentFromDatabase(
         documentName,
         query: { _id: id }
       });
-    } catch {
+    } catch (error) {
+      options.onError?.(error);
       return false;
     }
 
     if (!options.isCurrent()) return false;
-    if (sourceFingerprint(retained) !== before) continue;
+    const after = sourceFingerprint(retained, options.onError);
+    if (after === null) return false;
+    if (after !== before) continue;
     try {
       const fresh = getReturnedDocument(response);
       if (!fresh || typeof fresh.toObject !== "function") return false;
@@ -64,7 +67,8 @@ export async function refreshDocumentFromDatabase(
       if (!source) return false;
       retained.updateSource(source, { recursive: false });
       return true;
-    } catch {
+    } catch (error) {
+      options.onError?.(error);
       return false;
     }
   }
@@ -85,10 +89,12 @@ function getRootDocument(value: unknown): RecoverableDocument | null {
   return null;
 }
 
-function sourceFingerprint(document: RecoverableDocument): string | null {
+/** Serializes retained source for race detection while preserving conversion failures. */
+function sourceFingerprint(document: RecoverableDocument, onError?: (error: unknown) => void): string | null {
   try {
     return JSON.stringify(document.toObject?.(true));
-  } catch {
+  } catch (error) {
+    onError?.(error);
     return null;
   }
 }

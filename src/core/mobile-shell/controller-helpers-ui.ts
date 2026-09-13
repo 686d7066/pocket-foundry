@@ -33,9 +33,17 @@ export function reportShellActionError(
 ): void {
   const message = options.userMessage ?? getShellActionErrorMessage(options.kind ?? "unknown");
   const detail = formatShellActionErrorDetail(error);
-  globalThis.console?.error?.(`${MODULE_ID} ${options.action ?? "shell action"} failed.`, error);
+  reportShellActionDiagnostic(error, options);
   notifyShellActionError(message);
   if (root) openShellActionErrorDialog(root, message, detail);
+}
+
+/** Logs an unexpected shell failure without changing user-owned UI state. */
+export function reportShellActionDiagnostic(
+  error: unknown,
+  options: { action?: string } = {}
+): void {
+  globalThis.console?.error?.(`${MODULE_ID} ${options.action ?? "shell action"} failed.`, error);
 }
 
 /**
