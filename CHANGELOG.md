@@ -2,7 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
-## [14.11.0] - 18-enable-users-managing-their-inventory
+## [14.11.1] - Prevent stale asynchronous renders
+
+- Stale render fix
+
+## [14.11.0] - Inventory Management
 
 - Create, rename and delete bags.
 - Move items between bags and main inventory, with nesting safeguards.
