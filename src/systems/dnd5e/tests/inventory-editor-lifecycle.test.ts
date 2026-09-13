@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { afterEach, test, vi } from "vitest";
 import { handleCharacterSheetClickAction } from "../../../core/mobile-shell/actions-character-sheet.ts";
+import { disposeCharacterMutationCoordinator, getCharacterMutationCoordinator } from "../../../core/mobile-shell/character-mutation-coordinator.ts";
 import { createInitialSearchUiState } from "../../../core/mobile-shell/controller-helpers-search.ts";
 import { openConfirmationDialog } from "../../../core/mobile-shell/controller-helpers-ui.ts";
 import { createMobileRouter } from "../../../router/mobile-router.ts";
@@ -137,4 +138,46 @@ test("navigation during actor lookup does not open an editor for the previous ch
   assert.ok(resolve); resolve(f.actor); await pending;
   assert.equal(vi.mocked(openConfirmationDialog).mock.calls.length, 0);
   assert.equal(f.createItems.mock.calls.length, 0);
+});
+
+test("a slow rejected inventory submit is sent once and preserves the entered draft for safe retry", async () => {
+  const f = fixture();
+  let finish: (value: object[]) => void = () => undefined;
+  f.createItems.mockImplementation(() => new Promise(resolve => { finish = resolve; }));
+  await f.open();
+  const form = f.element.querySelector("form");
+  const field = form?.querySelector("input");
+  assert.ok(form); assert.ok(field);
+  field.value = "Travel bag";
+  form.dispatchEvent(new Event("submit", { cancelable: true }));
+  form.dispatchEvent(new Event("submit", { cancelable: true }));
+  assert.equal(f.createItems.mock.calls.length, 1);
+  finish([]);
+  await new Promise(resolve => setTimeout(resolve, 0));
+  assert.equal(field.value, "Travel bag");
+  assert.equal(form.isConnected, true);
+});
+
+test("a disconnected inventory submit remains open for review even if its late document call succeeds", async () => {
+  const f = fixture();
+  let finish: (value: object[]) => void = () => undefined;
+  f.createItems.mockImplementation(() => new Promise(resolve => { finish = resolve; }));
+  await f.open();
+  const form = f.element.querySelector("form");
+  const field = form?.querySelector("input");
+  assert.ok(form); assert.ok(field);
+  field.value = "Travel bag";
+  form.dispatchEvent(new Event("submit", { cancelable: true }));
+
+  const coordinator = getCharacterMutationCoordinator(f.element as unknown as HTMLElement);
+  coordinator.markDisconnected();
+  finish([{ id: "created-bag" }]);
+  await new Promise(resolve => setTimeout(resolve, 0));
+
+  assert.equal(field.value, "Travel bag");
+  assert.equal(form.isConnected, true);
+  assert.match(form.querySelector("p")?.textContent ?? "", /uncertain/i);
+  coordinator.beginRecovery("Actor.first");
+  coordinator.completeRecovery("Actor.first", true);
+  disposeCharacterMutationCoordinator(f.element as unknown as HTMLElement);
 });

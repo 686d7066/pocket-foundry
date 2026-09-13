@@ -358,5 +358,8 @@ export type Dnd5eDetailsModel = Dnd5eDetailsViewModel | UnavailableDnd5eDetailsV
  */
 export type Dnd5eDetailsControlResult = {
   ok: boolean;
-  reason?: "unavailable" | "forbidden";
+  reason?: "unavailable" | "forbidden" | "rejected";
+  failure?: "rejected" | "uncertain";
+  retry?: "safe" | "review";
+  changed?: boolean;
 };

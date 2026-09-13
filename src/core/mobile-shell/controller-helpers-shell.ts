@@ -1,5 +1,6 @@
 import { disposeTableLayout, initializeTableLayout } from "./table-layout.ts";
 import { beginShellRender, isShellRenderDisposed } from "./render-ownership.ts";
+import { getCharacterMutationCoordinator } from "./character-mutation-coordinator.ts";
 import type { foundry } from "fvtt-types";
 import { type MobileRouter } from "../../router/mobile-router.ts";
 import { createShellRoute, getShellDestination, RouteView, ShellDestination, type CharacterRoute, type MobileRoute } from "../../router/routes.ts";
@@ -31,6 +32,7 @@ import { getCharacterSheetBannerEnabled, getColorBlindMode, getMobileViewEnabled
 import { getCollectionContents, getInitials } from "../utils.ts";
 import { buildBottomNav, createFoundryRecentsService, getActorByUuid, getCharacterPickerRouteFavorites, getHeader, persistSelectedCharacterRoute, restoreCharacterPickerSearchFocus, restorePaneSearchFocus, restoreRouteScroll, restoreSearchFocus } from "./controller-helpers-navigation.ts";
 import { buildSearchViewModel, prepareSearchForRender } from "./controller-helpers-search.ts";
+import { captureOpenCharacterDialog } from "./controller-helpers-ui.ts";
 import type { JournalEntryTemplateModel, JournalPageRowViewModel, JournalPageTemplateModel, JournalShellViewModel, SearchUiState, ShellContentType, ShellViewModel } from "./types.ts";
 
 const SHELL_TEMPLATE = `modules/${MODULE_ID}/templates/shell.hbs`;
@@ -42,15 +44,24 @@ type JournalEntryPageClass = typeof foundry.documents.JournalEntryPage & {
 
 
 /** Renders only while this request still owns the mounted root and current route. */
-export async function renderShell(rootElement: HTMLElement, router: MobileRouter, searchState?: SearchUiState): Promise<void> {
+export async function renderShell(
+  rootElement: HTMLElement,
+  router: MobileRouter,
+  searchState?: SearchUiState,
+  options: {
+    isExternalOwnerCurrent?: () => boolean;
+    preserveOpenCharacterDialog?: boolean;
+  } = {}
+): Promise<void> {
   if (isShellRenderDisposed(rootElement)) return;
   // Normalization changes the route synchronously; claim that route before
   // yielding, so a later navigation or render supersedes this entire request.
   const normalizedRoute = normalizeUnavailableCombatRoute(router);
   const isCurrent = beginShellRender(rootElement, router);
+  const ownsRender = (): boolean => isCurrent() && (options.isExternalOwnerCurrent?.() ?? true);
   try {
     const activeRoute = await normalizedRoute;
-    if (!isCurrent()) return;
+    if (!ownsRender()) return;
     const handlebars = getFoundryHandlebars();
     if (!handlebars.renderTemplate) {
       throw new Error(`${MODULE_ID} cannot render the mobile shell before Foundry's template renderer is available.`);
@@ -58,24 +69,37 @@ export async function renderShell(rootElement: HTMLElement, router: MobileRouter
 
     const selectedCharacterRoute = router.getSelectedCharacterRoute();
     if (searchState) await prepareSearchForRender(activeRoute, searchState);
-    if (!isCurrent()) return;
+    if (!ownsRender()) return;
     persistSelectedCharacterRoute(selectedCharacterRoute);
     const viewModel = await buildShellViewModel(activeRoute, router.canGoBack(), selectedCharacterRoute, searchState);
-    if (!isCurrent()) return;
+    if (!ownsRender()) return;
     const html = await handlebars.renderTemplate(SHELL_TEMPLATE, viewModel);
-    if (!isCurrent()) return;
+    if (!ownsRender()) return;
+    const restoreDialog = options.preserveOpenCharacterDialog && canPreserveCharacterDialog(rootElement, activeRoute)
+      ? captureOpenCharacterDialog(rootElement)
+      : undefined;
     disposeTableLayout(rootElement);
     rootElement.innerHTML = html;
-    restoreRouteScroll(rootElement, router.getCurrentRoute(), isCurrent);
-    restoreSearchFocus(rootElement, activeRoute, isCurrent);
-    restorePaneSearchFocus(rootElement, activeRoute, isCurrent);
-    restoreCharacterPickerSearchFocus(rootElement, activeRoute, isCurrent);
+    restoreDialog?.restore();
+    getCharacterMutationCoordinator(rootElement).syncStatus();
+    restoreRouteScroll(rootElement, router.getCurrentRoute(), ownsRender);
+    restoreSearchFocus(rootElement, activeRoute, ownsRender);
+    restorePaneSearchFocus(rootElement, activeRoute, ownsRender);
+    restoreCharacterPickerSearchFocus(rootElement, activeRoute, ownsRender);
     initializeTableLayout(rootElement);
   } catch (error) {
     // An obsolete failure must not open an error dialog on the newer screen.
     // Current failures still reach the caller's existing error boundary.
-    if (isCurrent()) throw error;
+    if (ownsRender()) throw error;
   }
+}
+
+/** Keeps draft DOM only when it belongs to the character pane being committed. */
+function canPreserveCharacterDialog(rootElement: HTMLElement, route: MobileRoute): boolean {
+  if (route.view !== RouteView.Character) return false;
+  const committedSheet = rootElement.querySelector<HTMLElement>("[data-region='actor-sheet-shell']");
+  return committedSheet?.dataset.actorUuid === route.actorUuid
+    && committedSheet.dataset.activePane === getCharacterSheetAdapter().normalizePane(route.pane);
 }
 
 async function normalizeUnavailableCombatRoute(router: MobileRouter): Promise<MobileRoute> {

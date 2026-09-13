@@ -6,7 +6,9 @@ import {
   adjustInventoryQuantity,
   buildDnd5eInventoryViewModel,
   moveInventoryItemToContainer,
+  rechargeInventoryItem,
   removeInventoryItemFromContainer,
+  setInventoryCurrency,
   setInventoryRemainingUses,
   toggleInventoryAttuned,
   toggleInventoryEquipped,
@@ -27,7 +29,10 @@ test("inventory Use follows dnd5e canUse and delegates consumption without type 
   const activity = { canUse: true };
   item.system.activities = [activity];
   const calls: unknown[] = [];
-  item.use = async (config, dialog) => { calls.push([config, dialog]); };
+  item.use = async (config, dialog) => {
+    calls.push([config, dialog]);
+    return { item };
+  };
   const quantity = item.system.quantity;
   const model = await buildDnd5eInventoryViewModel({ actor, user });
   if (model.unavailable) throw new Error("Expected inventory.");
@@ -42,6 +47,36 @@ test("inventory Use follows dnd5e canUse and delegates consumption without type 
   actor.canUserModify = () => false;
   assert.equal((await useInventoryItem(actor, user, item.id ?? "")).reason, "forbidden");
   assert.equal(calls.length, 1);
+});
+
+test("inventory controls reject cancelled uses, updates, recharges, and empty currency submissions", async () => {
+  const actor = createInventoryActor({ updateEmbeddedDocuments: async () => [] });
+  const item = getItem(actor, "rations");
+  const wand = getItem(actor, "wand");
+  assert.ok(item && wand);
+  item.system.activities = [{ canUse: true }];
+  item.use = async () => undefined;
+  wand.hasRecharge = true;
+  wand.system.uses = {
+    ...wand.system.uses as object,
+    spent: 1,
+    rollRecharge: async () => ({ rolls: [{}], updates: { "system.uses.spent": 0 } })
+  };
+  const rejected = { ok: false, reason: "rejected", failure: "rejected", retry: "safe" };
+
+  assert.deepEqual(await useInventoryItem(actor, user, item.id ?? ""), rejected);
+  assert.deepEqual(await adjustInventoryQuantity(actor, user, "dagger", 1), rejected);
+  assert.deepEqual(await rechargeInventoryItem(actor, user, "wand"), rejected);
+  assert.deepEqual(await setInventoryCurrency(actor, user, {}), rejected);
+
+  Object.defineProperty(actor, "toObject", { value: () => ({ system: { marker: 1 } }) });
+  item.use = async () => ({ itemId: item.id });
+  assert.deepEqual(await useInventoryItem(actor, user, item.id ?? ""), { ok: true, changed: false });
+
+  (wand.system.uses as Record<string, unknown>).rollRecharge = async () => ({ rolls: [{}], updates: {} });
+  assert.deepEqual(await rechargeInventoryItem(actor, user, "wand"), { ok: true, changed: false });
+  (wand.system.uses as Record<string, unknown>).rollRecharge = async () => [{}];
+  assert.deepEqual(await rechargeInventoryItem(actor, user, "wand"), { ok: true, changed: false });
 });
 
 test("inventory view model groups visible dnd5e items by semantic sections", async () => {
@@ -602,6 +637,8 @@ function createInventoryActor(overrides: Partial<TestInventoryActor> = {}): Test
       system: { uses: { value: 0, max: 4 } }
     })
   ];
+
+  Object.defineProperty(actor, "toObject", { configurable: true, value: () => ({ system: actor.system }) });
 
   return actor;
 }

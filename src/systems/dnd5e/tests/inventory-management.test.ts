@@ -10,6 +10,7 @@ function fixture() {
     createEmbeddedDocuments: async (_kind, data) => { writes.push(data); return data; },
     updateEmbeddedDocuments: async (_kind, updates) => {
       for (const update of updates) await items.find(item => item.id === update._id)?.update?.(update);
+      return updates.map(update => items.find(item => item.id === update._id));
     },
     deleteEmbeddedDocuments: async (_kind, ids) => {
       writes.push({ deleted: ids });

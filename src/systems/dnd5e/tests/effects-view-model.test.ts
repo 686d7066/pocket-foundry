@@ -184,6 +184,7 @@ test("effect and condition controls require update permission and call dnd5e API
     },
     async create(data: unknown, options: unknown) {
       this.created.push([data, options]);
+      return data;
     }
   };
 
@@ -195,7 +196,7 @@ test("effect and condition controls require update permission and call dnd5e API
   assert.deepEqual(await deleteTemporaryEffect(actor, user, "devils-sight"), { ok: false, reason: "unsupported" });
   assert.deepEqual(await setEffectFavorite(actor, user, "devils-sight", true), { ok: true });
   assert.deepEqual(await setEffectFavorite(actor, user, "devils-sight", false), { ok: true });
-  assert.deepEqual(await endEffectConcentration(actor, user, "bless"), { ok: true });
+  assert.deepEqual(await endEffectConcentration(actor, user, "bless"), { ok: true, changed: false });
 
   assert.deepEqual(getEffect(actor, "mage-armor")?.updates, [{ disabled: false }]);
   assert.equal(getEffect(actor, "mage-armor")?.deleted, 1);
@@ -212,6 +213,29 @@ test("effect and condition controls require update permission and call dnd5e API
   assert.deepEqual(await toggleCondition(denied, user, "charmed", activeEffectImplementation), { ok: false, reason: "forbidden" });
   assert.deepEqual(await setEffectFavorite(denied, user, "devils-sight", true), { ok: false, reason: "forbidden" });
   assert.deepEqual(await endEffectConcentration(denied, user, "bless"), { ok: false, reason: "forbidden" });
+});
+
+test("effect controls reject cancelled Foundry document operations", async () => {
+  const actor = createEffectsActor({ endConcentration: async () => [] });
+  const effect = getEffect(actor, "mage-armor");
+  assert.ok(effect);
+  effect.update = async () => undefined;
+  effect.delete = async () => undefined;
+  const rejected = { ok: false, reason: "rejected", failure: "rejected", retry: "safe" };
+
+  assert.deepEqual(await toggleEffectDisabled(actor, user, "mage-armor"), rejected);
+  assert.deepEqual(await deleteTemporaryEffect(actor, user, "mage-armor"), rejected);
+  assert.deepEqual(await toggleCondition(actor, user, "frightened", {
+    fromStatusEffect: async id => ({ id }),
+    create: async () => undefined
+  }), rejected);
+  assert.deepEqual(await endEffectConcentration(actor, user, "bless"), rejected);
+
+  Object.defineProperty(actor, "toObject", { value: () => ({ system: { marker: 1 } }) });
+  const concentration = getEffect(actor, "bless");
+  assert.ok(concentration);
+  actor.endConcentration = async () => [concentration];
+  assert.deepEqual(await endEffectConcentration(actor, user, "bless"), { ok: true, changed: false });
 });
 
 test("effects template and styles preserve required regions with minimal effect rows", () => {
@@ -316,9 +340,11 @@ function createEffectsActor(overrides: Partial<TestEffectsActor> = {}): TestEffe
       favorites: ["ActiveEffect.devils-sight"],
       addFavorite: async (favorite: unknown) => {
         actor.favoriteCalls.push(["add", favorite]);
+        return actor;
       },
       removeFavorite: async (favorite: unknown) => {
         actor.favoriteCalls.push(["remove", favorite]);
+        return actor;
       }
     },
     effects: new TestEffectCollection(),
@@ -330,6 +356,7 @@ function createEffectsActor(overrides: Partial<TestEffectsActor> = {}): TestEffe
     allApplicableEffects: () => actor.effects,
     endConcentration: async effect => {
       actor.concentrationEnded.push(effect.id ?? "");
+      return [effect];
     },
     ...overrides
   };
@@ -422,6 +449,8 @@ function createEffectsActor(overrides: Partial<TestEffectsActor> = {}): TestEffe
     })
   );
 
+  Object.defineProperty(actor, "toObject", { configurable: true, value: () => ({ system: actor.system }) });
+
   return actor;
 }
 
@@ -440,11 +469,11 @@ function createEffect(actor: TestEffectsActor, data: Partial<TestEffect> & Pick<
     update(update: Record<string, unknown>) {
       effect.updates.push(update);
       if ("disabled" in update) effect.disabled = update.disabled as boolean;
-      return Promise.resolve();
+      return Promise.resolve(effect);
     },
     delete() {
       effect.deleted += 1;
-      return Promise.resolve();
+      return Promise.resolve(effect);
     },
     updateDuration() {
       return undefined;

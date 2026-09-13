@@ -5,6 +5,12 @@ import { canUpdateDocument, canViewDocument, type FoundryUserLike } from "../../
 import { summarizeRichTextWithReferences, type RichTextReference } from "../../../services/rich-text-links.ts";
 import { buildOptionalDnd5eFavoriteToggleState, hasDnd5eFavoriteReference } from "../favorites-storage.ts";
 import { clampNumber, formatPair, getConfigLabel, uniqueStrings } from "../view-model-helpers.ts";
+import {
+  acknowledgeDnd5eAction,
+  getDnd5eWorkflowOutcome,
+  hasDnd5eActionAcknowledgement,
+  snapshotDnd5eMutationState
+} from "../action-outcome.ts";
 import { Dnd5eProficiencyIndicator } from "./types.ts";
 import type {
   Dnd5eDetailsActor,
@@ -138,8 +144,7 @@ export async function applyDetailsHpDelta(
   const current = getNumber(hpObject.value) ?? 0;
   const max = getNumber(hpObject.effectiveMax) ?? getNumber(hpObject.max);
   const next = clampNumber(current + delta, 0, max ?? Number.POSITIVE_INFINITY);
-  await actor.update({ "system.attributes.hp.value": next });
-  return { ok: true };
+  return acknowledgeDnd5eAction(hasDnd5eActionAcknowledgement(await actor.update({ "system.attributes.hp.value": next })));
 }
 
 /**
@@ -156,8 +161,7 @@ export async function applyDetailsTempHpDelta(
   const hp = getObject(getObject(actor.system)?.attributes)?.hp;
   const current = getNumber(getObject(hp)?.temp) ?? 0;
   const next = clampNumber(current + delta, 0, Number.POSITIVE_INFINITY);
-  await actor.update({ "system.attributes.hp.temp": next });
-  return { ok: true };
+  return acknowledgeDnd5eAction(hasDnd5eActionAcknowledgement(await actor.update({ "system.attributes.hp.temp": next })));
 }
 
 /**
@@ -172,8 +176,9 @@ export async function applyDetailsRest(
   if (!actor?.initiateRest) return { ok: false, reason: "unavailable" };
   if (!canInitiateRest(actor, user)) return { ok: false, reason: "forbidden" };
 
-  await actor.initiateRest(config);
-  return { ok: true };
+  const before = snapshotDnd5eMutationState(actor);
+  const result = await actor.initiateRest(config);
+  return getDnd5eWorkflowOutcome(result, before, snapshotDnd5eMutationState(actor));
 }
 
 /**
@@ -191,6 +196,7 @@ export async function applyDetailsHitDieRoll(
   const normalizedDenomination = denomination.trim();
   if (!normalizedDenomination) return { ok: false, reason: "unavailable" };
 
+  const before = snapshotDnd5eMutationState(actor);
   const hpBefore = getCurrentHpValue(actor);
   const rollResult = await actor.rollHitDie({ denomination: normalizedDenomination }, { configure: false }, { create: false });
   const rolls = normalizeRolls(rollResult);
@@ -202,7 +208,7 @@ export async function applyDetailsHitDieRoll(
   }, null);
   const hpAfter = getCurrentHpValue(actor);
   return {
-    ok: true,
+    ...getDnd5eWorkflowOutcome(rollResult, before, snapshotDnd5eMutationState(actor)),
     roll: {
       denomination: normalizedDenomination,
       total,
@@ -225,8 +231,7 @@ export async function toggleDetailsInspiration(
   if (!canUpdateDocument(actor, user)) return { ok: false, reason: "forbidden" };
 
   const attributes = getObject(getObject(actor.system)?.attributes) ?? {};
-  await actor.update({ "system.attributes.inspiration": !Boolean(attributes.inspiration) });
-  return { ok: true };
+  return acknowledgeDnd5eAction(hasDnd5eActionAcknowledgement(await actor.update({ "system.attributes.inspiration": !Boolean(attributes.inspiration) })));
 }
 
 /**
@@ -246,8 +251,7 @@ export async function applyDetailsDeathSavePip(
   const death = getObject(getObject(getObject(actor.system)?.attributes)?.death) ?? {};
   const current = clampPipValue(getNumber(death[side]) ?? 0);
   const next = getNextDeathSaveValue(current, tappedActive, tappedPipValue, fillMode);
-  await actor.update({ [`system.attributes.death.${side}`]: next });
-  return { ok: true };
+  return acknowledgeDnd5eAction(hasDnd5eActionAcknowledgement(await actor.update({ [`system.attributes.death.${side}`]: next })));
 }
 
 /**
@@ -263,8 +267,7 @@ export async function applyDetailsExhaustionPip(
   if (!canUpdateDocument(actor, user)) return { ok: false, reason: "forbidden" };
 
   const next = getNextExhaustionValue(pipValue, tappedActive);
-  await actor.update({ "system.attributes.exhaustion": next });
-  return { ok: true };
+  return acknowledgeDnd5eAction(hasDnd5eActionAcknowledgement(await actor.update({ "system.attributes.exhaustion": next })));
 }
 
 /**

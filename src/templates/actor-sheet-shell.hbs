@@ -36,6 +36,7 @@
       {{#unless limited}}
         {{> "modules/pocket-foundry/templates/partials/pane-rail.hbs" railClass="pane-rail" label=(localize 'POCKETFOUNDRY.Character.Panes') panes=panes}}
       {{/unless}}
+      <div class="character-mutation-status" data-character-mutation-status data-state="idle" role="status" aria-live="polite" aria-atomic="true" hidden></div>
     </div>
 
     {{#if headerContent.dialogsTemplatePath}}

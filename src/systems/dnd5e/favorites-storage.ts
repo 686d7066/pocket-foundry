@@ -102,8 +102,7 @@ async function setLegacyDnd5eFavoriteEntry(
   const action = favorite ? system?.addFavorite : system?.removeFavorite;
   if (typeof action !== "function") return false;
 
-  await (action as (favoriteTarget: unknown) => Promise<unknown>).call(system, target);
-  return true;
+  return Boolean(await (action as (favoriteTarget: unknown) => Promise<unknown>).call(system, target));
 }
 
 function hasLegacyFavoriteApi(actor: Dnd5eFavoriteActorReference): boolean {

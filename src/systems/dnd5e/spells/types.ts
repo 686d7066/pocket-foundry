@@ -210,7 +210,10 @@ export type Dnd5eSpellsModel = Dnd5eSpellsViewModel | UnavailableDnd5eSpellsView
 
 export type Dnd5eSpellsControlResult = {
   ok: boolean;
-  reason?: "unavailable" | "forbidden" | "unsupported";
+  reason?: "unavailable" | "forbidden" | "unsupported" | "rejected";
+  failure?: "rejected" | "uncertain";
+  retry?: "safe" | "review";
+  changed?: boolean;
 };
 
 const ordinal = (value: number): string => {

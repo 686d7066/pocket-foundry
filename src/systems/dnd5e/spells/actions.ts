@@ -4,6 +4,14 @@ import { localize } from "../../../core/localization.ts";
 import { getObject, getNumber } from "../../../core/utils.ts";
 import { enrichSectionRows } from "../../../services/rich-text-enrichment.ts";
 import { setDnd5eFavoriteEntry } from "../favorites-storage.ts";
+import {
+  acknowledgeDnd5eAction,
+  getDnd5eRechargeOutcome,
+  getDnd5eWorkflowOutcome,
+  hasDnd5eActionAcknowledgement,
+  hasDnd5eEmbeddedDocumentAcknowledgement,
+  snapshotDnd5eMutationState
+} from "../action-outcome.ts";
 import { isGmUser } from "../view-model-helpers.ts";
 import { buildSpellcastingCards, buildSpellSections, filterSpellSections } from "./builders.ts";
 import {
@@ -94,8 +102,7 @@ export async function toggleSpellSlotPip(
   const slot = getObject(spells?.[slotId]);
   if (!slot) return { ok: false, reason: "unavailable" };
   const current = getNumber(slot.value) ?? 0;
-  await actor.update({ [`system.spells.${slotId}.value`]: getNextSpellSlotValue(current, pip) });
-  return { ok: true };
+  return acknowledgeDnd5eAction(hasDnd5eActionAcknowledgement(await actor.update({ [`system.spells.${slotId}.value`]: getNextSpellSlotValue(current, pip) })));
 }
 
 export async function useSpellItem(actor: Dnd5eSpellsActor | null | undefined, user: FoundryUserLike, itemId: string): Promise<Dnd5eSpellsControlResult> {
@@ -106,8 +113,9 @@ export async function useSpellItem(actor: Dnd5eSpellsActor | null | undefined, u
 
   const activities = getUsableActivities(item);
   if (activities.length > 1) return { ok: false, reason: "unsupported" };
-  await item.use(undefined, { options: { sheet: null } });
-  return { ok: true };
+  const before = snapshotDnd5eMutationState(actor);
+  const result = await item.use(undefined, { options: { sheet: null } });
+  return getDnd5eWorkflowOutcome(result, before, snapshotDnd5eMutationState(actor));
 }
 
 export async function useSpellActivity(
@@ -122,8 +130,9 @@ export async function useSpellActivity(
   if (!canUpdateOwnedSpell(actor, item, user)) return { ok: false, reason: "forbidden" };
   if (activity.canUse === false || typeof activity.use !== "function") return { ok: false, reason: "unsupported" };
 
-  await activity.use(undefined, { options: { sheet: null } });
-  return { ok: true };
+  const before = snapshotDnd5eMutationState(actor);
+  const result = await activity.use(undefined, { options: { sheet: null } });
+  return getDnd5eWorkflowOutcome(result, before, snapshotDnd5eMutationState(actor));
 }
 
 export async function toggleSpellPrepared(
@@ -178,8 +187,8 @@ export async function rechargeSpell(actor: Dnd5eSpellsActor | null | undefined, 
   const rollRecharge = uses?.rollRecharge;
   if (item.hasRecharge !== true || typeof rollRecharge !== "function") return { ok: false, reason: "unsupported" };
 
-  await (rollRecharge as (options: { apply: boolean }) => Promise<unknown>).call(uses, { apply: true });
-  return { ok: true };
+  const result = await (rollRecharge as (options: { apply: boolean }) => Promise<unknown>).call(uses, { apply: true });
+  return getDnd5eRechargeOutcome(result, getObject(item.system)?.uses);
 }
 
 export async function setSpellcastingAbility(
@@ -191,8 +200,7 @@ export async function setSpellcastingAbility(
   if (!canUpdateDocument(actor, user)) return { ok: false, reason: "forbidden" };
   if (!ability || typeof actor.update !== "function") return { ok: false, reason: "unsupported" };
 
-  await actor.update({ "system.attributes.spellcasting": ability });
-  return { ok: true };
+  return acknowledgeDnd5eAction(hasDnd5eActionAcknowledgement(await actor.update({ "system.attributes.spellcasting": ability })));
 }
 
 export async function setSpellFavorite(
@@ -205,7 +213,7 @@ export async function setSpellFavorite(
   if (!actor || !item) return { ok: false, reason: "unavailable" };
   if (!canUpdateOwnedSpell(actor, item, user)) return { ok: false, reason: "forbidden" };
 
-  return (await setDnd5eFavoriteEntry(actor, "item", item.uuid ?? item.id ?? item._id ?? "", favorite, { legacyAddTarget: item, legacyRemoveTarget: item })) ? { ok: true } : { ok: false, reason: "unsupported" };
+  return acknowledgeDnd5eAction(await setDnd5eFavoriteEntry(actor, "item", item.uuid ?? item.id ?? item._id ?? "", favorite, { legacyAddTarget: item, legacyRemoveTarget: item }));
 }
 
 async function updateOwnedSpell(
@@ -221,12 +229,11 @@ async function updateOwnedSpell(
   const id = item.id ?? item._id;
   if (!id) return { ok: false, reason: "unavailable" };
   if (actor.updateEmbeddedDocuments) {
-    await actor.updateEmbeddedDocuments("Item", [{ _id: id, ...update }]);
-    return { ok: true };
+    const updated = await actor.updateEmbeddedDocuments("Item", [{ _id: id, ...update }]);
+    return acknowledgeDnd5eAction(hasDnd5eEmbeddedDocumentAcknowledgement(updated, id));
   }
   if (item.update) {
-    await item.update(update);
-    return { ok: true };
+    return acknowledgeDnd5eAction(hasDnd5eActionAcknowledgement(await item.update(update)));
   }
   return { ok: false, reason: "unsupported" };
 }

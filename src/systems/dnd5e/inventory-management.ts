@@ -163,7 +163,13 @@ export async function deleteManagedItem(actor: ManagedInventoryActor, user: Foun
     if (children.some(child => !canUpdateDocument(child, user) || (contents === "delete" && child.canUserModify?.(user, "delete") === false))) return { ok: false, reason: "forbidden" };
     if (contents === "keep" && children.length) {
       if (!actor.updateEmbeddedDocuments) return { ok: false, reason: "unsupported" };
-      await actor.updateEmbeddedDocuments("Item", children.filter(child => parentContainerId(child) === itemId).map(child => ({ _id: child.id, "system.container": null })));
+      const directChildren = children.filter(child => parentContainerId(child) === itemId);
+      const moved = await actor.updateEmbeddedDocuments("Item", directChildren.map(child => ({ _id: child.id, "system.container": null })));
+      const movedDocuments = Array.isArray(moved) ? moved : [];
+      const movedIds = new Set(movedDocuments.map(document => getString(getObject(document)?.id) || getString(getObject(document)?._id)));
+      if (movedDocuments.length !== directChildren.length || directChildren.some(child => !child.id || !movedIds.has(child.id))) {
+        return { ok: false, reason: "rejected" };
+      }
       if (managedItems(actor).some(child => parentContainerId(child) === itemId)) return { ok: false, reason: "rejected" };
     }
     const ids = contents === "delete" ? [...actual, itemId] : [itemId];

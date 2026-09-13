@@ -31,11 +31,16 @@ export function beginShellRender(element: HTMLElement, router: MobileRouter): ()
   return owner.isCurrent;
 }
 
+/** Retires the current render while keeping the mounted root available. */
+export function invalidateShellRender(element: HTMLElement): void {
+  owners.get(element)?.release();
+  owners.delete(element);
+}
+
 /** Permanently retires a root so pending renders and deferred DOM work cannot resume. */
 export function disposeShellRendering(element: HTMLElement): void {
   disposedRoots.add(element);
-  owners.get(element)?.release();
-  owners.delete(element);
+  invalidateShellRender(element);
 }
 
 /** Separates render inputs from transient state that can change while rendering. */

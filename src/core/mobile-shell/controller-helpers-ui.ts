@@ -276,3 +276,27 @@ export function closeConfirmationDialog(root: HTMLElement, id: string): void {
   root.querySelectorAll<HTMLElement>(`[data-confirm-dialog='${CSS.escape(id)}']`).forEach(dialog => dialog.remove());
 }
 
+/**
+ * Retains the currently open template dialog so a recovery render preserves
+ * its entered values without replaying the submitted operation.
+ */
+export type CapturedCharacterDialog = {
+  restore(): void;
+};
+
+export function captureOpenCharacterDialog(root: HTMLElement): CapturedCharacterDialog | undefined {
+  const dialog = root.querySelector<HTMLElement>(".mock-dialog.open");
+  if (!dialog) return undefined;
+  const dialogId = dialog.id;
+  return {
+    restore: () => {
+      const replacement = dialogId ? root.querySelector<HTMLElement>(`#${CSS.escape(dialogId)}`) : null;
+      if (dialogId) {
+        if (replacement && replacement !== dialog && typeof replacement.replaceWith === "function") replacement.replaceWith(dialog);
+        return;
+      }
+      (root.querySelector<HTMLElement>(".pocket-foundry-root") ?? root).append(dialog);
+    }
+  };
+}
+

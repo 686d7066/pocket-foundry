@@ -82,6 +82,105 @@ test("newer content wins when same-route renders finish out of order", async () 
   assert.equal(f.root.innerHTML, "updated content");
 });
 
+test("a render loses ownership when its originating action is superseded on the same route", async () => {
+  const f = fixture();
+  const router = createMobileRouter();
+  let actionCurrent = true;
+  f.root.innerHTML = "newer pending action";
+  const oldRender = renderShell(f.root, router, undefined, { isExternalOwnerCurrent: () => actionCurrent });
+  const old = await f.request();
+
+  actionCurrent = false;
+  old.resolve("old action result");
+  await oldRender;
+
+  assert.equal(f.root.innerHTML, "newer pending action");
+});
+
+test("a recovery render preserves the latest dialog on an omitted default-pane route", async () => {
+  const f = fixture();
+  const router = createMobileRouter({
+    initialRoute: { view: RouteView.Character, actorUuid: "Actor.current" }
+  });
+  const originalQuerySelector = f.root.querySelector.bind(f.root);
+  const committedSheet = { dataset: { actorUuid: "Actor.current", activePane: "Unavailable" } };
+  const oldDialog = { id: "old-dialog" };
+  const newerDialog = { id: "new-dialog", draft: "-4" };
+  let openDialog: typeof oldDialog | typeof newerDialog | null = oldDialog;
+  let restored: unknown;
+  f.root.querySelector = (<T,>(selector: string): T | null => {
+    if (selector === "[data-region='actor-sheet-shell']") return committedSheet as T;
+    if (selector === ".mock-dialog.open") return openDialog as T | null;
+    if (selector === "#new-dialog") return { replaceWith: (value: unknown) => { restored = value; } } as T;
+    return originalQuerySelector<T>(selector);
+  });
+  vi.stubGlobal("CSS", { escape: (value: string) => value });
+
+  const recoveryRender = renderShell(f.root, router, undefined, { preserveOpenCharacterDialog: true });
+  const pending = await f.request();
+  openDialog = newerDialog;
+  pending.resolve("refreshed character");
+  await recoveryRender;
+
+  assert.equal(restored, newerDialog);
+  assert.equal((restored as typeof newerDialog).draft, "-4");
+});
+
+test.each([
+  { committedActor: "Actor.previous", committedPane: "Details", label: "another actor" },
+  { committedActor: "Actor.current", committedPane: "Inventory", label: "another pane" }
+])("a recovery render does not preserve a dialog committed for $label", async ({ committedActor, committedPane }) => {
+  const f = fixture();
+  const router = createMobileRouter({
+    initialRoute: { view: RouteView.Character, actorUuid: "Actor.current", pane: "Details" }
+  });
+  const originalQuerySelector = f.root.querySelector.bind(f.root);
+  let dialogCaptures = 0;
+  f.root.querySelector = (<T,>(selector: string): T | null => {
+    if (selector === "[data-region='actor-sheet-shell']") {
+      return { dataset: { actorUuid: committedActor, activePane: committedPane } } as T;
+    }
+    if (selector === ".mock-dialog.open") {
+      dialogCaptures += 1;
+      return { id: "stale-dialog" } as T;
+    }
+    return originalQuerySelector<T>(selector);
+  });
+
+  const rendering = renderShell(f.root, router, undefined, { preserveOpenCharacterDialog: true });
+  (await f.request()).resolve("current character");
+  await rendering;
+
+  assert.equal(f.root.innerHTML, "current character");
+  assert.equal(dialogCaptures, 0);
+});
+
+test("a superseded recovery render neither commits nor restores a stale dialog", async () => {
+  const f = fixture();
+  const router = createMobileRouter();
+  const originalQuerySelector = f.root.querySelector.bind(f.root);
+  let dialogCaptures = 0;
+  f.root.querySelector = (<T,>(selector: string): T | null => {
+    if (selector === ".mock-dialog.open") {
+      dialogCaptures += 1;
+      return { id: "stale-dialog" } as T;
+    }
+    return originalQuerySelector<T>(selector);
+  });
+
+  const recoveryRender = renderShell(f.root, router, undefined, { preserveOpenCharacterDialog: true });
+  const recovery = await f.request();
+  const successorRender = renderShell(f.root, router);
+  const successor = await f.request();
+  successor.resolve("newer screen");
+  await successorRender;
+  recovery.resolve("stale recovery");
+  await recoveryRender;
+
+  assert.equal(f.root.innerHTML, "newer screen");
+  assert.equal(dialogCaptures, 0);
+});
+
 test("leaving and returning to a route invalidates its pending render before another render starts", async () => {
   const f = fixture();
   const router = createMobileRouter();

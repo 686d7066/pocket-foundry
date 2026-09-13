@@ -6,11 +6,13 @@ import {
     getCenteredNumberWheelOption,
     rememberCurrentRouteScroll,
     runCharacterSheetAction,
+    runCharacterSheetMutation,
     setNumberWheelSelectedDelta,
     setNumberWheelValue,
     setNumberDialogOpen,
     updatePaneSearch
 } from "./controller-helpers-navigation.ts";
+import { getCharacterMutationCoordinator } from "./character-mutation-coordinator.ts";
 import { notifyDocumentLinkUnavailable, resolveDocumentLinkRoute } from "./controller-helpers-search.ts";
 import { renderShell } from "./controller-helpers-shell.ts";
 import { closeFavoriteContextMenu, consumeShellActionEvent, openConfirmationDialog } from "./controller-helpers-ui.ts";
@@ -103,6 +105,13 @@ export async function handleCharacterSheetClickAction(context: MobileShellAction
     return true;
   }
 
+  const mutationCoordinator = getCharacterMutationCoordinator(element);
+  const closesDialog = action.endsWith("-close-number-dialog") || action.endsWith("-close-dialog");
+  if (mutationCoordinator.isBlocked(activeRoute.actorUuid) && !closesDialog) {
+    consumeShellActionEvent(event);
+    return true;
+  }
+
   if (action.endsWith("-open-number-dialog")) {
     consumeShellActionEvent(event);
     setNumberDialogOpen(element, target.dataset.dialogId, true);
@@ -149,6 +158,11 @@ export async function handleCharacterSheetClickAction(context: MobileShellAction
       getCenteredNumberWheelOption,
       setSelectedNumberDelta: setNumberWheelSelectedDelta,
       runAction: (actionName, options) => runCharacterSheetAction(element, router, searchState, actionName, options),
+      runMutation: async (label, operation) => {
+        const execution = await runCharacterSheetMutation(element, router, activeRoute.actorUuid, label, operation);
+        return execution.started ? execution.result : { ok: false, reason: "busy", failure: "rejected" };
+      },
+      isMutationPending: () => mutationCoordinator.isPending(activeRoute.actorUuid),
       clearTransientState: () => clearCharacterSheetTransientState(router),
       closeFavoriteContextMenu: () => closeFavoriteContextMenu(element)
     }
