@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { afterEach, test } from "vitest";
 import { createMobileShellController } from "../../../core/mobile-shell/controller.ts";
-import { type ShellTemplateData, installShellFixtureRuntime, createElement, createInput, createActionEvent, settle } from "../../../../tests/support/search-ui-fixture.ts";
+import { type ShellTemplateData, installShellFixtureRuntime, createElement, createInput, createActionEvent, settle } from "../../../tests/support/search-ui-fixture.ts";
 afterEach(() => {
   for (const key of ["document", "Element", "addEventListener", "removeEventListener", "game", "history", "location", "localStorage", "renderTemplate", "requestAnimationFrame", "foundry"]) Reflect.deleteProperty(globalThis, key);
 });

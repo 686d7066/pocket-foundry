@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## [14.11.2] - Just some restructuring and more tests
+
+- Just some restructuring and more tests
+
 ## [14.11.1] - Prevent stale asynchronous renders
 
 - Stale render fix

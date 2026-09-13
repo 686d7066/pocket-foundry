@@ -4,7 +4,7 @@ import { createMobileRouter } from "../../../router/mobile-router.ts";
 import { RouteView } from "../../../router/routes.ts";
 import { buildCharacterPickerViewModel, type CharacterPickerActor } from "../../../services/character-picker.ts";
 import { createCharacterPaneRoute } from "../actor-sheet-navigation.ts";
-import { createActor } from "../../../../tests/support/character-picker-fixture.ts";
+import { createActor } from "../../../tests/support/character-picker-fixture.ts";
 const user = { id: "player" };
 
 test("character picker renders limited characters as identity-only rows", () => {
