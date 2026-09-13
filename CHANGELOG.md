@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [14.11.4] - Move system-specific sheet behavior out of core and shared services
+
+- Moved picker and item-detail interpretation into adapters.
+- Preserved D&D controls, permissions, and unsupported-system navigation.
+- Added behavioral coverage with a synthetic adapter.
+
 ## [14.11.3] - 39-separate-recents-persistence-from-rendering-and-expose-failed-setting-writes
 
 - Recents now record navigation without blocking rendering. The shared storage fix also prevents overlapping favorites updates from losing data and exposes failed saves.
