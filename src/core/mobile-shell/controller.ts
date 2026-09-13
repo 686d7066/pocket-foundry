@@ -3,14 +3,16 @@ import { disposeShellRendering } from "./render-ownership.ts";
 import { getPocketFoundryRouteFromHash } from "../../router/browser-history.ts";
 import { createMobileRouter } from "../../router/mobile-router.ts";
 import { createReactiveRefreshController, type ReactiveRefreshController, type ReactiveRefreshHooks } from "../../services/reactive-refresh.ts";
+import { RouteView, type MobileRoute } from "../../router/routes.ts";
 import { getCharacterSheetAdapter } from "../../systems/character-sheet-adapter-registry.ts";
 import { MODULE_ID } from "../constants.ts";
 import { getFoundryRuntime } from "../foundry-globals.ts";
 import { createViewportOwnershipController } from "../viewport-ownership.ts";
-import { createFoundryRoutePermissionResolver, getStoredSelectedCharacterRoute, rememberCurrentRouteScroll } from "./controller-helpers-navigation.ts";
+import { createFoundryRecentsService, createFoundryRoutePermissionResolver, getStoredSelectedCharacterRoute, rememberCurrentRouteScroll } from "./controller-helpers-navigation.ts";
 import { clearSearchDebounce, createInitialSearchUiState, runSearchImmediately } from "./controller-helpers-search.ts";
 import { normalizeCharacterRoutePanes, renderShell } from "./controller-helpers-shell.ts";
 import { activateBrowserHistory, bindBrowserBack, uninstallLeaveGameConfirmGuard, writeBrowserHistory } from "./controller-helpers-browser-history.ts";
+import { reportShellActionError } from "./controller-helpers-ui.ts";
 import { bindMobileShellEvents } from "./events.ts";
 import type { MobileShellController } from "./types.ts";
 
@@ -33,6 +35,8 @@ export function createMobileShellController(): MobileShellController {
   const viewportOwnership = createViewportOwnershipController();
   const searchState = createInitialSearchUiState();
   let reactiveRefresh: ReactiveRefreshController | undefined;
+  let unsubscribeRecentRouteRecording: (() => void) | undefined;
+  let lastVisitedRoute: string | undefined;
   let unbindBrowserBack: (() => void) | undefined;
   let pendingMount: Promise<void> | undefined;
 
@@ -82,6 +86,10 @@ export function createMobileShellController(): MobileShellController {
       document.body.append(element);
       unbindBrowserBack = bindBrowserBack(router, () => rootElement, searchState);
       bindEvents(rootElement);
+      unsubscribeRecentRouteRecording = router.subscribe(route => {
+        recordRecentRoute(route, element);
+      });
+      recordRecentRoute(router.getCurrentRoute(), element);
       reactiveRefresh = createReactiveRefreshController({
         hooks: getFoundryRuntime().Hooks as ReactiveRefreshHooks | undefined,
         getRoute: () => router.getCurrentRoute(),
@@ -114,6 +122,26 @@ export function createMobileShellController(): MobileShellController {
     bindMobileShellEvents({ element, abortController, router, searchState });
   }
 
+  /** Records a completed route visit without delaying navigation or rendering. */
+  function recordRecentRoute(route: MobileRoute, element: HTMLElement): void {
+    const serializedRoute = JSON.stringify(route);
+    if (serializedRoute === lastVisitedRoute) return;
+    lastVisitedRoute = serializedRoute;
+    const service = createFoundryRecentsService();
+    if (!service) return;
+
+    void service.recordRoute(route).then(recorded => {
+      if (!recorded || rootElement !== element || router.getCurrentRoute().view !== RouteView.Recents) return;
+      void renderShell(element, router, searchState).catch(error => {
+        if (rootElement !== element) return;
+        reportShellActionError(element, error, { kind: "render", action: "refresh-recents-after-record" });
+      });
+    }).catch(error => {
+      if (rootElement !== element) return;
+      reportShellActionError(element, error, { kind: "storage", action: "record-recent-route" });
+    });
+  }
+
   /** Invalidates async renders before removing listeners and the owned DOM root. */
   function unmount(): void {
     if (rootElement) disposeShellRendering(rootElement);
@@ -122,6 +150,9 @@ export function createMobileShellController(): MobileShellController {
     abortController = undefined;
     reactiveRefresh?.dispose();
     reactiveRefresh = undefined;
+    unsubscribeRecentRouteRecording?.();
+    unsubscribeRecentRouteRecording = undefined;
+    lastVisitedRoute = undefined;
     clearSearchDebounce(searchState);
     unbindBrowserBack?.();
     unbindBrowserBack = undefined;

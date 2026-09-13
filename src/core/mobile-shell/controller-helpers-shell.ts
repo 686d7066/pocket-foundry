@@ -60,8 +60,6 @@ export async function renderShell(rootElement: HTMLElement, router: MobileRouter
     if (searchState) await prepareSearchForRender(activeRoute, searchState);
     if (!isCurrent()) return;
     persistSelectedCharacterRoute(selectedCharacterRoute);
-    await createFoundryRecentsService()?.recordRoute(activeRoute);
-    if (!isCurrent()) return;
     const viewModel = await buildShellViewModel(activeRoute, router.canGoBack(), selectedCharacterRoute, searchState);
     if (!isCurrent()) return;
     const html = await handlebars.renderTemplate(SHELL_TEMPLATE, viewModel);

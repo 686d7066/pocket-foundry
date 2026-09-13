@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [14.11.3] - 39-separate-recents-persistence-from-rendering-and-expose-failed-setting-writes
+
+- Recents now record navigation without blocking rendering. The shared storage fix also prevents overlapping favorites updates from losing data and exposes failed saves.
+- Version update
+
 ## [14.11.2] - Just some restructuring and more tests
 
 - Just some restructuring and more tests

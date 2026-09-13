@@ -488,6 +488,62 @@ test("Foundry character picker favorites are scoped by current system and user i
   assert.deepEqual(readCharacterPickerFavoritesFromStorage(createFoundryCharacterPickerFavoritesStorage()), ["Actor.arlen"]);
 });
 
+test("concurrent character picker favorite additions preserve both actors", async () => {
+  const settingValues = new Map<string, unknown>();
+  const firstWriteStarted = deferred<void>();
+  const releaseFirstWrite = deferred<void>();
+  let writes = 0;
+  Object.defineProperty(globalThis, "game", {
+    configurable: true,
+    value: {
+      settings: {
+        get: (_namespace: string, key: string) => settingValues.get(key) ?? {},
+        set: async (_namespace: string, key: string, value: unknown) => {
+          writes += 1;
+          if (writes === 1) {
+            firstWriteStarted.resolve();
+            await releaseFirstWrite.promise;
+          }
+          settingValues.set(key, value);
+        }
+      },
+      user: { id: "User1" },
+      system: { id: "fixtureSystem" },
+      world: { id: "World1" }
+    }
+  });
+
+  const first = setCharacterPickerFavoriteInStorage(createFoundryCharacterPickerFavoritesStorage(), "Actor.arlen", true);
+  await firstWriteStarted.promise;
+  const second = setCharacterPickerFavoriteInStorage(createFoundryCharacterPickerFavoritesStorage(), "Actor.mira", true);
+  releaseFirstWrite.resolve();
+  await Promise.all([first, second]);
+
+  assert.deepEqual(readCharacterPickerFavoritesFromStorage(createFoundryCharacterPickerFavoritesStorage()), ["Actor.arlen", "Actor.mira"]);
+});
+
+test("a rejected character picker favorite write propagates without changing stored state", async () => {
+  const settingValues = new Map<string, unknown>();
+  Object.defineProperty(globalThis, "game", {
+    configurable: true,
+    value: {
+      settings: {
+        get: (_namespace: string, key: string) => settingValues.get(key) ?? {},
+        set: async () => {
+          throw new Error("picker favorite setting denied");
+        }
+      },
+      user: { id: "User1" },
+      system: { id: "fixtureSystem" },
+      world: { id: "World1" }
+    }
+  });
+
+  const storage = createFoundryCharacterPickerFavoritesStorage();
+  await assert.rejects(setCharacterPickerFavoriteInStorage(storage, "Actor.denied", true), /picker favorite setting denied/);
+  assert.deepEqual(readCharacterPickerFavoritesFromStorage(storage), []);
+});
+
 test("character picker view model does not show favorites from a previous Foundry user", async () => {
   const settingValues = new Map<string, unknown>();
   const runtime = globalThis as typeof globalThis & {
@@ -577,4 +633,15 @@ function createElement(_tagName: string): TestElement {
       return undefined;
     }
   };
+}
+
+/** Creates an explicit promise gate without relying on timing delays. */
+function deferred<T>() {
+  let resolve: (value: T | PromiseLike<T>) => void = () => undefined;
+  let reject: (reason?: unknown) => void = () => undefined;
+  const promise = new Promise<T>((accept, fail) => {
+    resolve = accept;
+    reject = fail;
+  });
+  return { promise, resolve, reject };
 }

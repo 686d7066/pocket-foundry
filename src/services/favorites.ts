@@ -120,22 +120,23 @@ export async function setFavoriteEntry(
   if (!hasFoundryFavoriteSettingScope()) return setLegacyFavoriteEntry(normalizedType, normalizedId, favorite, options);
 
   const storage = createFavoritesByActorStorage();
-  const byActor = storage.read();
-  const entries = byActor[actorUuid] ?? normalizeFavoriteEntries(getCollectionContents(options.fallbackEntries));
-  const remaining = entries.filter(entry => !favoriteIdsMatch(entry.id, normalizedId));
+  await storage.update(current => {
+    const byActor = { ...current };
+    const entries = byActor[actorUuid] ?? normalizeFavoriteEntries(getCollectionContents(options.fallbackEntries));
+    const remaining = entries.filter(entry => !favoriteIdsMatch(entry.id, normalizedId));
 
-  byActor[actorUuid] = favorite
-    ? [
-        ...remaining,
-        {
-          id: normalizedId,
-          type: normalizedType,
-          sort: entries.find(entry => favoriteIdsMatch(entry.id, normalizedId))?.sort ?? getNextSort(entries)
-        }
-      ].sort((left, right) => left.sort - right.sort)
-    : remaining;
-
-  await storage.write(byActor);
+    byActor[actorUuid] = favorite
+      ? [
+          ...remaining,
+          {
+            id: normalizedId,
+            type: normalizedType,
+            sort: entries.find(entry => favoriteIdsMatch(entry.id, normalizedId))?.sort ?? getNextSort(entries)
+          }
+        ].sort((left, right) => left.sort - right.sort)
+      : remaining;
+    return byActor;
+  });
   return true;
 }
 

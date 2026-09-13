@@ -79,13 +79,12 @@ export async function setCharacterPickerFavoriteInStorage(storage: CharacterPick
   const normalizedActorUuid = actorUuid.trim();
   if (!normalizedActorUuid) return readCharacterPickerFavoritesFromStorage(storage);
 
-  const favorites = new Set(readCharacterPickerFavoritesFromStorage(storage));
-  if (favorite) favorites.add(normalizedActorUuid);
-  else favorites.delete(normalizedActorUuid);
-
-  const nextFavorites = normalizeCharacterPickerFavorites([...favorites]);
-  await storage.write(nextFavorites);
-  return nextFavorites;
+  return storage.update(current => {
+    const favorites = new Set(current);
+    if (favorite) favorites.add(normalizedActorUuid);
+    else favorites.delete(normalizedActorUuid);
+    return normalizeCharacterPickerFavorites([...favorites]);
+  });
 }
 
 function parseCharacterPickerFavorites(value: unknown): string[] | undefined {
