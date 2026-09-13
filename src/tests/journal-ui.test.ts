@@ -44,7 +44,7 @@ test("journal templates preserve required regions and separate phone navigation 
   assert.match(pageTemplate, /class="section-heading content-group-heading pf-view-section-heading journal-page-title-row"/);
   assert.match(pageTemplate, /data-action="journal-edit-page"/);
   assert.match(pageTemplate, /class="section pf-view-section reader journal-reader"/);
-  assert.match(pageTemplate, /data-journal-links/);
+  assert.match(pageTemplate, /data-document-links/);
   assert.match(pageTemplate, /journal-image-frame/);
   assert.match(pageTemplate, /journal-pdf-frame/);
   assert.match(pageTemplate, /journal-video-frame/);
@@ -60,7 +60,8 @@ test("journal templates preserve required regions and separate phone navigation 
   assert.match(journalActionSource, /target\.dataset\.action === "journal-edit-page"/);
   assert.match(journalActionSource, /target\.dataset\.action === "journal-up"/);
   assert.match(journalActionSource, /getJournalParentRoute/);
-  assert.match(searchHelperSource, /\.journal-reader a\[data-uuid\]/);
+  assert.match(searchHelperSource, /\[data-document-links\] a\[data-uuid\]/);
+  assert.doesNotMatch(searchHelperSource, /\.journal-reader a\[data-uuid\]/);
   assert.match(shellSource, /createReactiveRefreshController/);
   assert.match(reactiveRefreshSource, /createJournalEntryPage/);
   assert.match(reactiveRefreshSource, /updateJournalEntryPage/);

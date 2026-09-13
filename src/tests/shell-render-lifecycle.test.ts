@@ -227,7 +227,7 @@ test("navigation records one visit without delaying render or rewriting it on re
   assert.ok(Array.isArray(records));
   assert.equal(records.length, 1);
   assert.deepEqual(records[0], {
-    route: { view: RouteView.Character, actorUuid: "Actor.arlen", pane: "Details" },
+    route: { view: RouteView.Character, actorUuid: "Actor.arlen", pane: "Unavailable" },
     lastOpened: (records[0] as { lastOpened: number }).lastOpened
   });
 });

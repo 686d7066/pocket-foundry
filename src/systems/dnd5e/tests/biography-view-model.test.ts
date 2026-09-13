@@ -144,10 +144,10 @@ test("biography template, styles, and shell wiring preserve required regions and
   assert.match(template, /class="sheet-group-body biography-backstory-body"/);
   assert.match(template, /class="reader bio-backstory-content"/);
   assert.match(template, /<h2>\{\{localize 'POCKETFOUNDRY\.DND5E\.Biography\.Backstory'\}\}<\/h2>/);
-  assert.match(template, /data-biography-links/);
+  assert.match(template, /data-document-links/);
   assert.match(moduleSource, /getTemplatePaths/);
-  assert.match(searchSource, /handleBiographyDocumentLinkClick/);
-  assert.match(searchSource, /\.biography-pane a\[data-uuid\]/);
+  assert.doesNotMatch(searchSource, /handleBiographyDocumentLinkClick|\.biography-pane a\[data-uuid\]/);
+  assert.match(searchSource, /\[data-document-links\] a\[data-uuid\]/);
   assert.match(searchSource, /createDocumentLookupService/);
   assert.match(searchSource, /router\.push\(nextRoute\)/);
   assert.match(css, /\.pocket-foundry-root \.bio-grid/);

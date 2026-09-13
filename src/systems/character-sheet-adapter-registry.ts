@@ -1,7 +1,12 @@
 import { getFoundryRuntime } from "../core/foundry-globals.ts";
 import { localize, type LocalizationData } from "../core/localization.ts";
 import { createCharacterRoute, RouteView } from "../router/routes.ts";
-import type { CharacterSheetActionResult, CharacterSheetAdapter, CharacterSheetVisualMetadata, SystemTermId } from "./character-sheet-adapter.ts";
+import type {
+  CharacterSheetActionResult,
+  CharacterSheetAdapter,
+  CharacterSheetVisualMetadata,
+  SystemTermId
+} from "./character-sheet-adapter.ts";
 import { BUILT_IN_CHARACTER_SHEET_ADAPTERS } from "./character-sheet-adapters.generated.ts";
 
 const registeredAdapters = new Map<string, CharacterSheetAdapter>();
@@ -36,6 +41,7 @@ export function hasCharacterSheetAdapterForSystem(systemId?: string): boolean {
 const unsupportedVisualMetadata: CharacterSheetVisualMetadata = {
   bannerImage: null
 };
+const UNSUPPORTED_PANE_ID = "Unavailable";
 
 /**
  * Builds the safe unavailable state shown when no adapter supports the active
@@ -53,18 +59,26 @@ function buildUnsupportedSystemNavigationModel(): { unavailable: true; title: st
 }
 
 const unsupportedCharacterSheetAdapter: CharacterSheetAdapter = {
+  isCharacterPickerActor: () => true,
+  buildCharacterPickerPresentation: () => ({
+    typeLabel: localize("POCKETFOUNDRY.Document.Character", "Character"),
+    summary: "",
+    subtitle: "",
+    headerStats: [],
+    chips: []
+  }),
   buildNavigationViewModel: () => buildUnsupportedSystemNavigationModel(),
   getPaneSpecs: () => [],
   buildPaneViewModel: ({ pane }) => ({ pane, context: pane, templatePath: "", data: undefined }),
   onPaneActionResult: () => undefined,
   clearTransientState: () => undefined,
   runPaneAction: () => ({ ok: false, reason: "unsupported" } satisfies CharacterSheetActionResult),
-  createPaneRoute: options => createCharacterRoute(options.actorUuid, "Details"),
+  createPaneRoute: options => createCharacterRoute(options.actorUuid, UNSUPPORTED_PANE_ID),
   createOwnedDocumentRoute: options => ({
     view: RouteView.OwnedDocument,
     actorUuid: options.actorUuid,
     documentUuid: options.documentUuid,
-    parentPane: "Details",
+    parentPane: UNSUPPORTED_PANE_ID,
     ...(options.scrollTop === undefined ? {} : { scrollTop: options.scrollTop })
   }),
   getStylePaths: () => [],
@@ -74,10 +88,10 @@ const unsupportedCharacterSheetAdapter: CharacterSheetAdapter = {
   getVisualMetadata: () => unsupportedVisualMetadata,
   getSystemTermLabel: (term, data) => getFallbackSystemTermLabel(term, data),
   getTemplatePaths: () => [],
-  getDefaultPane: () => "Details",
-  getDefaultOwnedItemParentPane: () => "Details",
+  getDefaultPane: () => UNSUPPORTED_PANE_ID,
+  getDefaultOwnedItemParentPane: () => UNSUPPORTED_PANE_ID,
   getPaneFromSwipe: () => null,
-  normalizePane: () => "Details",
+  normalizePane: () => UNSUPPORTED_PANE_ID,
   isInteractiveSwipeTarget: () => false,
   isCharacterRoute: route => route.view === RouteView.Character
 };
@@ -109,33 +123,15 @@ export function getSystemTermLabel(term: SystemTermId, data: LocalizationData = 
  * Returns English fallback text for system-owned terms without assuming a
  * concrete Foundry system is active.
  */
-function getFallbackSystemTermLabel(term: SystemTermId, data: LocalizationData = {}): string {
+function getFallbackSystemTermLabel(term: SystemTermId, _data: LocalizationData = {}): string {
   switch (term) {
-    case "armorClass":
-      return "AC";
-    case "characterLevel":
-      return formatFallbackTerm("Level {level}", data);
-    case "hitPoints":
-      return "HP";
-    case "initiativeAbbreviation":
-      return "Init";
-    case "characterClass":
-      return "Class";
-    case "itemType":
-      return "Type";
+    case "enemy":
+      return "Enemy";
+    case "initiative":
+      return "Initiative";
     default:
       return humanizeTermId(term);
   }
-}
-
-/**
- * Applies named replacement data to adapter terminology fallback strings.
- */
-function formatFallbackTerm(template: string, data: LocalizationData): string {
-  return template.replace(/\{([^}]+)\}/g, (match, key: string) => {
-    const value = data[key.trim()];
-    return value === undefined || value === null ? match : String(value);
-  });
 }
 
 /**

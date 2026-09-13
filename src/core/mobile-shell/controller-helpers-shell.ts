@@ -213,7 +213,8 @@ export async function buildShellContentViewModel(
           favoriteActorUuids: getCharacterPickerRouteFavorites(),
           favoriteHelpOpen: activeRoute.view === RouteView.Characters ? activeRoute.favoriteHelpOpen === true : false,
           searchQuery: activeRoute.view === RouteView.Characters ? activeRoute.query : "",
-          expandedFolderIds: activeRoute.view === RouteView.Characters ? activeRoute.expandedFolderIds : []
+          expandedFolderIds: activeRoute.view === RouteView.Characters ? activeRoute.expandedFolderIds : [],
+          adapter: characterSheetAdapter
         })
       };
     case ShellDestination.Combat:
@@ -223,7 +224,9 @@ export async function buildShellContentViewModel(
     case "owned-document":
       if (activeRoute.view === RouteView.OwnedDocument) {
         return {
-          itemDetail: await buildItemDetailViewModel(activeRoute.documentUuid)
+          itemDetail: await buildItemDetailViewModel(activeRoute.documentUuid, {
+            presentation: characterSheetAdapter.getItemDetailCapability?.()
+          })
         };
       }
 
@@ -236,7 +239,10 @@ export async function buildShellContentViewModel(
     case "document-detail":
       if (activeRoute.view === RouteView.DocumentDetail && activeRoute.documentType === "item") {
         return {
-          itemDetail: await buildItemDetailViewModel(activeRoute.documentUuid, { source: activeRoute.source })
+          itemDetail: await buildItemDetailViewModel(activeRoute.documentUuid, {
+            source: activeRoute.source,
+            presentation: characterSheetAdapter.getItemDetailCapability?.()
+          })
         };
       }
 

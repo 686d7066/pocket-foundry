@@ -200,7 +200,7 @@ export function buildActorSheetNavigationViewModel(options: {
       actorName,
       portraitInitials: getInitials(actorName),
       portraitImage: actor.img || null,
-      classSummary: "",
+      summary: "",
       activePane,
       activePaneLabel: activePane,
       panes: [] as ActorSheetPaneItem[],
@@ -214,7 +214,7 @@ export function buildActorSheetNavigationViewModel(options: {
     actorName,
     portraitInitials: getInitials(actorName),
     portraitImage: actor.img || null,
-    classSummary: getCharacterSummary(actor) || "Character",
+    summary: getCharacterSummary(actor) || "Character",
     activePane,
     activePaneLabel: activePane,
     panes: DND5E_CHARACTER_PANE_CONFIG.map(pane => ({
@@ -348,7 +348,7 @@ export function clearDnd5eTransientState(route: MobileRoute): void {
 /**
  * Builds the user-facing class/species summary shown in the persistent header.
  */
-function getCharacterSummary(actor: ActorSheetNavigationActor): string {
+export function getCharacterSummary(actor: ActorSheetNavigationActor): string {
   const details = getObject(actor.system?.details);
   const species = getString(details?.species) || getString(details?.race);
   const classSummary = getClassSummary(actor);
@@ -361,7 +361,7 @@ function getCharacterSummary(actor: ActorSheetNavigationActor): string {
 /**
  * Reads dnd5e class item levels for the compact class summary.
  */
-function getClassSummary(actor: ActorSheetNavigationActor): string {
+export function getClassSummary(actor: ActorSheetNavigationActor): string {
   const classItems = getActorItems(actor).filter(item => item.type === "class");
   if (classItems.length === 0) return "";
 

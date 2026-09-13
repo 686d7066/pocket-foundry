@@ -29,6 +29,8 @@ test("each registered built-in system adapter loads and satisfies the runtime ad
 });
 
 async function assertAdapterContract(label: string, adapter: CharacterSheetAdapter): Promise<void> {
+  assert.equal(typeof adapter.isCharacterPickerActor, "function", `${label}: isCharacterPickerActor must be a function.`);
+  assert.equal(typeof adapter.buildCharacterPickerPresentation, "function", `${label}: buildCharacterPickerPresentation must be a function.`);
   const defaultPane = adapter.getDefaultPane();
   assert.equal(typeof defaultPane, "string", `${label}: getDefaultPane() must return a string pane id.`);
 
@@ -102,6 +104,11 @@ async function assertAdapterContract(label: string, adapter: CharacterSheetAdapt
     assert.equal(favoritesCapability.context, "favorites", `${label}: favorites capability must use the generic favorites context.`);
     assert.ok(Array.isArray(favoritesCapability.groupPartials), `${label}: favorites groupPartials must be an array.`);
     assert.equal(typeof favoritesCapability.buildViewModel, "function", `${label}: favorites capability must expose a buildViewModel function.`);
+  }
+
+  const itemDetailCapability = adapter.getItemDetailCapability?.() ?? null;
+  if (itemDetailCapability) {
+    assert.equal(typeof itemDetailCapability.buildPresentation, "function", `${label}: item detail capability must expose buildPresentation.`);
   }
 
   const paneContext = adapter.getPaneContext(normalizedPane as ActorSheetPaneId);

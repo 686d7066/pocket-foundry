@@ -319,7 +319,7 @@ export async function handleEnrichedDocumentLinkClick(
   searchState: SearchUiState
 ): Promise<void> {
   const link = event.target instanceof Element
-    ? event.target.closest<HTMLAnchorElement>(".biography-pane a[data-uuid], .biography-pane a.content-link, .biography-pane a.inline-roll, .journal-reader a[data-uuid], .journal-reader a.content-link")
+    ? event.target.closest<HTMLAnchorElement>("[data-document-links] a[data-uuid], [data-document-links] a.content-link, [data-document-links] a.inline-roll")
     : null;
   const uuid = getEnrichedLinkUuid(link);
   if (!link || !uuid) return;
@@ -335,15 +335,6 @@ export async function handleEnrichedDocumentLinkClick(
 
   await router.push(nextRoute);
   await renderShell(element, router, searchState);
-}
-
-export async function handleBiographyDocumentLinkClick(
-  event: MouseEvent,
-  element: HTMLElement,
-  router: MobileRouter,
-  searchState: SearchUiState
-): Promise<void> {
-  return handleEnrichedDocumentLinkClick(event, element, router, searchState);
 }
 
 export function getEnrichedLinkUuid(link: HTMLAnchorElement | null): string {

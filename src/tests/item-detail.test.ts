@@ -1,8 +1,29 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { test } from "vitest";
 import { buildItemDetailViewModel, type ItemDetailDocumentLike } from "../services/item-detail.ts";
+import type { CharacterSheetItemDetailCapability } from "../systems/character-sheet-adapter.ts";
 
 const user = { id: "player" };
+
+/** Creates an opaque item presenter for shared service tests. */
+function createPresentation(options: {
+  description?: string;
+  typeLabel?: string;
+  source?: string | null;
+  chips?: Array<{ id: string; label: string; value: string }>;
+  fields?: Array<{ label: string; value: string }>;
+} = {}): CharacterSheetItemDetailCapability {
+  return {
+    buildPresentation: () => ({
+      description: options.description ?? "",
+      typeLabel: options.typeLabel ?? "Artifact",
+      source: options.source ?? null,
+      chips: options.chips ?? [],
+      fields: options.fields ?? []
+    })
+  };
+}
 
 function createItem(options: {
   uuid: string;
@@ -27,7 +48,7 @@ function createItem(options: {
   };
 }
 
-test("world item detail view is mobile-native, read-only, and permission checked", async () => {
+test("world item detail enriches an opaque adapter presentation after permission checks", async () => {
   const item = createItem({
     uuid: "Item.arcane-focus",
     name: "Arcane Focus: Iron Rod",
@@ -41,7 +62,14 @@ test("world item detail view is mobile-native, read-only, and permission checked
     }
   });
 
-  const model = await buildItemDetailViewModel("Item.arcane-focus", {}, {
+  const model = await buildItemDetailViewModel("Item.arcane-focus", {
+    presentation: createPresentation({
+      description: "<p>A visible artifact.</p>",
+      typeLabel: "Signal Relic",
+      chips: [{ id: "origin", label: "Origin", value: "Outer Rim" }],
+      fields: [{ label: "Resonance", value: "7" }]
+    })
+  }, {
     user,
     fromUuid: async uuid => (uuid === item.uuid ? item : null),
     enrichHTML: async html => `<article>${html}</article>`
@@ -49,19 +77,15 @@ test("world item detail view is mobile-native, read-only, and permission checked
 
   assert.equal(model.available, true);
   assert.equal(model.name, "Arcane Focus: Iron Rod");
-  assert.equal(model.typeLabel, "Equipment");
+  assert.equal(model.typeLabel, "Signal Relic");
   assert.equal(model.icon, "icons/focus.webp");
-  assert.equal(model.descriptionHtml, "<article><p>A visible spellcasting focus.</p></article>");
-  assert.deepEqual(model.chips, [{ id: "type", label: "Type", value: "Equipment" }]);
-  assert.deepEqual(model.fields, [
-    { label: "Quantity", value: "1" },
-    { label: "Weight", value: "1" },
-    { label: "Price", value: "10 gp" }
-  ]);
+  assert.equal(model.descriptionHtml, "<article><p>A visible artifact.</p></article>");
+  assert.deepEqual(model.chips, [{ id: "origin", label: "Origin", value: "Outer Rim" }]);
+  assert.deepEqual(model.fields, [{ label: "Resonance", value: "7" }]);
   assert.doesNotMatch(JSON.stringify(model), /create|delete|edit|import|Open Sheet/i);
 });
 
-test("compendium spell detail includes source pack and spell-specific fields", async () => {
+test("item detail forwards a route source to the adapter presenter", async () => {
   const bane = createItem({
     uuid: "Compendium.fixtureSystem.spells.Item.bane",
     name: "Bane",
@@ -78,7 +102,20 @@ test("compendium spell detail includes source pack and spell-specific fields", a
     }
   });
 
-  const model = await buildItemDetailViewModel("Compendium.fixtureSystem.spells.Item.bane", { source: "Spells (SRD)" }, {
+  let receivedSource: string | undefined;
+  const presentation: CharacterSheetItemDetailCapability = {
+    buildPresentation: ({ source }) => {
+      receivedSource = source;
+      return {
+        description: "<p>Visible rules.</p>",
+        typeLabel: "Protocol",
+        source: source ?? null,
+        chips: source ? [{ id: "archive", label: "Archive", value: source }] : [],
+        fields: [{ label: "Tier", value: "1" }]
+      };
+    }
+  };
+  const model = await buildItemDetailViewModel("Compendium.fixtureSystem.spells.Item.bane", { source: "Spells (SRD)", presentation }, {
     user,
     fromUuid: async uuid => (uuid === bane.uuid ? bane : null),
     enrichHTML: async html => html
@@ -86,18 +123,14 @@ test("compendium spell detail includes source pack and spell-specific fields", a
 
   assert.equal(model.available, true);
   assert.equal(model.name, "Bane");
-  assert.equal(model.typeLabel, "Spell");
+  assert.equal(receivedSource, "Spells (SRD)");
+  assert.equal(model.typeLabel, "Protocol");
   assert.equal(model.source, "Spells (SRD)");
   assert.deepEqual(model.chips, [
-    { id: "type", label: "Type", value: "Spell" },
-    { id: "source", label: "Pack", value: "Spells (SRD)" }
+    { id: "archive", label: "Archive", value: "Spells (SRD)" }
   ]);
   assert.deepEqual(model.fields, [
-    { label: "Level", value: "1" },
-    { label: "School", value: "enc" },
-    { label: "Activation", value: "1 action" },
-    { label: "Range", value: "30 ft" },
-    { label: "Duration", value: "1 minute" }
+    { label: "Tier", value: "1" }
   ]);
 });
 
@@ -137,7 +170,11 @@ test("item detail description keeps content links but strips roll actions", asyn
     }
   });
 
-  const model = await buildItemDetailViewModel("Item.wand", {}, {
+  const model = await buildItemDetailViewModel("Item.wand", {
+    presentation: createPresentation({
+      description: "<p>One creature attempts [[/save ability=wis dc=13 format=long]].</p>"
+    })
+  }, {
     user,
     fromUuid: async uuid => (uuid === item.uuid ? item : null),
     enrichHTML: async content => content
@@ -149,5 +186,10 @@ test("item detail description keeps content links but strips roll actions", asyn
   assert.match(model.descriptionHtml, /WIS Save/);
   assert.doesNotMatch(model.descriptionHtml, /<button\b/i);
   assert.match(model.descriptionHtml, /data-uuid="Compendium\.fixtureSystem\.rules\.Item\.creature"/);
+});
+
+test("item detail marks enriched content as a generic document-link reader", () => {
+  const template = readFileSync(new URL("../templates/item-detail.hbs", import.meta.url), "utf8");
+  assert.match(template, /item-detail-description[^>]*data-document-links/);
 });
 

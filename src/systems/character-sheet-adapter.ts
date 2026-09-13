@@ -71,6 +71,61 @@ export type CharacterSheetHeaderStat = {
 };
 
 /**
+ * Small metadata chip supplied by a system adapter for a character-picker row.
+ */
+export type CharacterPickerPresentationChip = {
+  id: string;
+  label: string;
+  value: string;
+  tone?: string;
+};
+
+/**
+ * System-owned presentation for one fully observable actor in the character picker.
+ */
+export type CharacterPickerPresentation = {
+  typeLabel: string;
+  summary: string;
+  subtitle: string;
+  headerStats: CharacterSheetHeaderStat[];
+  chips: CharacterPickerPresentationChip[];
+};
+
+/**
+ * Minimal resolved item shape exposed to a system-owned detail presenter.
+ */
+export type CharacterSheetItemDetailDocument = PermissionCheckedDocument
+  & FoundryDocumentMutationApi
+  & FoundryDataShape<foundry.documents.types.ItemData>
+  & {
+    img?: foundry.documents.types.ItemData["img"] | null;
+    pack?: string | null;
+    parent?: PermissionCheckedDocument | null;
+    system?: unknown;
+  };
+
+/**
+ * System-owned raw item presentation enriched and rendered by shared services.
+ */
+export type CharacterSheetItemDetailPresentation = {
+  description: string;
+  typeLabel: string;
+  source: string | null;
+  chips: Array<{ id: string; label: string; value: string }>;
+  fields: Array<{ label: string; value: string }>;
+};
+
+/**
+ * Optional adapter capability for systems that expose mobile item details.
+ */
+export type CharacterSheetItemDetailCapability = {
+  buildPresentation(options: {
+    document: CharacterSheetItemDetailDocument;
+    source?: string;
+  }): CharacterSheetItemDetailPresentation;
+};
+
+/**
  * Renderable content returned by a system adapter.
  */
 export type CharacterSheetRenderableContent = {
@@ -128,7 +183,7 @@ export type CharacterSheetNavigationViewModel = {
   actorName: string;
   portraitInitials: string;
   portraitImage: string | null;
-  classSummary: string;
+  summary: string;
   activePane: ActorSheetPaneId;
   activePaneLabel: string;
   panes: CharacterSheetPaneItem[];
@@ -169,35 +224,8 @@ export type CharacterSheetPaneViewModel = {
  * referencing concrete system localization keys.
  */
 export type SystemTermId =
-  | "armorClass"
-  | "activation"
-  | "cantrip"
-  | "charges"
-  | "characterLevel"
-  | "hitPoints"
-  | "duration"
   | "enemy"
-  | "formula"
-  | "initiative"
-  | "initiativeAbbreviation"
-  | "characterClass"
-  | "itemType"
-  | "level"
-  | "passive"
-  | "price"
-  | "quantity"
-  | "range"
-  | "recovery"
-  | "roll"
-  | "school"
-  | "skill"
-  | "source"
-  | "target"
-  | "time"
-  | "tool"
-  | "total"
-  | "uses"
-  | "weight";
+  | "initiative";
 
 /**
  * Shared context used by adapter action handlers.
@@ -257,6 +285,11 @@ export type CharacterSheetShellActionContext = {
  * System-owned actor sheet behavior consumed by the generic mobile shell.
  */
 export type CharacterSheetAdapter = {
+  isCharacterPickerActor(actor: CharacterSheetNavigationActor): boolean;
+  buildCharacterPickerPresentation(options: {
+    actor: CharacterSheetNavigationActor;
+    user: FoundryUserLike;
+  }): CharacterPickerPresentation;
   buildNavigationViewModel(options: {
     actor: CharacterSheetNavigationActor | null | undefined;
     user: FoundryUserLike;
@@ -309,6 +342,7 @@ export type CharacterSheetAdapter = {
   getPaneSearchDrawerPrefix(pane: ActorSheetPaneId): string | null;
   getSearchAdapters(options: { user: FoundryUserLike }): SearchAdapter[];
   getFavoritesCapability?(): CharacterSheetFavoritesCapability | null;
+  getItemDetailCapability?(): CharacterSheetItemDetailCapability | null;
   /**
    * Optional system-owned compendium labels and type filters for generic
    * compendium search results.
@@ -316,8 +350,8 @@ export type CharacterSheetAdapter = {
   getCompendiumSearchCustomization?(): CompendiumSearchCustomization;
   getVisualMetadata(): CharacterSheetVisualMetadata;
   /**
-   * Resolves a system-owned term for generic UI, such as initiative or item
-   * field labels, using the active system's localization keys when available.
+   * Resolves a system-owned combat term for generic UI using the active
+   * system's localization keys when available.
    */
   getSystemTermLabel?(term: SystemTermId, data?: LocalizationData): string;
   getPaneFromSwipe(activePane: ActorSheetPaneId | undefined, gesture: PaneSwipeGesture): ActorSheetPaneId | null;

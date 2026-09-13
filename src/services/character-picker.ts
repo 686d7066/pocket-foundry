@@ -1,6 +1,11 @@
 import type { foundry } from "fvtt-types";
 import type { FoundryDataShape } from "../core/foundry-globals.ts";
 import { localize } from "../core/localization.ts";
+import type {
+  CharacterPickerPresentation,
+  CharacterPickerPresentationChip,
+  CharacterSheetAdapter
+} from "../systems/character-sheet-adapter.ts";
 import {
   canUpdateDocument,
   canViewDocument,
@@ -11,8 +16,7 @@ import {
   type FoundryDocumentMutationApi,
   type PermissionCheckedDocument
 } from "./permissions.ts";
-import { getCollectionContents, getInitials, getNumber, getObject, getString } from "../core/utils.ts";
-import { getSystemTermLabel } from "../systems/character-sheet-adapter-registry.ts";
+import { getCollectionContents, getInitials } from "../core/utils.ts";
 
 /**
  * Minimal actor shape needed by the character picker view model.
@@ -28,25 +32,10 @@ export type CharacterPickerActor = PermissionCheckedDocument
   items?: unknown;
 };
 
-/**
- * Minimal owned item shape used to derive class summaries.
- */
-export type CharacterPickerItem = FoundryDataShape<foundry.documents.types.ItemData> & {
-  system?: Record<string, unknown>;
-};
+export type CharacterPickerChip = CharacterPickerPresentationChip;
 
 /**
- * Small metadata chip displayed on character picker rows.
- */
-export type CharacterPickerChip = {
-  id: string;
-  label: string;
-  value: string;
-  tone?: string;
-};
-
-/**
- * Template-safe row for one observable player character.
+ * Template-safe row for one adapter-selected observable actor.
  */
 export type CharacterPickerRow = {
   uuid: string;
@@ -58,11 +47,7 @@ export type CharacterPickerRow = {
   subtitle: string;
   summary: string;
   ownershipLabel: string;
-  showHeaderStats: boolean;
-  acLabel: string;
-  acValue: string;
-  hpLabel: string;
-  hpValue: string;
+  headerStats: CharacterPickerPresentation["headerStats"];
   chips: CharacterPickerChip[];
   favorite: boolean;
   canToggleFavorite: boolean;
@@ -122,6 +107,7 @@ export type CharacterPickerEnvironment = {
   favoriteHelpOpen?: boolean;
   searchQuery?: string;
   expandedFolderIds?: string[];
+  adapter: Pick<CharacterSheetAdapter, "isCharacterPickerActor" | "buildCharacterPickerPresentation">;
 };
 
 /**
@@ -132,8 +118,8 @@ export function buildCharacterPickerViewModel(environment: CharacterPickerEnviro
   const favoriteActorUuids = new Set((environment.favoriteActorUuids ?? []).map(actorUuid => actorUuid.trim()).filter(Boolean));
   const expandedFolderIds = new Set((environment.expandedFolderIds ?? []).map(folderId => folderId.trim()).filter(Boolean));
   const characters = getActors(environment.actors)
-    .filter(actor => isPlayerCharacter(actor) && canListCharacter(actor, environment.user))
-    .map(actor => buildCharacterPickerRow(actor, environment.user, favoriteActorUuids))
+    .filter(actor => canListCharacter(actor, environment.user) && environment.adapter.isCharacterPickerActor(actor))
+    .map(actor => buildCharacterPickerRow(actor, environment.user, favoriteActorUuids, environment.adapter))
     .filter(character => matchesCharacterNameSearch(character, searchQuery))
     .sort(compareCharacterRows);
   const favorites = characters.filter(character => character.favorite);
@@ -144,7 +130,7 @@ export function buildCharacterPickerViewModel(environment: CharacterPickerEnviro
     label: localize("POCKETFOUNDRY.Route.Characters", "Characters"),
     heading: localize("POCKETFOUNDRY.CharacterPicker.Heading", "Character Picker"),
     emptyTitle: localize("POCKETFOUNDRY.CharacterPicker.Empty.Title", "No Characters Available"),
-    emptyBody: localize("POCKETFOUNDRY.CharacterPicker.Empty.Body", "No observable player characters are available for this user."),
+    emptyBody: localize("POCKETFOUNDRY.CharacterPicker.Empty.Body", "No observable characters are available for this user."),
     searchQuery,
     canClearSearch: searchQuery.length > 0,
     favorites,
@@ -163,35 +149,36 @@ function canListCharacter(actor: CharacterPickerActor, user: FoundryUserLike): b
   return canViewLimitedDocument(actor, user);
 }
 
-function buildCharacterPickerRow(actor: CharacterPickerActor, user: FoundryUserLike, favoriteActorUuids: Set<string>): CharacterPickerRow {
+/** Builds one row after shared visibility and adapter eligibility checks succeed. */
+function buildCharacterPickerRow(
+  actor: CharacterPickerActor,
+  user: FoundryUserLike,
+  favoriteActorUuids: Set<string>,
+  adapter: CharacterPickerEnvironment["adapter"]
+): CharacterPickerRow {
   const name = actor.name?.trim() || localize("POCKETFOUNDRY.Character.Unnamed", "Unnamed Character");
   const canViewFullSheet = canViewDocument(actor, user);
-  const summary = canViewFullSheet ? getCharacterSummary(actor) : "";
-  const classSummary = canViewFullSheet ? getClassSummary(actor) : "";
+  const presentation = canViewFullSheet
+    ? adapter.buildCharacterPickerPresentation({ actor, user })
+    : createLimitedCharacterPresentation();
   const ownershipLabel = canViewFullSheet
     ? (isOwner(actor, user) ? localize("POCKETFOUNDRY.Permission.Owner", "Owner") : localize("POCKETFOUNDRY.Permission.Observer", "Observer"))
     : localize("POCKETFOUNDRY.Permission.Limited", "Limited");
   const folderInfo = getCharacterFolderInfo(actor);
   const actorUuid = actor.uuid ?? (actor.id ? `Actor.${actor.id}` : "");
-  const headerStats = canViewFullSheet ? getCharacterHeaderStats(actor) : { ac: "", hp: "" };
-  const subtitle = canViewFullSheet ? (classSummary || summary || localize("POCKETFOUNDRY.Document.Character", "Character")) : "";
 
   return {
     uuid: actorUuid,
     name,
-    typeLabel: localize("POCKETFOUNDRY.Document.Character", "Character"),
+    typeLabel: presentation.typeLabel,
     iconText: getInitials(name),
     image: actor.img || null,
     limited: !canViewFullSheet,
-    subtitle,
-    summary: canViewFullSheet ? summary : "",
+    subtitle: presentation.subtitle,
+    summary: presentation.summary,
     ownershipLabel,
-    showHeaderStats: canViewFullSheet,
-    acLabel: getSystemTermLabel("armorClass"),
-    acValue: headerStats.ac,
-    hpLabel: getSystemTermLabel("hitPoints"),
-    hpValue: headerStats.hp,
-    chips: canViewFullSheet ? getCharacterChips(actor) : [],
+    headerStats: presentation.headerStats,
+    chips: presentation.chips,
     favorite: favoriteActorUuids.has(actorUuid),
     canToggleFavorite: true,
     folderLabel: folderInfo.label,
@@ -210,10 +197,6 @@ function getActors(actors: unknown): CharacterPickerActor[] {
   return getCollectionContents(actors) as CharacterPickerActor[];
 }
 
-function isPlayerCharacter(actor: CharacterPickerActor): boolean {
-  return actor.type === "character";
-}
-
 function isOwner(actor: CharacterPickerActor, user: FoundryUserLike): boolean {
   if (canUpdateDocument(actor, user)) return true;
   return (getDocumentUserLevel(actor, user) ?? FOUNDRY_PERMISSION_LEVELS.NONE) >= FOUNDRY_PERMISSION_LEVELS.OWNER;
@@ -225,78 +208,14 @@ function compareCharacterRows(left: CharacterPickerRow, right: CharacterPickerRo
   return left.sortName.localeCompare(right.sortName);
 }
 
-/**
- * Builds the picker subtitle from system-owned actor details and class data.
- */
-function getCharacterSummary(actor: CharacterPickerActor): string {
-  const details = getObject(actor.system?.details);
-  const species = getString(details?.species) || getString(details?.race);
-  const classSummary = getClassSummary(actor);
-  const level = getNumber(details?.level);
-
-  const parts = [species, classSummary || (level !== null ? getSystemTermLabel("characterLevel", { level }) : "")].filter(Boolean);
-  return parts.join(" ");
-}
-
-/**
- * Formats class item names and levels for the character picker summary.
- */
-function getClassSummary(actor: CharacterPickerActor): string {
-  const classItems = getActorItems(actor).filter(item => item.type === "class");
-  if (classItems.length === 0) return "";
-
-  return classItems
-    .map(item => {
-      const levels = getNumber(getObject(item.system)?.levels);
-      return `${item.name?.trim() || getSystemTermLabel("characterClass")}${levels === null ? "" : ` ${levels}`}`;
-    })
-    .join(" / ");
-}
-
-function getActorItems(actor: CharacterPickerActor): CharacterPickerItem[] {
-  return getCollectionContents(actor.items) as CharacterPickerItem[];
-}
-
-/**
- * Builds compact system-owned stat chips shown on character picker rows.
- */
-function getCharacterChips(actor: CharacterPickerActor): CharacterPickerChip[] {
-  const attributes = getObject(actor.system?.attributes);
-  const hp = getObject(attributes?.hp);
-  const ac = getObject(attributes?.ac);
-  const initiative = getObject(attributes?.init);
-  const chips: CharacterPickerChip[] = [];
-
-  const hpValue = getNumber(hp?.value);
-  const hpMax = getNumber(hp?.max);
-  if (hpValue !== null || hpMax !== null) {
-    chips.push({ id: "hp", label: getSystemTermLabel("hitPoints"), value: `${hpValue ?? "-"}${hpMax === null ? "" : `/${hpMax}`}` });
-  }
-
-  const acValue = getNumber(ac?.value);
-  if (acValue !== null) chips.push({ id: "ac", label: getSystemTermLabel("armorClass"), value: String(acValue) });
-
-  const initiativeValue = getNumber(initiative?.total) ?? getNumber(initiative?.mod) ?? getNumber(initiative?.value);
-  if (initiativeValue !== null) chips.push({ id: "initiative", label: getSystemTermLabel("initiativeAbbreviation"), value: formatSignedNumber(initiativeValue) });
-
-  return chips;
-}
-
-function formatSignedNumber(value: number): string {
-  return value >= 0 ? `+${value}` : String(value);
-}
-
-function getCharacterHeaderStats(actor: CharacterPickerActor): { ac: string; hp: string } {
-  const attributes = getObject(actor.system?.attributes);
-  const hp = getObject(attributes?.hp);
-  const ac = getObject(attributes?.ac);
-  const acValue = getNumber(ac?.value);
-  const hpValue = getNumber(hp?.value);
-  const hpMax = getNumber(hp?.max);
-
+/** Creates the identity-only presentation used when the user has LIMITED access. */
+function createLimitedCharacterPresentation(): CharacterPickerPresentation {
   return {
-    ac: acValue === null ? "-" : String(acValue),
-    hp: hpValue === null && hpMax === null ? "-/-" : `${hpValue ?? "-"}/${hpMax ?? "-"}`
+    typeLabel: localize("POCKETFOUNDRY.Document.Character", "Character"),
+    summary: "",
+    subtitle: "",
+    headerStats: [],
+    chips: []
   };
 }
 
